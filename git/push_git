@@ -1,0 +1,12 @@
+#!/bin/bash
+PWD=`pwd`
+BASE=`basename $PWD`
+GITTREE="gregkh@master.kernel.org:/pub/scm/linux/kernel/git/gregkh/$BASE.git"
+echo -n "push to '$GITTREE'?"
+read -n 1 YES
+
+echo "YES = '$YES'"
+
+if [ "$YES" == "y" ]; then
+	git push $GITTREE
+fi

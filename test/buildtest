@@ -1,0 +1,80 @@
+#!/bin/sh
+
+TESTDIR=`pwd`
+PATCHDIR="$TESTDIR/patches"
+BUILDDIR="$TESTDIR/linux"
+LOG="$TESTDIR/log"
+GIT_LOCAL="greg@aria:git/patches.git"
+GIT_REMOTE="git://git.kernel.org/pub/scm/linux/kernel/git/gregkh/patches.git"
+
+HOSTNAME=`hostname`
+
+ONE_SHOT=$1
+
+echo "PATCHDIR=$PATCHDIR"
+echo "BUILDDIR=$BUILDDIR"
+
+# If we are a machine on the local network, don't download the kernel.org
+# version of the patch repo
+#if [ $HOSTNAME = "kvm" ]; then
+#	PATCH_REPO=$GIT_LOCAL
+#elif [ $HOSTNAME = "mini" ]; then
+#	PATCH_REPO=$GIT_LOCAL
+#else
+	PATCH_REPO=$GIT_REMOTE
+#fi
+
+if [ -d $PATCHDIR ]; then
+	# just pull, don't clone a whole new tree
+	cd $PATCHDIR
+	git pull
+	cd ..
+else
+	# check out latest version of patches
+	git clone $PATCH_REPO $PATCHDIR
+fi
+
+echo "cleaning up from any previous runs"
+rm -rf $BUILDDIR
+rm $LOG $LOG.run1 $LOG.run2
+
+VERSION=`cat $PATCHDIR/version`
+
+echo "working with kernel version $VERSION"
+
+# get latest version of kernel based on patch level
+mkdir $BUILDDIR
+cd $BUILDDIR
+ketchup $VERSION
+
+FAILED=0
+J=$(expr $(grep processor /proc/cpuinfo | wc -l) \* 4)
+
+if [ "X$ONE_SHOTX" == "XX" ] ; then
+	# do a build first to set a baseline
+	make allmodconfig
+	nice -20 make -j$J 2> $LOG.run1 || FAILED=1
+	if [ "$FAILED" != "0" ]; then
+		echo "initial build FAILED!"
+		echo "see $LOG.run1 for what happened"
+		exit $FAILED
+	fi
+
+	# now clean up and do a second build with our patches
+	make distclean
+fi
+
+# apply all patches
+QUILT_PATCHES=$PATCHDIR QUILT_SERIES=$PATCHDIR/series quilt push -aq --quiltrc
+
+# build for allmodconfig
+make allmodconfig
+#make -j4 &> $LOG
+nice -20 make -j$J 2> $LOG.run2 || FAILED=1
+if [ "$FAILED" != "0" ]; then
+	echo "initial build FAILED!"
+	echo "see $LOG.run2 for what happened"
+	exit $FAILED
+fi
+
+diff -u $LOG.run1 $LOG.run2

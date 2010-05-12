@@ -1,0 +1,68 @@
+Here's a summary of the current state of the Linux PCI and PCI Hotplug
+subsystems.
+
+If the information in here is incorrect, or anyone knows of any
+outstanding issues not listed here, please let me know.
+
+List of outstanding regressions from 2.6.15:
+	- none known.
+
+List of outstanding regressions from older kernel versions:
+	- some cardbus users still have issues with the change to the
+	  PCI resource allocation stuff.
+	  http://bugzilla.kernel.org/show_bug.cgi?id=5736 shows this
+	  issue, but seems to be stalled for now :(
+
+Here is a list of the current outstanding bugs for the PCI subsystem as
+tracked at bugzilla.kernel.org.  If anyone can help out with any of
+these, please add information to the bug reports.
+
+ * 5736 [greg@kroah.com] - pci broken on PIIX/ICH laptop (CARDBUS_IO_SIZE
+	too small?).
+
+
+Future stuff:
+  Wow, for a subsystem that no one cared about for a long time (PCI
+  Hotplug) all of a sudden we have so many patches floating around that
+  it is difficult to handle all of them.  If you are interested in the
+  changes in this area that will be coming in 2.6.17, please see my
+  quilt tree at
+  http://www.kernel.org/pub/linux/kernel/people/gregkh/gregkh-2.6/
+
+  Summary of the changes found there are:
+	- shpchp driver reworks that fix issues and handle the module
+	  being able to be unloaded properly
+	- acpiphp driver changes to try to be able to work properly for
+	  laptop docking stations.  There is still remaining work to do
+	  in this area.
+	- We have unstable patches to handle multi-domain PCI busses for
+	  i386 and x86 arches in this tree.  Unfortunately they still
+	  seem to break NUMA and other random boxes, so they will not be
+	  heading for mainline any time soon.  If anyone has one of
+	  these boxes and wishes to work on this, please let me know.
+	- MSI cleanups and fixes to get things to work on ia64.
+	- Other minor PCI and PCI bug fixes.
+
+
+I still have a few outstanding patches in my TODO queue that I have not
+applied to my quilt tree.  These patches do the following:
+	- boot parameter to disable MSI
+	- various PCI quirks added
+	- remove PCI_LEGACY_PROC functionality.
+	- more acpiphp driver fixes.
+	- kzalloc cleanup for drivers/pci
+	- cpqphp driver cleanups as found by the Coverty checker.
+	- other minor things.
+
+I hope to get to these by the end of the week, depending on other 2.6.16
+stabilization work.  If you don't hear back from me by then, and you
+have sent me a PCI or PCI Hotplug patch, please resend it and poke me
+about it.
+
+No new PCI driver API changes are pending that I am aware of.
+
+Was this summary useful for people?  Anything that I should add to it?
+
+thanks,
+
+greg k-h

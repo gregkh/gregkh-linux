@@ -1,0 +1,3878 @@
+#! /usr/bin/perl -wT
+
+# This Perl script is meant to simplify/beautify BK ChangeLogs for the linux
+# kernel.
+#
+# (C) Copyright 2002 by Matthias Andree <matthias.andree@gmx.de>
+#			Marcus Alanen <maalanen@abo.fi>
+#			Tomas Szepe <szepe@pinerecords.com>
+#			Vitezslav Samel <samel@mail.cz>
+#
+# ----------------------------------------------------------------------
+# Distribution of this script is permitted under the terms of the
+# GNU General Public License (GNU GPL) v2.
+# ----------------------------------------------------------------------
+
+# This program expects its input in the following format:
+# (E-Mail Addresses MUST NOT bear leading whitespace!)
+#
+# <email@ddr.ess>
+#	changelog text
+#	more changelog text
+# <email@ddr.ess>
+#	yet another changelog
+# <another@add.ress>
+#	changelog #3
+#	more lines
+#
+# and discards all changelog lines but the first after an email address,
+# and groups and sorts the entries by email address:
+#
+# another@add.ress:
+#	changelog #3
+# email@ddr.ess
+#	changelog text
+#	yet another changelog
+
+require 5.005;
+use strict;
+
+use Carp;
+use Getopt::Long;
+use IO::File;
+eval 'use Pod::Usage;';
+if ($@) {
+  eval 'sub pod2usage {
+    print STDERR "Usage information would be presented here if you had Pod::Usage installed.\n"
+      . "Try: perl -MCPAN -e \'install Pod::Usage\'\nAbort.\n";
+    exit 2;
+  }';
+}
+use Text::ParseWords;
+use Text::Tabs;
+use Text::Wrap;
+
+sub selftest();
+
+# --------------------------------------------------------------------
+# customize the following line to change the indentation of the change
+# lines, $indent1 is used for the first line of an entry, $indent for
+# all subsequent lines. $indent is auto-generated from $indent1.
+#
+# WARNING: $indent1 and $indent MUST NOT contain characters that are
+# special in a regular expression!
+my $indent1 = "  o ";
+my $indent  = " " x length($indent1);
+# change this to enable some debugging stuff:
+my $debug = 0;
+# --------------------------------------------------------------------
+
+if (defined $ENV{LINUXKERNEL_BK_FMT_DEBUG}
+	and $ENV{LINUXKERNEL_BK_FMT_DEBUG}) {
+    $debug = 1;
+}
+
+# Perl syntax magic here, "=>" is equivalent to ","
+my @addrregexps = (
+[ 'alan@[^.]+\.swansea\.linux\.org\.uk' => 'Alan Cox', ],
+[ 'bos@([^.]+\.)?serpentine\.com' => 'Bryan O\'Sullivan', ],
+[ 'chas@([^.]+\.)*nrl\.navy\.mil' => 'Chas Williams', ],
+[ 'davej@(.*\.)?codemonkey\.or(g\.uk?)?' => 'Dave Jones', ],
+[ 'davem@[^.]+\.ninka\.net' => 'David S. Miller', ],
+[ 'davem@([^.]+\.)*davemloft\.net' => 'David S. Miller', ],
+[ 'kuznet@[^.]+\.inr\.ac\.ru' => 'Alexey Kuznetsov', ],
+[ 'torvalds@([^.]+\.)?transmeta\.com' => 'Linus Torvalds', ],
+[ 'torvalds@([^.]+\.)?osdl\.org' => 'Linus Torvalds', ],
+[ '~~~~~~~~~~~~~~~~~~~~~~~~~~~~~' => '~~~~~~~~' ]);
+
+sub obfuscate(@) {
+  my @a = @_;
+  map { tr/@/:/ } @a;
+  return wantarray ? @a : $a[0];
+};
+
+sub unveil(@) {
+  my @a = @_;
+  map { tr/:/@/ } @a;
+  return wantarray ? @a : $a[0];
+};
+
+# the key is the email address in ALL LOWER CAPS!
+# the value is the real name of the person
+#
+# Unless otherwise noted, the addresses below have been obtained using
+# lbdb.
+my @addresses_handled_in_regexp = (
+'alan:hraefn.swansea.linux.org.uk' => 'Alan Cox',
+'alan:irongate.swansea.linux.org.uk' => 'Alan Cox',
+'bos:camp4.serpentine.com' => 'Bryan O\'Sullivan',
+'bos:serpentine.com' => 'Bryan O\'Sullivan',
+'chas:cmd.nrl.navy.mil' => 'Chas Williams',
+'chas:cmf.nrl.navy.mil' => 'Chas Williams',
+'chas:locutus.cmf.nrl.navy.mil' => 'Chas Williams',
+'chas:nrl.navy.mil' => 'Chas Williams',
+'chas:relax.cmf.nrl.navy.mil' => 'Chas Williams',
+'davej:codemonkey.or' => 'Dave Jones',
+'davej:codemonkey.org.u' => 'Dave Jones',
+'davej:codemonkey.org.uk' => 'Dave Jones',
+'davej:delerium.codemonkey.org.uk' => 'Dave Jones',
+'davej:delerium.kernelslacker.org' => 'Dave Jones',
+'davej:wopr.codemonkey.org.uk' => 'Dave Jones',
+'davem:cheetah.ninka.net' => 'David S. Miller',
+'davem:nuts.ninka.net' => 'David S. Miller',
+'davem:pizda.ninka.net' => 'David S. Miller', # guessed
+'kuznet:mops.inr.ac.ru' => 'Alexey Kuznetsov',
+'kuznet:ms2.inr.ac.ru' => 'Alexey Kuznetsov',
+'kuznet:oops.inr.ac.ru' => 'Alexey Kuznetsov',
+'torvalds:athlon.transmeta.com' => 'Linus Torvalds',
+'torvalds:home.transmeta.com' => 'Linus Torvalds',
+'torvalds:kiwi.transmeta.com' => 'Linus Torvalds',
+'torvalds:penguin.transmeta.com' => 'Linus Torvalds',
+'torvalds:tove.transmeta.com' => 'Linus Torvalds',
+'torvalds:transmeta.com' => 'Linus Torvalds',
+'###############################' => '###############'
+);
+# Above is the list of addresses that are now matched by regexps,
+# it is not used by _this_ script (ourselves), but Zack Brown has
+# scripts that parse this code to get developer addresses, so we keep
+# them around. As we don't need it, we just kill it. (We use the same
+# syntax as for the regular address hash for ease of use.)
+undef @addresses_handled_in_regexp;
+
+my %addresses = (
+'33554432:mtu-net.ru' => 'Serge Belyshev',
+'76306.1226:compuserve.com' => 'Chuck Ebbert',
+'[alex.williamson:hp.com' => 'Alex Williamson', # typo
+'_nessuno_:katamail.com' => 'Davide Andrian',
+'a.kasparas:gmc.lt' => 'Aidas Kasparas',
+'a.llano:usyscom.com' => 'Asier Llano Palacios',
+'a.othieno:bluewin.ch' => 'Arthur Othieno',
+'a.othieno:ch.rmk.(none)' => 'Arthur Othieno',
+'a.pugachev:pcs-net.net' => 'Anatoly Pugachev',
+'a.wegele:tu-bs.de' => 'Artur Wegele',
+'a1tmblwd:netscape.net' => 'Kam Leo',
+'aaron.baranoff:tsc.tdk.com' => 'Aaron Baranoff',
+'abbotti:mev.co.uk' => 'Ian Abbott',
+'abem.se:shinybook.infradead.org' => 'Per Hedblom',
+'abraham:2d3d.co.za' => 'Abraham van der Merwe',
+'abslucio:terra.com.br' => 'Lucio Maciel',
+'ac9410:attbi.com' => 'Albert Cranford',
+'ac9410:bellsouth.net' => 'Albert Cranford',
+'acher:in.tum.de' => 'Georg Acher',
+'achew:nvidia.com' => 'Andrew Chew',
+'achim_leubner:adaptec.com' => 'Achim Leubner',
+'achirica:telefonica.net' => 'Javier Achirica',
+'achirica:ttd.net' => 'Javier Achirica',
+'achurch:achurch.org' => 'Andrew Church',
+'acme:allegro.kerneljanitors.org' => 'Arnaldo Carvalho de Melo',
+'acme:brinquedo.oo.ps' => 'Arnaldo Carvalho de Melo',
+'acme:conectiva.com.br' => 'Arnaldo Carvalho de Melo',
+'acme:dhcp197.conectiva' => 'Arnaldo Carvalho de Melo',
+'acme:parisc.kerneljanitors.org' => 'Arnaldo Carvalho de Melo',
+'acme:toy.ghostprotocols.net' => 'Arnaldo Carvalho de Melo',
+'acme:toy.kerneljanitors.org' => 'Arnaldo Carvalho de Melo',
+'acurtis:onz.com' => 'Allen Curtis',
+'adam:evdebs.org' => 'Adam Goode',
+'adam:kroptech.com' => 'Adam Kropelin',
+'adam:mailhost.nmt.edu' => 'Adam Radford', # google
+'adam:nmt.edu' => 'Adam Radford', # google
+'adam:os.inf.tu-dresden.de' => 'Adam Lackorzynski',
+'adam:skullslayer.rod.org' => 'Adam Bernau',
+'adam:yggdrasil.com' => 'Adam J. Richter',
+'adaplas:gawab.com' => 'Antonino A. Daplas', # guessed
+'adaplas:hotpop.com' => 'Antonino A. Daplas',
+'adaplas:pol.net' => 'Antonino A. Daplas',
+'aderesch:fs.tum.de' => 'Andreas Deresch',
+'adi:drcomp.erfurt.thur.de' => 'Adrian Knoth',
+'adilger:clusterfs.com' => 'Andreas Dilger',
+'adobriyan:mail.ru' => 'Alexey Dobriyan',
+'adrian:humboldt.co.uk' => 'Adrian Cox',
+'adsharma:unix-os.sc.intel.com' => 'Arun Sharma',
+'adwol:polsl.gliwice.pl' => 'Adam Osuchowski',
+'aeb:cwi.nl' => 'Andries E. Brouwer',
+'aebr:win.tue.nl' => 'Andries E. Brouwer',
+'afleming:freescale.com' => 'Andy Fleming',
+'agk:redhat.com' => 'Alasdair G. Kergon',
+'agl:us.ibm.com' => 'Adam Litke',
+'agoddard:purdue.edu' => 'Alex Goddard',
+'agrover:acpi3.(none)' => 'Andy Grover',
+'agrover:acpi3.jf.intel.com' => 'Andy Grover', # guessed
+'agrover:aracnet.com' => 'Andy Grover',
+'agrover:dexter.groveronline.com' => 'Andy Grover',
+'agrover:groveronline.com' => 'Andy Grover',
+'agruen:suse.de' => 'Andreas Gruenbacher',
+'agx:sigxcpu.org' => 'Guido Guenther',
+'ahaas:airmail.net' => 'Art Haas',
+'ahaas:neosoft.com' => 'Art Haas',
+'ahendry:tusc.com.au' => 'Andrew Hendry',
+'aherrman:de.ibm.com' => 'Andreas Herrmann',
+'ahu:ds9a.nl' => 'Bert Hubert',
+'aia21:cam.ac.uk' => 'Anton Altaparmakov',
+'aia21:cantab.net' => 'Anton Altaparmakov',
+'aia21:cus.cam.ac.uk' => 'Anton Altaparmakov',
+'aia21:drop.stormcorp.org' => 'Anton Altaparmakov', # guessed
+'airlied:linux.ie' => 'Dave Airlie',
+'airlied:pdx.freedesktop.org' => 'Dave Airlie',
+'airlied:starflyer.(none)' => 'Dave Airlie',
+'aj:andaco.de' => 'Andreas Jochens',
+'aj:net-lab.net' => 'Andreas John',
+'ajgrothe:yahoo.com' => 'Aaron Grothe',
+'ajm:sgi.com' => 'Alan Mayer',
+'ajoshi:kernel.crashing.org' => 'Ani Joshi',
+'ajoshi:shell.unixbox.com' => 'Ani Joshi',
+'ak:colin.muc.de' => 'Andi Kleen',
+'ak:colin2.muc.de' => 'Andi Kleen',
+'ak:muc.de' => 'Andi Kleen',
+'ak:sensi.org' => 'Alex Kanavin',
+'ak:suse.de' => 'Andi Kleen',
+'akepner:sgi.com' => 'Arthur Kepner',
+'akeptner:sgi.com' => 'Arthur Kepner',
+'akiyama.nobuyuk:jp.fujitsu.com' => 'Akiyama Nobuyuki',
+'akm:osdl.org' => 'Andrew Morton', # typo?
+'akonovalov:ru.mvista.com' => 'Andrei Konovalov',
+'akpm:digeo.com' => 'Andrew Morton',
+'akpm:org.rmk.(none)' => 'Andrew Morton',
+'akpm:osdl.org' => 'Andrew Morton', # guessed
+'akpm:reardensteel.com' => 'Andrew Morton',
+'akpm:zip.com.au' => 'Andrew Morton',
+'akropel1:rochester.rr.com' => 'Adam Kropelin', # lbdb
+'akropel:rochester.rr.com' => 'Adam Kropelin', # guessed
+'al.fracchetti:tin.it' => 'Alessandro Fracchetti',
+'alain.knaff:lll.lu' => 'Alain Knaff',
+'alain:linux.lu' => 'Alain Knaff',
+'alan:lxorguk.ukuu.org.uk' => 'Alan Cox',
+'alan:redhat.com' => 'Alan Cox',
+'alanh:fairlite.demon.co.uk' => 'Alan Hourihane',
+'alanh:tungstengraphics.com' => 'Alan Hourihane',
+'albert.cahalan:ccur.com' => 'Albert Cahalan',
+'albert:users.sf.net' => 'Albert Cahalan',
+'albert:users.sourceforge.net' => 'Albert Cahalan',
+'albert_herranz:yahoo.es' => 'Albert Herranz',
+'albertcc:tw.ibm.com' => 'Albert Lee',
+'albertogli:telpin.com.ar' => 'Alberto Bertogli',
+'alborchers:steinerpoint.com' => 'Al Borchers',
+'alessandro.zummo:towertech.it' => 'Alessandro Zummo',
+'alex.butcher:assursys.co.uk' => 'Alex Butcher',
+'alex.kern:gmx.de' => 'Alexander Kern',
+'alex.kiernan:gmail.com' => 'Alex Kiernan',
+'alex.williamson:com.rmk.(none)' => 'Alex Williamson',
+'alex.williamson:hp.com' => 'Alex Williamson',
+'alex:alexdalton.org' => 'Alexandre d\'Alton',
+'alex:clusterfs.com' => 'Alex Tomas',
+'alex:de.rmk.(none)' => 'Alexander Schulz',
+'alex:netchip.com' => 'Alex Sanks',
+'alex:skip86.com' => 'Alexander Clausen',
+'alex:ssi.bg' => 'Alexander Atanasov',
+'alex_williamson:attbi.com' => 'Alex Williamson', # lbdb
+'alex_williamson:com.rmk.(none)' => 'Alex Williamson',
+'alex_williamson:hp.com' => 'Alex Williamson', # google
+'alexander.kern:siemens.com' => 'Alexander Kern',
+'alexander.riesen:synopsys.com' => 'Alexander Riesen',
+'alexander.schulz:com.rmk.(none)' => 'Alexander Schulz',
+'alexander.schulz:innominate.com' => 'Alexander Schulz',
+'alexander.stohr:gmx.de' => 'Alexander Stohr',
+'alexander:all-2.com' => 'Alexander Oltu',
+'alexey.y.starikovskiy:intel.com' => 'Alexey Y. Starikovskiy',
+'alexey:technomagesinc.com' => 'Alex Tomas',
+'alexn:dsv.su.se' => 'Alexander Nyberg',
+'alext:fc.hp.com' => 'Alex Tsariounov',
+'alfre:ibd.es' => 'Alfredo Sanjuán',
+'aliakc:web.de' => 'Ali Akcaagac', # lbdb
+'alsbergt:cs.huji.ac.il' => 'Tom Alsberg',
+'amalysh:web.de' => 'Alexander Malysh',
+'ambx1:com.rmk.(none)' => 'Adam Belay',
+'ambx1:neo.rr.com' => 'Adam Belay',
+'amgta:yacht.ocn.ne.jp' => 'Akinobu Mita',
+'amir.noam:intel.com' => 'Amir Noam',
+'amitg:edu.rmk.(none)' => 'Amit Gurdasani',
+'amn3s1a:ono.com' => 'Miguel A. Fosas',
+'amodra:bigpond.net.au' => 'Alan Modra',
+'amunoz:vmware.com' => 'Alberto Munoz',
+'ananth:in.ibm.com' => 'Ananth N. Mavinakayanahalli',
+'andersen:codepoet.org' => 'Erik Andersen',
+'andersg:0x63.nu' => 'Anders Gustafsson',
+'andi:cosy.sbg.ac.at' => 'Andreas Maier',
+'andikies:t-online.de' => 'Andreas Kies',
+'andmike:us.ibm.com' => 'Mike Anderson', # lbdb
+'andre.breiler:null-mx.org' => 'André Breiler',
+'andre.landwehr:gmx.net' => 'Andre Landwehr',
+'andre:linux-ide.org' => 'Andre Hedrick',
+'andrea:cpushare.com' => 'Andrea Arcangeli',
+'andrea:novell.com' => 'Andrea Arcangeli',
+'andrea:suse.de' => 'Andrea Arcangeli',
+'andreas:fjortis.info' => 'Andreas Henriksson',
+'andreas:xss.co.at' => 'Andreas Haumer',
+'andrej.filipcic:ijs.si' => 'Andrej Filipcic',
+'andrew-lists:optusnet.com.au' => 'Andrew Dennison',
+'andrew.grover:intel.com' => 'Andy Grover', # "Andy" to match former entries
+'andrew.patterson:hp.com' => 'Andrew Patterson',
+'andrew.vasquez:qlogic.com' => 'Andrew Vasquez',
+'andrew.wood:ivarch.com' => 'Andrew Wood',
+'andrew:com.rmk.(none)' => 'Andrew Victor', # double-check
+'andrew:lunn.ch' => 'Andrew Lunn',
+'andrew:walrond.org' => 'Andrew Walrond',
+'andries.brouwer:cwi.nl' => 'Andries E. Brouwer',
+'andros:citi.umich.edu' => 'Andy Adamson',
+'andros:thnk.citi.umich.edu' => 'William A. Adamson',
+'andros:umich.edu' => 'Andy Adamson',
+'andyw:uk.ibm.com' => 'Andy Whitcroft',
+'aneesh.kumar:digital.com' => 'Aneesh Kumar KV',
+'aneesh.kumar:gmail.com' => 'Aneesh Kumar',
+'angus.sawyer:dsl.pipex.com' => 'Angus Sawyer',
+'aniket:sgi.com' => 'Aniket Malatpure',
+'anil.s.keshavamurthy:intel.com' => 'Anil Keshavamurthy',
+'ankry:green.mif.pg.gda.pl' => 'Andrzej Krzysztofowicz',
+'annabellesgarden:yahoo.de' => 'Karsten Wiese',
+'anton:samba.org' => 'Anton Blanchard',
+'anton:superego.(none)' => 'Anton Blanchard',
+'anton:superego.ozlabs.ibm.com' => 'Anton Blanchard',
+'aoki:sdl.hitachi.co.jp' => 'Hideo Aoki',
+'aoliva:redhat.com' => 'Alexandre Oliva',
+'ap:cipherica.com' => 'Alex Pankratov',
+'apatard:mandrakesoft.com' => 'Arnaud Patard',
+'apm:brigitte.dna.fi' => 'Antti P. Miettinen',
+'apolkosnik:directvinternet.com' => 'Adam Polkosnik',
+'appro:fy.chalmers.se' => 'Andy Polyakov',
+'apw:shadowen.org' => 'Andy Whitcroft',
+'aradford:amcc.com' => 'Adam Radford',
+'arashi:yomerashi.yi.org' => 'Matt Reppert',
+'arekm:pld-linux.org' => 'Arkadiusz Miskiewicz', # lbdb
+'arief_m_utama:telkomsel.co.id' => 'Arief Mulya Utama',
+'ariel:blueslice.com' => 'Ariel Rosenblatt',
+'aris:cathedrallabs.org' => 'Aristeu Sergio Rozanski Filho',
+'arjan:fenrus.demon.nl' => 'Arjan van de Ven',
+'arjan:infradead.org' => 'Arjan van de Ven',
+'arjan:nl.rmk.(none)' => 'Arjan van de Ven',
+'arjan:redhat.com' => 'Arjan van de Ven',
+'arjanv:infradead.org' => 'Arjan van de Ven',
+'arjanv:redhat.com' => 'Arjan van de Ven',
+'armcc2000:com.rmk.(none)' => 'Andre McCurdy',
+'armcc2000:yahoo.com' => 'Andre McCurdy',
+'armijn:uulug.nl' => 'Armijn Hemel',
+'armin:melware.de' => 'Armin Schindler',
+'arnaud.quette:mgeups.com' => 'Arnaud Quette',
+'arnd:arndb.de' => 'Arnd Bergmann',
+'arnd:bergmann-dalldorf.de' => 'Arnd Bergmann',
+'arndb:de.ibm.com' => 'Arnd Bergmann',
+'arndt:lin02384n012.mc.schoenewald.de' => 'Arndt Schoenewald',
+'arnouten:bzzt.net' => 'Arnout Engelen',
+'arubin:atl.lmco.com' => 'Aron Rubin',
+'arun.sharma:intel.com' => 'Arun Sharma',
+'arvidjaar:mail.ru' => 'Andrey Borzenkov',
+'arvind.kan:wipro.com' => 'Arvind Kandhare',
+'arzie:dds.nl' => 'Robert Zwerus',
+'aschultz:warp10.net' => 'Andreas Schultz',
+'asetlur:lucent.com' => 'Anand R. Setlur',
+'ash:tsi.lv' => 'Alexander Shatohin',
+'ashok.raj:intel.com' => 'Ashok Raj',
+'asit.k.mallick:intel.com' => 'Asit K. Mallick', # by Kristian Peters
+'askulysh:image.kiev.ua' => 'Andriy Skulysh',
+'asl:launay.org' => 'Arnaud S. Launay',
+'aso:granite.phys.s.u-tokyo.ac.jp' => 'Youichi Aso',
+'aspicht:arkeia.com' => 'Arnaud Spicht',
+'ast:domdv.de' => 'Andreas Steinmetz',
+'async:cc.gatech.edu' => 'Rob Melby',
+'atomenergie:t-online.de' => 'Stephan Fuhrmann',
+'atul.mukker:lsil.com' => 'Atul Mukker',
+'atulm:lsil.com' => 'Atul Mukker',
+'augustus:linuxhardware.org' => 'Kris Kersey',
+'aurelien:aurel32.net' => 'Aurelien Jarno', # lbdb
+'avi:argo.co.il' => 'Avi Kivity',
+'aviro:parcelfarce.linux.theplanet.co.uk' => 'Alexander Viro',
+'avvisi:spalletti.it' => 'Iacopo Spalletti',
+'awagger:web.de' => 'Axel Waggershauser',
+'axboe:burns.home.kernel.dk' => 'Jens Axboe', # guessed
+'axboe:hera.kernel.org' => 'Jens Axboe',
+'axboe:suse.de' => 'Jens Axboe',
+'azarah:gentoo.org' => 'Martin Schlemmer',
+'azarah:nosferatu.za.org' => 'Martin Schlemmer',
+'aziz:hp.com' => 'Khalid Aziz', # Alan
+'b.zolnierkiewicz:elka.pw.edu.pl' => 'Bartlomiej Zolnierkiewicz',
+'baccala:vger.freesoft.org' => 'Brent Baccala',
+'baldrick:free.fr' => 'Duncan Sands',
+'baldrick:wanadoo.fr' => 'Duncan Sands',
+'ballabio_dario:emc.com' => 'Dario Ballabio',
+'baris:idealteknoloji.com' => 'M. Baris Demiray',
+'barrow_dj:yahoo.com' => 'D. J. Barrow',
+'barryn:pobox.com' => 'Barry K. Nathan', # lbdb
+'bart.de.schuyer:pandora.be' => 'Bart De Schuymer',
+'bart.de.schuymer:pandora.be' => 'Bart De Schuymer',
+'bart:samwel.tk' => 'Bart Samwel',
+'baruch:ev-en.org' => 'Baruch Even',
+'basic:mozdev.org' => 'Pang Lih Wuei',
+'bastian:waldi.eu.org' => 'Bastian Blank',
+'bbosch:iphase.com' => 'Bradley A. Bosch',
+'bbuesker:qualcomm.com' => 'Brian Buesker',
+'bcasavan:sgi.com' => 'Brent Casavant',
+'bcollins:debian.org' => 'Ben Collins',
+'bcrl:bob.home.kvack.org' => 'Benjamin LaHaise',
+'bcrl:kvack.org' => 'Benjamin LaHaise',
+'bcrl:redhat.com' => 'Benjamin LaHaise',
+'bcrl:toomuch.toronto.redhat.com' => 'Benjamin LaHaise', # guessed
+'bde:bwlink.com' => 'Bruce D. Elliott',	# it's typo IMHO
+'bde:nwlink.com' => 'Bruce D. Elliott',
+'bdschuym:pandora.be' => 'Bart De Schuymer',
+'bdschuym:telenet.be' => 'Bart De Schuymer',
+'bdshuym:pandora.be' => 'Bart De Schuymer', # it's typo IMHO
+'beattie:beattie-home.net' => 'Brian Beattie', # from david.nelson
+'becky.gill:freescale.com' => 'Becky Gill',
+'bellucda:tiscali.it' => 'Daniele Bellucci',
+'ben-linux:fluff.org' => 'Ben Dooks',
+'ben-linux:org.rmk.(none)' => 'Ben Dooks',
+'ben:fluff.org' => 'Ben Dooks',
+'ben:simtec.co.uk' => 'Ben Dooks',
+'bengen:hilluzination.de' => 'Hilko Bengen',
+'benh:au1.ibm.com' => 'Benjamin Herrenschmidt',
+'benh:kenrel.crashing.org' => 'Benjamin Herrenschmidt', # typo
+'benh:kernel.crashing.org' => 'Benjamin Herrenschmidt',
+'benh:zion.wanadoo.fr' => 'Benjamin Herrenschmidt',
+'benjl:cse.unsw.edu.au' => 'Ben Leslie',
+'berentsen:sent5.uni-duisburg.de' => 'Martin Berentsen',
+'bergner:brule.rchland.ibm.com' => 'Peter Bergner',
+'bergner:cannon.rchland.ibm.com' => 'Peter Bergner',
+'bergner:vnet.ibm.com' => 'Peter Bergner',
+'bernard:blackham.com.au' => 'Bernard Blackham',
+'bernhard.kaindl:gmx.de' => 'Bernhard Kaindl',
+'bernie:develer.com' => 'Bernardo Innocenti',
+'berny.f:aon.at' => 'Bernhard Fischer',
+'bero:arklinux.org' => 'Bernhard Rosenkraenzer',
+'bfennema:falcon.csc.calpoly.edu' => 'Ben Fennema',
+'bfg-kernel:blenning.no' => 'Tom Fredrik Blenning Klaussen',
+'bfields:citi.umich.edu' => 'J. Bruce Fields',
+'bfields:fieldses.org' => 'J. Bruce Fields',
+'bgerst:didntduck.org' => 'Brian Gerst',
+'bgerst:quark.didntduck.org' => 'Brian Gerst',
+'bhards:bigpond.net.au' => 'Brad Hards',
+'bhavesh:avaya.com' => 'Bhavesh P. Davda',
+'bheilbrun:paypal.com' => 'Brad Heilbrun', # by himself
+'bill.irwin:oracle.com' => 'William Lee Irwin III',
+'bjoern:j3e.de' => 'Bjoern Jacke',
+'bjohnson:sgi.com' => 'Brian J. Johnson',
+'bjorn-helgaas:comcast.net' => 'Bjorn Helgaas',
+'bjorn.andersson:erc.ericsson.se' => 'Björn Andersson', # google, guessed ö
+'bjorn.helgaas:com.rmk.(none)' => 'Bjorn Helgaas',
+'bjorn.helgaas:hp.com' => 'Bjorn Helgaas',
+'bjorn.wesen:axis.com' => 'Bjorn Wesen',
+'bjorn:haxx.se' => 'Bjorn Stenberg',
+'bjorn:mork.no' => 'Bjørn Mork',
+'bjorn_helgaas:hp.com' => 'Bjorn Helgaas',
+'bk:suse.de' => 'Bernhard Kaindl',
+'blaisorblade:yahoo.it' => 'Paolo \'Blaisorblade\' Giarrusso',
+'blaisorblade_spam:yahoo.it' => 'Paolo \'Blaisorblade\' Giarrusso',
+'blaschke:blaschke3.austin.ibm.com' => 'Dave Blaschke',
+'blazara:nvidia.com' => 'Brian Lazara',
+'blofeldus:com.rmk.(none)' => 'Roger Blofeld',
+'blueflux:koffein.net' => 'Oskar Andreasson',
+'bmatheny:purdue.edu' => 'Blake Matheny', # google
+'bo.henriksen:com.rmk.(none)' => 'Bo Henriksen',
+'bo.henriksen:nordicid.com' => 'Bo Henriksen',
+'bob.picco:hp.com' => 'Bob Picco',
+'bodo.stroesser:fujitsu-siemens.com' => 'Bodo Stroesser',
+'bogdan.costescu:iwr.uni-heidelberg.de' => 'Bogdan Costescu',
+'bombe:informatik.tu-muenchen.de' => 'Andreas Bombe',
+'boris.hu:intel.com' => 'Boris Hu',
+'borisitk:fortunet.com' => 'Boris Itkis', # by Kristian Peters
+'bos:pathscale.com' => "Bryan O'Sullivan",
+'boutcher:us.ibm.com' => 'Dave Boutcher',
+'braam:clusterfs.com' => 'Peter Braam',
+'brad:wasp.net.au' => 'Brad Campbell',
+'brad_mssw:gentoo.org' => 'Brad House',
+'bram.verweij:wanadoo.nl' => 'Bram Verweij',
+'bram:sara.nl' => 'Bram Stolk',
+'braunu:de.ibm.com' => 'Ursula Braun-Krahl',
+'brazilnut:us.ibm.com' => 'Don Fry',
+'brett:bad-sports.com' => 'Brett Pemberton',
+'breuerr:mc.net' => 'Bob Breuer',
+'brewt-linux-kernel:brewt.org' => 'Adrian Yee',
+'brian.haley:hp.com' => 'Brian Haley',
+'brian:murphy.dk' => 'Brian Murphy',
+'brian:rentec.com' => 'Brian Childs',
+'brihall:pcisys.net' => 'Brian Hall', # google
+'brill:fs.math.uni-frankfurt.de' => 'Björn Brill',
+'brix:gentoo.org' => 'Henrik Brix Andersen',
+'brking:us.ibm.com' => 'Brian King',
+'brm:murphy.dk' => 'Brian Murphy',
+'brownfld:irridia.com' => 'Ken Brownfield',
+'brugolsky:telemetry-investments.com' => 'Bill Rugolsky',
+'bryan:staidm.org' => 'Bryan Rittmeyer',
+'bryder:paradise.net.nz' => 'Bill Ryder',
+'bstroesser:fujitsu-siemens.com' => 'Bodo Stroesser',
+'buffer:antifork.org' => 'Angelo Dell\'Aera',
+'bugfixer:list.ru' => 'Nick Orlov',
+'bunk:de.rmk.(none)' => 'Adrian Bunk', # guessed
+'bunk:fs.tum.de' => 'Adrian Bunk',
+'bunk:stusta.de' => 'Adrian Bunk',
+'buytenh:gnu.org' => 'Lennert Buytenhek',
+'buytenh:org.rmk.(none)' => 'Lennert Buytenhek',
+'buytenh:wantstofly.org' => 'Lennert Buytenhek',
+'bwa:us.ibm.com' => 'Bruce Allan',
+'bwheadley:earthlink.net' => 'Bryan W. Headley',
+'bwindle:fint.org' => 'Burton N. Windle',
+'bzeeb-lists:lists.zabbadoz.net' => 'Björn A. Zeeb', # lbdb
+'bzolnier:elka.pw.edu.pl' => 'Bartlomiej Zolnierkiewicz',
+'bzolnier:gmail.com' => 'Bartlomiej Zolnierkiewicz',
+'bzolnier:trik.(none)' => 'Bartlomiej Zolnierkiewicz',
+'bzzz:gerasimov.net' => 'Alex Tomas',
+'bzzz:tmi.comex.ru' => 'Alex Tomas',
+'c-d.hailfinger.devel.2005:gmx.net' => 'Carl-Daniel Hailfinger',
+'c-d.hailfinger.kernel.2002-07:gmx.net' => 'Carl-Daniel Hailfinger',
+'c-d.hailfinger.kernel.2002-q4:gmx.net' => 'Carl-Daniel Hailfinger', # himself
+'c-d.hailfinger.kernel.2003:gmx.net' => 'Carl-Daniel Hailfinger', # himself
+'c-d.hailfinger.kernel.2004:gmx.net' => 'Carl-Daniel Hailfinger',
+'c.lucas:com.rmk.(none)' => 'Christophe Lucas',
+'c.lucas:ifrance.com' => 'Christophe Lucas',
+'cagle:mindspring.com' => 'John Cagle', # Alan
+'calum.mackay:cdmnet.org' => 'Calum Mackay', # lbdb
+'cananian:lesser-magoo.lcs.mit.edu' => 'C. Scott Ananian',
+'cannam:all-day-breakfast.com' => 'Chris Cannam',
+'car.busse:gmx.de' => 'Carsten Busse',	# verified by Greg KH
+'carlo:linux.it' => 'Carlo Perassi',
+'castet.matthieu:free.fr' => 'Matthieu Castet',
+'castor:3pardata.com' => 'Castor Fu',
+'cat:zip.com.au' => 'CaT',
+'catab at umbrella.ro' => 'Catalin Boie',
+'catab:deuroconsult.ro' => 'Catalin Boie',
+'catab:umbrella.ro' => 'Catalin Boie',
+'catalin.marinas:com.rmk.(none)' => 'Catalin Marinas',
+'cattelan:lupo.thebarn.com' => 'Russell Cattelan',
+'cattelan:naboo.americas.sgi.com' => 'Russell Cattelan',
+'cattelan:naboo.eagan' => 'Russell Cattelan',
+'cattelan:sgi.com' => 'Russell Cattelan', # google
+'cbajumpa:or8.net' => 'Chris Bajumpaa',
+'cborntra:de.ibm.com' => 'Christian Bornträger',
+'cbrake:com.rmk.(none)' => 'Cliff Brake',
+'ccaputo:alt.net' => 'Chris Caputo',
+'ccheney:cheney.cx' => 'Christopher L. Cheney',
+'ce:idtect.com' => 'Charles-Edouard Ruault',
+'cel:citi.umich.edu' => 'Chuck Lever',
+'cel:netapp.com' => 'Chuck Lever',
+'celso:bulma.net' => 'Celso González', # google
+'cesarb:nitnet.com.br' => 'Cesar Eduardo Barros',
+'ch:com.rmk.(none)' => 'Christopher Hoover',
+'ch:hpl.hp.com' => 'Christopher Hoover', # by Kristian Peters
+'ch:murgatroid.com' => 'Christopher Hoover',
+'chaapala:cisco.com' => 'Clay Haapala',
+'chad.dupuis:hp.com' => 'Chad Dupuis',
+'chad_smith:hp.com' => 'Chad Smith',
+'chadt:sgi.com' => 'Chad Talbott',
+'chan:aleph1.co.uk' => 'Tak-Shing Chan',
+'char:cmf.nrl.navy.mil' => 'Chas Williams', # typo ???
+'charles.white:hp.com' => 'Charles White',
+'chaus:cs.uni-potsdam.de' => 'Carsten Haustein',
+'chaus:rz.uni-potsdam.de' => 'Carsten Haustein',
+'chessman:tux.org' => 'Samuel S. Chessman',
+'chip:pobox.com' => 'Chip Salzenberg', # lbdb
+'chris:heathens.co.nz' => 'Chris Heath',
+'chris:onestepahead.de' => 'Christian Meder',
+'chris:osdl.org' => 'Chris Wright',
+'chris:qwirx.com' => 'Chris Wilson',
+'chris:wirex.com' => 'Chris Wright',
+'chrisg:etnus.com' => 'Chris Gottbrath',
+'chrisl:vmware.com' => 'Christopher Li',
+'christer:weinigel.se' => 'Christer Weinigel', # from shortlog
+'christian:borntraeger.net' => 'Christian Borntraeger',
+'christoph:graphe.net' => 'Christoph Lameter',
+'christoph:lameter.com' => 'Christoph Lameter',
+'christophe:saout.de' => 'Christophe Saout',
+'christopher.leech:intel.com' => 'Christopher Leech',
+'christopher:intel.com' => 'Christopher Goldfarb',
+'chrisw:osdl.org' => 'Chris Wright',
+'chyang:clusterfs.com' => 'Chen Yang',
+'ciaranm:gentoo.org' => 'Ciaran McCreesh',
+'cieciwa:alpha.zarz.agh.edu.pl' => 'Wojciech Cieciwa',
+'cip307:cip.physik.uni-wuerzburg.de' => 'Jochen Karrer', # from shortlog
+'ckoerner:sysgo.com' => 'Christian Koerner',
+'ckulesa:as.arizona.edu' => 'Craig Kulesa',
+'cl81:gmx.net' => 'Christian Ludwig',
+'clameter:sgi.com' => 'Christoph Lameter',
+'clear.zhang:uli.com.tw' => 'Clear Zhang',
+'clemens-dated-1061728015.bf63:endorphin.org' => 'Fruhwirth Clemens',
+'clemens:endorphin.org' => 'Fruhwirth Clemens',
+'clemens:ladisch.de' => 'Clemens Ladisch',
+'clemy:clemy.org' => 'Bernhard C. Schrenk',
+'cloos:jhcloos.com' => 'James H. Cloos Jr.',
+'cloos:lugabout.jhcloos.org' => 'James H. Cloos Jr.',
+'cltien:cmedia.com.tw' => 'Chen Li Tien',
+'clubneon:hereintown.net' => 'Chris Meadors',
+'cmayor:ca.rmk.(none)' => 'Cam Mayor',
+'cminyard:mvista.com' => 'Corey Minyard',
+'cmm:us.ibm.com' => 'Mingming Cao',
+'cniehaus:handhelds.org' => 'Carsten Niehaus',
+'co2b:ceres.dti.ne.jp' => 'Kouichi Ono',
+'cobra:compuserve.com' => 'Kevin Brosius',
+'cohuck:de.ibm.com' => 'Cornelia Huck',
+'colin.lkml:colino.net' => 'Colin Leroy',
+'colin:colino.net' => 'Colin Leroy',
+'colin:gibbs.dhs.org' => 'Colin Gibbs',
+'colin:gibbsonline.net' => 'Colin Gibbs', # whois
+'colpatch:us.ibm.com' => 'Matthew Dobson',
+'corbet:lwn.net' => 'Jonathan Corbet',
+'coreyed:linxtechnologies.com' => 'Corey Edwards',
+'corryk:us.ibm.com' => 'Kevin Corry',
+'cort:fsmlabs.com' => 'Cort Dougan',
+'cotte:de.ibm.com' => 'Carsten Otte',
+'coughlan:redhat.com' => 'Tom Coughlan',
+'coywolf:gmail.com' => 'Coywolf Qi Hunt',
+'coywolf:greatcn.org' => 'Coywolf Qi Hunt',
+'cp:absolutedigital.net' => 'Cal Peake',
+'cpg:aladdin.de' => 'Christian Groessler',
+'cpg:puchol.com' => 'Carlos Puchol',
+'cph:cph.demon.co.uk' => 'Colin Phipps',
+'cph:zurich.ai.mit.edu' => 'Chris Hanson',
+'cr7:os.inf.tu-dresden.de' => 'Carsten Rietzschel',
+'cr:sap.com' => 'Christoph Rohland',
+'craig.nadler:arc.com' => 'Craig Nadler',
+'craig:gumstix.com' => 'Craig Hughes',
+'craig:homerjay.homelinux.org' => 'Craig Wilkie',
+'cramerj:intel.com' => 'Jeb J. Cramer',
+'crn:netunix.com' => 'Chris Newport',
+'cruault:724.com' => 'Charles-Edouard Ruault',
+'cs.helsinki.fi:shinybook.infradead.org' => 'Heikki Lindholm',
+'cspalletta:yahoo.com' => 'Carl Spalletta',
+'ctindel:cup.hp.com' => 'Chad N. Tindel',
+'cubic:miee.ru' => 'Ruslan U. Zakirov',
+'cus:fazekas.hu' => 'Bálint Márton',
+'cw:f00f.org' => 'Chris Wedgwood',
+'cw:sgi.com' => 'Chris Wedgwood',
+'cweidema:indiana.edu' => 'Christoph Weidemann',
+'cwernham:airspan.com' => 'Colin P. Wernham',
+'cwf:sgi.com' => 'Charles Fumuso',
+'cyeoh:samba.org' => 'Christopher Yeoh',
+'d.mueller:elsoft.ch' => 'David Müller',
+'d3august:dtek.chalmers.se' => 'Björn Augustsson',
+'da-x:gmx.net' => 'Dan Aloni',
+'dada1:cosmosbay.com' => 'Eric Dumazet',
+'dainis_jonitis:exigengroup.lv' => 'Dainis Jonitis',
+'daisy:teetime.dynamic.austin.ibm.com' => 'Daisy Chang', # from shortlog
+'dale.farnsworth:mvista.com' => 'Dale Farnsworth',
+'dale:farnsworth.org' => 'Dale Farnsworth',
+'dalecki:evision-ventures.com' => 'Martin Dalecki',
+'dalecki:evision.ag' => 'Martin Dalecki',
+'dalto:austin.ibm.com' => 'Dave Altobelli',
+'damien.morange:hp.com' => 'Damien Morange',
+'damm:opensource.se' => 'Magnus Damm',
+'dan.zink:hp.com' => 'Dan Zink',
+'dan:debian.org' => 'Daniel Jacobowitz',
+'dan:embeddededge.com' => 'Dan Malek',
+'dan:geefour.netx4.com' => 'Dan Malek',
+'dan:reactivated.net' => 'Daniel Drake',
+'dana.lacoste:peregrine.com' => 'Dana Lacoste',
+'danc:mvista.com' => 'Dan Cox', # some CREDITS patch found by google
+'dancy:dancysoft.com' => 'Ahmon Dancy',
+'daniel.ritz:ch.rmk.(none)' => 'Daniel Ritz',
+'daniel.ritz:gmx.ch' => 'Daniel Ritz',
+'daniel:deadlock.et.tudelft.nl' => 'Daniël Mantione',
+'daniel:osdl.org' => 'Daniel McNeil',
+'daniel:rimspace.net' => 'Daniel Pittman',
+'daniela:cyclades.com' => 'Daniela Squassoni',
+'dank:kegel.com' => 'Dan Kegel',
+'danlee:informatik.uni-freiburg.de' => 'Sau Dan Lee',
+'dario:emc.com' => 'Dario Ballabio', # Alan Cox
+'dave.jiang:com.rmk.(none)' => 'Dave Jiang',
+'dave.jiang:intel.com' => 'Dave Jiang', # lbdb
+'dave:qix.net' => 'Dave Maietta',
+'dave:thedillows.org' => 'David Dillow',
+'davej:codmonkey.org.uk' => 'Dave Jones', # not matched by regexp above
+'davej:delerium.kernelslacker.org' => 'Dave Jones',
+'davej:dhcp83-103.boston.redhat.com' => 'Dave Jones',
+'davej:hardwired.(none)' => 'Dave Jones',
+'davej:redhat.com' => 'Dave Jones', # lbdb
+'davej:suse.de' => 'Dave Jones',
+'davej:tetrachloride.(none)' => 'Dave Jones',
+'davem:cheetah.(none)' => 'David S. Miller',
+'davem:hera.kernel.org' => 'David S. Miller',
+'davem:kernel.bkbits.net' => 'David S. Miller',
+'davem:netfilter.org' => 'David S. Miller',
+'davem:redhat.co' => 'David S. Miller',
+'davem:redhat.com' => 'David S. Miller',
+'david-b:net.rmk.(none)' => 'David Brownell',
+'david-b:pacbell.com' => 'David Brownell',
+'david-b:pacbell.net' => 'David Brownell',
+'david-b:packbell.net' => 'David Brownell',
+'david.goodenough:btconnect.com' => 'David Goodenough',
+'david.martinez:rediris.es' => 'David Martínez Moreno',
+'david.nelson:pobox.com' => 'David Nelson',
+'david:csse.uwa.edu.au' => 'David Glance',
+'david:gibson.dropbear.id.au' => 'David Gibson',
+'david:panzer.utcluj.ro' => 'David Lazar',
+'david_jeffery:adaptec.com' => 'David Jeffery',
+'davidel:xmailserver.org' => 'Davide Libenzi',
+'davidjoerg:web.de' => 'David Jörg',
+'davidm:hpl.hp.com' => 'David Mosberger',
+'davidm:napali.hpl.hp.com' => 'David Mosberger',
+'davidm:snapgear.com' => 'David McCullough',
+'davidm:tiger.hpl.hp.com' => 'David Mosberger',
+'davidm:wailua.hpl.hp.com' => 'David Mosberger',
+'davids:youknow.youwant.to' => 'David Schwartz', # google
+'davidvh:cox.net' => 'David van Hoose',
+'davis_g:com.rmk.(none)' => 'George G. Davis',
+'davmac:ozonline.com.au' => 'Davin McCall',
+'dax:gurulabs.com' => 'Dax Kelson',
+'dbrownell:users.sourceforge.net' => 'David Brownell',
+'dcbw:redhat.com' => 'Dan Williams',
+'dcn:sgi.com' => 'Dean Nelson',
+'ddstreet:ieee.org' => 'Dan Streetman',
+'ddstreet:us.ibm.com' => 'Dan Streetman',
+'dean:arctic.org' => 'Dean Gaudet',
+'debian:abeckmann.de' => 'Andreas Beckmann',
+'debian:sternwelten.at' => 'Maximilian Attems',
+'dedekind:infradead.org' => 'Artem Bityuckiy',
+'dedekind:yandex.ru' => 'Artem Bityuckiy',
+'deepfire:sic-elvis.zel.ru' => 'Samium Gromoff',
+'defouwj:purdue.edu' => 'Jeff DeFouw',
+'delaunay:lix.polytechnique.fr' => 'Eric Delaunay',
+'deller:gmx.de' => 'Helge Deller',
+'dely.l.sy:intel.com' => 'Dely Sy',
+'dent:cosy.sbg.ac.at' => "Thomas 'Dent' Mirlacher",
+'der.eremit:email.de' => 'Pascal Schmidt',
+'derek:ihtfp.com' => 'Derek Atkins',
+'dev:sw.ru' => 'Kirill Korotaev',
+'devel:brodo.de' => 'Dominik Brodowski',
+'devenyga:mcmaster.ca' => 'Gabriel Devenyi',
+'devik:cdi.cz' => 'Martin Devera',
+'dfages:arkoon.net' => 'Daniel Fages',
+'dfarnsworth.adm:bkbits.net' => 'Dale Farnsworth', # guessed
+'dfarnsworth:mvista.com' => 'Dale Farnsworth',
+'dfries:mail.win.org' => 'David Fries',
+'dgc:sgi.com' => 'David Chinner',
+'dgibson:samba.org' => 'David Gibson',
+'dgoeddel:trustedcs.com' => 'Darrel Goeddel',
+'dhinds:sonic.net' => 'David Hinds', # google
+'dhollis:davehollis.com' => 'David T. Hollis',
+'dhowells:cambridge.redhat.com' => 'David Howells',
+'dhowells:redhat.com' => 'David Howells',
+'dhylands:com.rmk.(none)' => 'Dave Hylands',
+'didickman:yahoo.com' => 'Daniel Dickman',
+'diegocg:teleline.es' => 'Diego Calleja García',
+'dignome:gmail.com' => 'Lonnie Mendez',
+'dilinger:mp3revolution.net' => 'Andres Salomon',
+'dilinger:voxel.net' => 'Andres Salomon',
+'dimitry.andric:tomtom.com' => 'Dimitry Andric',
+'dino:in.ibm.com' => 'Dinakar Guniguntala',
+'dipankar:in.ibm.com' => 'Dipankar Sarma',
+'dirk.behme:com.rmk.(none)' => 'Dirk Behme',
+'dirk.behme:de.bosch.com' => 'Dirk Behme',
+'dirk.uffmann:nokia.com' => 'Dirk Uffmann',
+'djwong:us.ibm.com' => 'Darrick Wong',
+'dkrivoschokov:dev.rtsoft.ru' => 'Dmitry Krivoschokov',
+'dkuhlen:fhm.edu' => 'Dominik Kuhlen',
+'dl8bcu:dl8bcu.de' => 'Thorsten Kranzkowski',
+'dledford:aladin.rdu.redhat.com' => 'Doug Ledford',
+'dledford:build-base.perf.redhat.com' => 'Doug Ledford', # guessed
+'dledford:compaq.xsintricity.com' => 'Doug Ledford',
+'dledford:dledford.theledfords.org' => 'Doug Ledford',
+'dledford:flossy.devel.redhat.com' => 'Doug Ledford',
+'dledford:redhat.com' => 'Doug Ledford',
+'dlstevens:us.ibm.com' => 'David Stevens',
+'dlsy:snoqualmie.dp.intel.com' => 'Dely Sy',
+'dmarlin:redhat.com' => 'David Marlin',
+'dmccr:us.ibm.com' => 'Dave McCracken',
+'dmilburn:redhat.com' => 'David Milburn',
+'dmo:osdl.org' => 'Dave Olien',
+'dmp:davidmpye.dyndns.org' => 'David Pye',
+'doj:cubic.org' => 'Dirk Jagdmann',
+'dok:directfb.org' => 'Denis Oliver Kropp',
+'dolbeau:irisa.fr' => 'Romain Dolbeau',
+'domen:coderock.org' => 'Domen Puncer',
+'doug:easyco.com' => 'Doug Dumitru',
+'dougg:torque.net' => 'Douglas Gilbert',
+'doyle:primenet.com' => 'Bob Doyle',
+'drambo:broadcom.com' => 'Darwin Rambo',
+'drb:med.co.nz' => 'Ross Boswell',
+'drepper:redhat.com' => 'Ulrich Drepper',
+'drewie:freemail.hu' => 'Andras Bali',
+'driver:huey.jpl.nasa.gov' => 'Bryan B. Whitehead', # google
+'drizzd:aon.at' => 'Clemens Buchacher',
+'drow:false.org' => 'Daniel Jacobowitz',
+'drow:nevyn.them.org' => 'Daniel Jacobowitz',
+'drzeus-list:cx.rmk.(none)' => 'Pierre Ossman',
+'drzeus-list:drzeus.cx' => 'Pierre Ossman',
+'drzeus:cx.rmk.(none)' => 'Pierre Ossman',
+'ds-fraser:comcast.net' => 'Douglas Fraser',
+'dsaxena:com.rmk' => 'Deepak Saxena',
+'dsaxena:com.rmk.(none)' => 'Deepak Saxena',
+'dsaxena:mvista.com' => 'Deepak Saxena',
+'dsaxena:net.rmk.(none)' => 'Deepak Saxena',
+'dsaxena:omelas.(none)' => 'Deepak Saxena',
+'dsaxena:plexity.net' => 'Deepak Saxena',
+'dsaxena:xanadu.(none)' => 'Deepak Saxena',
+'dsd:gentoo.org' => 'Daniel Drake',
+'dsteklof:us.ibm.com' => 'Daniel E. F. Stekloff',
+'dsw:gelato.unsw.edu.au' => 'Darren Williams',
+'dth:dth.net' => 'Danny ter Haar', # guessed
+'dtor:mail.ru' => 'Dmitry Torokhov',
+'dtor_core:ameritech.net' => 'Dmitry Torokhov',
+'ducrot:poupinou.org' => 'Bruno Ducrot',
+'duncan.sands:math.u-psud.fr' => 'Duncan Sands',
+'duncan:sun.com' => 'Duncan Laurie',
+'duraid:octopus.com.au' => 'Duraid Madina',
+'duwe:suse.de' => 'Torsten Duwe',
+'dvhltc:us.ibm.com' => 'Darren Hart',
+'dvrabel:arcom.co.uk' => 'David Vrabel',
+'dvrabel:arcom.com' => 'David Vrabel',
+'dvrabel:com.rmk.(none)' => 'David Vrabel',
+'dwcraig:qualcomm.com' => 'Dave Craig',
+'dwg:au.ibm.com' => 'David Gibson',
+'dwg:au1.ibm.com' => 'David Gibson',
+'dwm:austin.ibm.com' => 'Doug Maxey',
+'dwmw2:dwmw2.baythorne.internal' => 'David Woodhouse',
+'dwmw2:infradead.org' => 'David Woodhouse',
+'dwmw2:redhat.com' => 'David Woodhouse',
+'dwmw2:shinybook.infradead.org' => 'David Woodhouse',
+'dz:cs.unitn.it' => 'Massimo Dal Zotto',
+'e9925248:student.tuwien.ac.at' => 'Martin Kögler',
+'ebiederm:xmission.com' => 'Eric W. Biederman',
+'ebrower:gmail.com' => 'Eric Brower',
+'ebrower:resilience.com' => 'Eric Brower',
+'ebrower:usa.net' => 'Eric Brower',
+'ebs:ebshome.net' => 'Eugene Surovegin',
+'ecashin:coraid.com' => 'Ed L. Cashin',
+'ecashin:uga.edu' => 'Ed L. Cashin',
+'ecd:skynet.be' => 'Eddie C. Dost',
+'echtler:fs.tum.de' => 'Florian Echtler',
+'ed:il.fontys.nl' => 'Ed Schouten',
+'eddie.williams:steeleye.com' => 'Eddie Williams',
+'edrossma:us.ibm.com' => 'Eric Rossman',
+'edv:macrolink.com' => 'Ed Vance',
+'edward_peng:alphanetworks.com' => 'Edward Peng',
+'edward_peng:dlink.com.tw' => 'Edward Peng',
+'edwardsg:sgi.com' => 'Greg Edwards', # google
+'efalk:google.com' => 'Edward Falk',
+'efocht:ess.nec.de' => 'Erich Focht',
+'egallego:telefonica.net' => 'Emilio Gallego Arias',
+'eger:havoc.gtf.org' => 'David Eger',
+'eger:theboonies.us' => 'David Eger',
+'egmont:uhulinux.hu' => 'Egmont Koblinger',
+'ehabkost:conectiva.com.br' => 'Eduardo Pereira Habkost',
+'ehrhardt:mathematik.uni-ulm.de' => 'Christian Ehrhardt',
+'eich:suse.de' => 'Egbert Eich',
+'eike-hotplug:sf-tec.de' => 'Rolf Eike Beer',
+'eike-kernel:sf-tec.de' => 'Rolf Eike Beer', # sent by himself
+'eike:bilbo.math.uni-mannheim.de' => 'Rolf Eike Beer',
+'ekonijn:xs4all.nl' => 'Erik van Konijnenburg',
+'elenstev:com.rmk.(none)' => 'Steven Cole',
+'elenstev:mesatop.com' => 'Steven Cole',
+'elf:buici.com' => 'Marc Singer',
+'elf:com.rmk.(none)' => 'Marc Singer',
+'elfert:de.ibm.com' => 'Fritz Elfert',
+'eli.carter:com.rmk.(none)' => 'Eli Carter',
+'eli.kupermann:intel.com' => 'Eli Kupermann',
+'emann:mrv.com' => 'Eran Mann',
+'emcnabb:cs.byu.edu' => 'Evan N. McNabb',
+'emoenke:gwdg.de' => 'Eberhard Mönkeberg',
+'emoore:lsil.com' => 'Eric Dean Moore',
+'ender:debian.org' => 'David Martínez Moreno',
+'engebret:au1.ibm.com' => 'David Engebretsen',
+'engebret:brule.rchland.ibm.com' => 'David Engebretsen',
+'engebret:us.ibm.com' => 'David Engebretsen',
+'engel:us.ibm.com' => 'John Engel',
+'enrico.scholz:informatik.tu-chemnitz.de' => 'Enrico Scholz',
+'eolson:mit.edu' => 'Edwin Olson',
+'eradicator:gentoo.org' => 'Jeremy Huddleston',
+'eranian:frankl.hpl.hp.com' => 'Stéphane Eranian',
+'eranian:hpl.hp.co' => 'Stéphane Eranian', # typo
+'eranian:hpl.hp.com' => 'Stéphane Eranian',
+'erbenson:alaska.net' => 'Ethan Benson',
+'eric.lemoine:gmail.com' => 'Eric Lemoine',
+'eric.moore:lsil.com' => 'Eric Moore',
+'eric.piel:bull.net' => 'Eric Piel',
+'eric.piel:lifl.fr' => 'Eric Piel',
+'eric.valette:free.fr' => 'Eric Valette',
+'eric:lammerts.org' => 'Eric Lammerts',
+'eric:yhbt.net' => 'Eric Wong',
+'erik:aarg.net' => 'Erik Arneson',
+'erik:harddisk-recovery.nl' => 'Erik Mouw',
+'erik:rigtorp.com' => 'Erik Rigtorp',
+'erik_habbinga:hp.com' => 'Erik Habbinga',
+'erikj:sgi.com' => 'Erik Jacobson',
+'erikj:subway.americas.sgi.com' => 'Erik Jacobson',
+'erlend-a:us.his.no' => 'Erlend Aasland',
+'erlend-a:ux.his.no' => 'Erlend Aasland',
+'ernstp:mac.com' => 'Ernst Persson', # lbdb
+'errandir_news:mph.eclipse.co.uk' => 'Martin Habets',
+'error27:email.com' => 'Dan Carpenter',
+'eugene.teo:eugeneteo.net' => 'Eugene Teo',
+'eugeneteo:eugeneteo.net' => 'Eugene Teo',
+'evan.felix:pnl.gov' => 'Evan Felix',
+'evil:g-house.de' => 'Christian Kujau',
+'extreme:zayanionline.com' => 'Vineet Mehta',
+'eyal:eyal.emu.id.au' => 'Eyal Lebedinsky', # lbdb
+'f.duncan.m.haldane:worldnet.att.net' => 'Duncan Haldane',
+'fabbione:fabbione.net' => 'Fabio Massimo Di Nitto',
+'fabian.frederick:skynet.be' => 'Fabian Frederick',
+'faikuygur:tnn.net' => 'Faik Uygur',
+'faikuygur:ttnet.net.tr' => 'Faik Uygur',
+'faith:redhat.com' => 'Rik Faith',
+'falk.hueffner:student.uni-tuebingen.de' => 'Falk Hüffner',
+'fanny.wakizaka:cyclades.com' => 'Fanny Wakizaka',
+'fb.arm:net.rmk.(none)' => 'Frank Becker',
+'fbecker:com.rmk.(none)' => 'Frank Becker',
+'fbl:conectiva.com.br' => 'Flávio Bruno Leitner', # google
+'fbl:netbank.com.br' => 'Flávio Bruno Leitner',
+'fcusack:fcusack.com' => 'Frank Cusack',
+'fdavis:si.rr.com' => 'Frank Davis',
+'felipe_alfaro:linuxmail.org' => 'Felipe Alfaro Solana',
+'felipewd:terra.com.br' => 'Felipe Damasio', # by self (did not ask to include the W.)
+'felixb:sgi.com' => 'Felix Blyakher',
+'fello:libero.it' => 'Fabrizio Fellini',
+'fenghua.yu:intel.com' => 'Fenghua Yu', # google
+'fenlason:redhat.com' => 'Jay Fenlason',
+'fero:sztalker.hu' => 'Bakonyi Ferenc',
+'fhirtz:redhat.com' => 'Frank Hirtz',
+'filip.sneppe:cronos.be' => 'Filip Sneppe',
+'fischer:linux-buechse.de' => 'Jürgen E. Fischer',
+'fishor:gmx.net' => 'Alexey Fisher',
+'fl:fl.priv.at' => 'Friedrich Lobenstock',
+'flavien:lebarbe.net' => 'Flavien Lebarbé',
+'fletch:aracnet.com' => 'Martin J. Bligh',
+'fli:ati.com' => 'Frederick Li',
+'flo:rfc822.org' => 'Florian Lohoff',
+'florian.thiel:gmx.net' => 'Florian Thiel', # from shortlog
+'florin:iucha.net' => 'Florin Iucha',
+'floroiu:fokus.fraunhofer.de' => 'John Williams Floroiu',
+'fn:kernelport.de' => 'Frank Neuber',
+'fnm:fusion.ukrsat.com' => 'Nick Fedchik',
+'focht:ess.nec.de' => 'Erich Focht',
+'fokkensr:fokkensr.vertis.nl' => 'Rolf Fokkens',
+'france:handhelds.org' => 'George France',
+'francis.wiran:hp.com' => 'Francis Wiran',
+'frank.a.uepping:t-online.de' => 'Frank A. Uepping',
+'frank.cornelis:elis.ugent.be' => 'Frank Cornelis',
+'frank:tuxrocks.com' => 'Frank Sorenson',
+'frank_borich:us.xyratex.com' => 'Frank Borich',
+'frankie:cse.unsw.edu.au' => 'Frank Engel',
+'franz.sirl-kernel:lauterbach.com' => 'Franz Sirl',
+'franz.sirl:lauterbach.com' => 'Franz Sirl',
+'franz_pletz:t-online.de' => 'Franz Pletz',
+'frederik.deweerdt:laposte.net' => 'Frederik Deweerdt',
+'frediano.ziglio:vodafone.com' => 'Frediano Ziglio',
+'frival:zk3.dec.com' => 'Peter Rival',
+'fscked:netvisao.pt' => 'Paulo André',
+'fsgqa:sgi.com' => 'Nathan Scott',
+'fubar:us.ibm.com' => 'Jay Vosburgh',
+'fujiwara:linux-m32r.org' => 'Hayato Fujiwara',
+'fw:deneb.enyo.de' => 'Florian Weimer', # lbdb
+'fxhuehl:gmx.de' => 'Felix Kuehling',
+'fzago:austin.rr.com' => 'Frank Zago', # google
+'g.liakhovetski:gmx.de' => 'Guennadi Liakhovetski',
+'gaa:ulticom.com' => 'Gary Algier', # google
+'gaboregry:axelero.hu' => 'Gabor Egry',
+'galak:blarg.somerset.sps.mot.com' => 'Kumar Gala',
+'galak:freescale.com' => 'Kumar Gala',
+'galak:linen.sps.mot.com' => 'Kumar Gala',
+'galak:somerset.sps.mot.com' => 'Kumar Gala',
+'gam3:gam3.net' => 'G. Allen Morris III',
+'gamal:alternex.com.br' => 'Haroldo Gamal',
+'ganadist:nakyup.mizi.com' => 'Cha Young-Ho',
+'gandalf:netfilter.org' => 'Martin Josefsson',
+'gandalf:winds.org' => 'Byron Stanoszek',
+'gandalf:wlug.westbo.se' => 'Martin Josefsson',
+'ganesh.venkatesan:intel.com' => 'Ganesh Venkatesan',
+'ganesh:tuxtop.vxindia.veritas.com' => 'Ganesh Varadarajan',
+'ganesh:veritas.com' => 'Ganesh Varadarajan',
+'ganesh:vxindia.veritas.com' => 'Ganesh Varadarajan',
+'garloff:suse.de' => 'Kurt Garloff',
+'gary.spiess:intermec.com' => 'Gary N. Spiess',
+'gary_lerhaupt:dell.com' => 'Gary Lerhaupt',
+'garyhade:us.ibm.com' => 'Gary Hade',
+'gbarzini:virata.com' => 'Guido Barzini',
+'gcardwel:motorola.com' => 'Guy Cardwell',
+'gdavis:mvista.com' => 'George G. Davis',
+'geert.uytterhoeven:sonycom.com' => 'Geert Uytterhoeven',
+'geert:linux-m68k.org' => 'Geert Uytterhoeven',
+'geoffrey.levand:am.sony.com' => 'Geoffrey LEVAND',
+'george:mvista.com' => 'George Anzinger',
+'georgn:somanetworks.com' => 'Georg Nikodym',
+'gerald.schaefer:gmx.net' => 'Gerald Schaefer',
+'geraldsc:de.ibm.com' => 'Gerald Schaefer',
+'gerg:moreton.com.au' => 'Greg Ungerer',
+'gerg:snapgear.com' => 'Greg Ungerer',
+'gerg:uclinux.org' => 'Greg Ungerer',
+'ghoward:sgi.com' => 'Greg Howard',
+'ghoz:sympatico.ca' => 'Ghozlane Toumi',
+'gibbs:overdrive.btc.adaptec.com' => 'Justin T. Gibbs',
+'gibbs:scsiguy.com' => 'Justin T. Gibbs',
+'gijoe:poczta.onet.pl' => 'Daniel Johnson',
+'gilbertd:treblig.org' => 'Dr. David Alan Gilbert',
+'giorgio:org.rmk.(none)' => 'Giorgio Padrin',
+'giri:lmc.cs.sunysb.edu' => 'Giridhar Pemmasani',
+'giuseppe.furlan:systeam.it' => 'Giuseppe Furlan',
+'giuseppe:eppesuigoccas.homedns.org' => 'Giuseppe Sacco',
+'gj:pointblue.com.pl' => 'Grzegorz Jaskiewicz',
+'gjaeger:sysgo.com' => 'Gerhard Jaeger',
+'gkernel.adm:hostme.bitkeeper.com' => 'Jeff Garzik', # himself
+'gkurz:meiosys.com' => 'Gregory Kurz',
+'gl:dsa-ac.de' => 'Guennadi Liakhovetski',
+'glee:gnupilgrims.org' => 'Geoffrey Lee', # lbdb
+'glen:imodulo.com' => 'Glen Nakamura',
+'glenn:aoi-industries.com' => 'Glenn Burkhardt',
+'glynis:butterfly.hjsoft.com' => 'John M. Flinchbaugh',
+'gme:citi.umich.edu' => 'Galen Michael Elias',
+'gnb:alphalink.com.au' => 'Greg Banks',
+'gnb:melbourne.sgi.com' => 'Greg Banks',
+'gnb:sgi.com' => 'Greg Banks',
+'gniibe:fsij.org' => 'Niibe Yutaka',
+'go:turbolinux.co.jp' => 'Go Taniguchi',
+'gone:us.ibm.com' => 'Patricia Gaughen',
+'gordon.jin:intel.com' => 'Gordon Jin',
+'gorgo:thunderchild.debian.net' => 'Madarasz Gergely',
+'gortan:tttech.com' => 'Philipp Gortan',
+'gortmaker:yahoo.com' => 'Paul Gortmaker',
+'gotom:debian.or.jp' => 'Goto Masanori', # from shortlog
+'gphat:cafes.net' => 'Cory Watson',
+'grantma:anathoth.gen.nz' => 'Matthew Grant',
+'greearb:candelatech.com' => 'Ben Greear',
+'green:angband.namesys.com' => 'Oleg Drokin',
+'green:linuxhacker.ru' => 'Oleg Drokin',
+'green:namesys.com' => 'Oleg Drokin',
+'greg:kroah.com' => 'Greg Kroah-Hartman',
+'greg:soap.kroah.net' => 'Greg Kroah-Hartman',
+'greg_aumann:sil.org' => 'Greg Aumann',
+'gregkh:kernel.bkbits.net' => 'Greg Kroah-Hartman',
+'gregkh:suse.de' => 'Greg Kroah-Hartman',
+'gregor_jan:seznam.cz' => 'Jan Gregor',
+'grigouze:noos.fr' => 'Mickaël Grigouze',
+'gronkin:nerdvana.com' => 'George Ronkin',
+'grundler:cup.hp.com' => 'Grant Grundler',
+'grundler:parisc-linux.org' => 'Grant Grundler', # lbdb
+'grundym:us.ibm.com' => 'Michael Grundy',
+'gsromero:alumnos.euitt.upm.es' => 'Guillermo S. Romero',
+'gtj.member:com.rmk.(none)' => 'George T. Joseph',
+'gtoumi:laposte.net' => 'Ghozlane Toumi',
+'gtw:cs.bu.edu' => 'Gary Wong',
+'guido.barzini:com.rmk.(none)' => 'Guido Barzini',
+'guillaume.thouvenin:bull.net' => 'Guillaume Thouvenin',
+'guillaume:morinfr.org' => 'Guillaume Morin',
+'guninski:guninski.com' => 'Georgi Guninski',
+'gunther.mayer:gmx.net' => 'Gunther Mayer',
+'gwehrman:sgi.com' => 'Geoffrey Wehrman',
+'gwurster:scs.carleton.ca' => 'Glenn Wurster',
+'h.schurig:de.rmk.(none)' => 'Holger Schurig',
+'h.schurig:mn-logistik.de' => 'Holger Schurig',
+'ha505:hszk.bme.hu' => 'Andras Huszar',
+'habanero:us.ibm.com' => 'Andrew Theurer',
+'hadi:cyberus.ca' => 'Jamal Hadi Salim',
+'hadi:shell.cyberus.ca' => 'Jamal Hadi Salim',
+'hadi:znyx.com' => 'Jamal Hadi Salim', # typo
+'hadi:zynx.com' => 'Jamal Hadi Salim',
+'hager:cs.umu.se' => 'Peter Hagervall',
+'hal:realmsys.com' => 'Hal Tolley',
+'hall:vdata.com' => 'Jeff Hall',
+'hallyn:cs.wm.edu' => 'Serge Hallyn',
+'halr:voltaire.com' => 'Hal Rosenstock',
+'hammer:adaptec.com' => 'Jack Hammer',
+'hannal:us.ibm.com' => 'Hanna V. Linder',
+'hanno:gmx.de' => 'Hanno Böck',
+'harald:gnumonks.org' => 'Harald Welte',
+'hare:suse.de' => 'Hannes Reinecke',
+'haroldo.gamal:infolink.com.br' => 'Haroldo Gamal',
+'haveblue:us.ibm.com' => 'Dave Hansen',
+'hawkes:oss.sgi.com' => 'John Hawkes',
+'hawkes:sgi.com' => 'John Hawkes',
+'hbabu:us.ibm.com' => 'Haren Myneni',
+'hch:caldera.de' => 'Christoph Hellwig',
+'hch:com.rmk' => 'Christoph Hellwig',
+'hch:com.rmk.(none)' => 'Christoph Hellwig',
+'hch:de.rmk' => 'Christoph Hellwig',
+'hch:de.rmk.(none)' => 'Christoph Hellwig',
+'hch:dhcp212.munich.sgi.com' => 'Christoph Hellwig',
+'hch:hera.kernel.org' => 'Christoph Hellwig',
+'hch:infradead.org' => 'Christoph Hellwig',
+'hch:lab343.munich.sgi.com' => 'Christoph Hellwig',
+'hch:lst.de' => 'Christoph Hellwig',
+'hch:pentafluge.infradead.org' => 'Christoph Hellwig',
+'hch:sb.bsdonline.org' => 'Christoph Hellwig', # by Kristian Peters
+'hch:sgi.com' => 'Christoph Hellwig',
+'hduston:speedscript.com' => 'Hal Duston',
+'heiko.carstens:de.ibm.com' => 'Heiko Carstens',
+'helgaas:fc.hp.com' => 'Bjorn Helgaas', # doesn't want ø/å
+'helgaas:hp.com' => 'Bjorn Helgaas', # guessed
+'helmut:helios.de' => 'Helmut Tschemernjak',
+'henk:god.dyndns.org' => 'Henk Vergonet',
+'henning:meier-geinitz.de' => 'Henning Meier-Geinitz',
+'henning:wh9.tu-dresden.de' => 'Henning Schild',
+'henrique2.gobbi:cyclades.com' => 'Henrique Gobbi',
+'henrique:cyclades.com' => 'Henrique Gobbi',
+'herbert:13thfloor.at' => 'Herbert Pötzl', # lbdb
+'herbert:gondor.apan.org.au' => 'Herbert Xu',
+'herbert:gondor.apana.org.au' => 'Herbert Xu',
+'herbet:gondor.apana.org.au' => 'Herbert Xu',
+'hermes:gibson.dropbear.id' => 'David Gibson',
+'hermes:gibson.dropbear.id.au' => 'David Gibson',
+'hero:persua.de' => 'Heiko Ronsdorf',
+'herry:sgi.com' => 'Herry Wiputra',
+'hfvogt:arcor.de' => 'Hans-Frieder Vogt',
+'hfvogt:gmx.net' => 'Hans-Frieder Vogt',
+'hifumi.hisashi:lab.ntt.co.jp' => 'Hisashi Hifumi',
+'hirofumi:mail.parknet.co.jp' => 'Hirofumi Ogawa', # corrected by himself
+'hiroshi_doyu:montavista.co.jp' => 'Hiroshi Doyu',
+'hj.oertel:surfeu.de' => 'Heinz-Juergen Oertel',
+'hjl:lucon.org' => 'H. J. Lu',
+'hjm:redhat.com' => 'Heinz Mauelshagen', # lbdb
+'hkneissel:gmx.de' => 'Hermann Kneissel',
+'hkneissel:t-online.de' => 'Hermann Kneissel',
+'hno:marasystems.com' => 'Henrik Nordstrom',
+'hoho:binbash.net' => 'Colin Slater',
+'holger.smolinski:de.ibm.com' => 'Holger Smolinski',
+'holindho:cs.helsinki.fi' => 'Heikki O. Lindholm',
+'holland:loser.net' => 'Shannon Holland',
+'hollis:austin.ibm.com' => 'Hollis Blanchard',
+'hollisb:us.ibm.com' => 'Hollis Blanchard',
+'holt:sgi.com' => 'Robin Holt',
+'holzheu:de.ibm.com' => 'Michael Holzheu',
+'home:mdiehl.de' => 'Martin Diehl',
+'horms:verge.net.au' => 'Simon Horman',
+'horst.hummel:de.ibm.com' => 'Horst Hummel',
+'hpa:transmeta.com' => 'H. Peter Anvin',
+'hpa:zytor.com' => 'H. Peter Anvin',
+'huangt:star-net.cn' => 'Tao Huang',
+'hugh:com.rmk.(none)' => 'Hugh Dickins',
+'hugh:veritas.com' => 'Hugh Dickins',
+'hunold:convergence.de' => 'Michael Hunold',
+'hunold:linuxtv.org' => 'Michael Hunold',
+'hverhagen:dse.nl' => 'Harm Verhagen',
+'hvr:gnu.org' => 'Herbert V. Riedel',
+'hwahl:hwahl.de' => 'Hartmut Wahl',
+'hwelte:hmw-consulting.de' => 'Harald Welte',
+'hzhong:cisco.com' => 'Hua Zhong',
+'i.palsenberg:jdirmedia.nl' => 'Igmar Palsenberg', # lbdb
+'i:stingr.net' => 'Paul P. Komkoff Jr.',
+'ian.abbott:mev.co.uk' => 'Ian Abbott',
+'ian.pratt:cl.cam.ac.uk' => 'Ian Pratt',
+'ianw:gelato.unsw.edu.au' => 'Ian Wienand', # lbdb
+'ica2_ts:csv.ica.uni-stuttgart.de' => 'Thiemo Seufer', # google
+'icampbell:arcom.com' => 'Ian Campbell',
+'icampbell:com.rmk.(none)' => 'Ian Campbell',
+'icanoop:bitwiser.org' => 'Ryan Boder',
+'ilmari:ilmari.org' => 'Dagfinn Ilmari Mannsåker',
+'immidi_kiran:yahoo.com' => 'Kiran Kumar Immidi',
+'inaky.perez-gonzalez:intel.com' => 'Iñaky Pérez-González', # LK 20030829
+'info:gudeads.com' => 'Gude Analog- und Digitalsysteme GmbH',
+'info:usblcd.de' => 'Adams IT Services',
+'ink:jurassic.park.msu.ru' => 'Ivan Kokshaysky',
+'ink:ru.rmk.(none)' => 'Ivan Kokshaysky',
+'ink:undisclosed.(none)' => 'Ivan Kokshaysky',
+'ioanamitu:yahoo.com' => 'Carl Spalletta',
+'iod00d:hp.com' => 'Grant Grundler', # lbdb
+'ionut:badula.org' => 'Ion Badulescu',
+'ionut:cs.columbia.edu' => 'Ion Badulescu',
+'ioshadij:hotmail.com' => 'Ishan O. Jayawardena',
+'irohlfs:irohlfs.de' => 'Ingo Rohlfs',
+'ishikawa:linux.or.jp' => 'Mutsumi Ishikawa',
+'ivangurdiev:linuxfreemail.com' => 'Ivan Gyurdiev',
+'iwamoto:valinux.co.jp' => 'Toshihiro Iwamoto',
+'iwi:atm.ox.ac.uk' => 'Alan Iwi',
+'j-nomura:ce.jp.nec.com' => 'Junichi Nomura',
+'j.blunck:tu-harburg.de' => 'Jan Blunck',
+'j.dittmer:portrix.net' => 'Jan Dittmer',
+'ja:ssi.bg' => 'Julian Anastasov',
+'jaap.keuter:xs4all.nl' => 'Jaap Keuter',
+'jacekpoplawski:wp.pl' => 'Jacek Poplawski',
+'jack:suse.cz' => 'Jan Kara',
+'jack:ucw.cz' => 'Jan Kara',
+'jack_hammer:adaptec.com' => 'Jack Hammer',
+'jackson:realtek.com.tw' => 'Ian Jackson',
+'jacmet:sunsite.dk' => 'Peter Korsgaard',
+'jaharkes:cs.cmu.edu' => 'Jan Harkes',
+'jakob.kemi:telia.com' => 'Jakob Kemi',
+'jakub:redhat.com' => 'Jakub Jelínek',
+'jamagallon:able.es' => 'J. A. Magallon',
+'james.bottomley:steeleye.com' => 'James Bottomley',
+'james.smart:emulex.com' => 'James Smart',
+'james4765:cwazy.co.uk' => 'James Nelson',
+'james4765:gmail.com' => 'James Nelson',
+'james4765:verizon.net' => 'James Nelson',
+'james:cobaltmountain.com' => 'James Mayer',
+'james:superbug.demon.co.uk' => 'James Courtier-Dutton',
+'james_mcmechan:hotmail.com' => 'James McMechan',
+'jamesclv:us.ibm.com' => 'James Cleverdon',
+'jamesl:appliedminds.com' => 'James Lamanna',
+'jamey.hicks:hp.com' => 'Jamey Hicks',
+'jamey:crl.dec.com' => 'Jamey Hicks',
+'jamie:shareable.org' => 'Jamie Lokier',
+'jan.glauber:de.ibm.com' => 'Jan Glauber',
+'jan.oravec:6com.sk' => 'Jan Oravec',
+'jan:ccsinfo.com' => 'Jan Capek',
+'jan:zuchhold.com' => 'Jan Zuchhold',
+'janetmor:us.ibm.com' => 'Janet Morgan',
+'jani:astechnix.ro' => 'Jani Monoses',
+'jani:iv.ro' => 'Jani Monoses',
+'janiceg:us.ibm.com' => 'Janice M. Girouard',
+'janitor:at.none.(rmk)' => 'Maximilian Attems',
+'janitor:at.rmk.(none)' => 'Maximilian Attems',
+'janitor:sternwelten.at' => 'Maximilian Attems',
+'jarkko.lavinen:nokia.com' => 'Jarkko Lavinen',
+'jason.d.gaston:intel.com' => 'Jason Gaston',
+'jason.davis:unisys.com' => 'Jason Davis',
+'jasonuhl:sgi.com' => 'Jason Uhlenkott',
+'jasper:vs19.net' => 'Jasper Spaans',
+'javaman:katamail.com' => 'Paulo Ornati',
+'javier:tudela.mad.ttd.net' => 'Javier Achirica',
+'jay.estabrook:compaq.com' => 'Jay Estabrook',
+'jay.estabrook:hp.com' => 'Jay Estabrook',
+'jb:jblache.org' => 'Julien Blache',
+'jbarnes:engr.sgi.com' => 'Jesse Barnes',
+'jbarnes:sgi.com' => 'Jesse Barnes',
+'jbaron:redhat.com' => 'Jason Baron',
+'jbglaw:lug-owl.de' => 'Jan-Benedict Glaw',
+'jbj1:ultraemail.net' => 'Jens B. Jorgensen',
+'jblack:linuxguru.net' => 'James Blackwell',
+'jbm:joshisanerd.com' => 'Josh Myer',
+'jbourne:hardrock.org' => 'James Bourne',
+'jcdutton:users.sourceforge.net' => 'James Courtier-Dutton',
+'jchapman:katalix.com' => 'James Chapman',
+'jd:rightthere.net' => 'Jason Davis',
+'jdavid:farfalle.com' => 'David Ruggiero',
+'jdewand:redhat.com' => 'Julie DeWandel',
+'jdgaston:snoqualmie.dp.intel.com' => 'Jason D. Gaston',
+'jdike:addtoit.com' => 'Jeff Dike',
+'jdike:jdike.wstearns.org' => 'Jeff Dike',
+'jdike:karaya.com' => 'Jeff Dike',
+'jdike:uml.karaya.com' => 'Jeff Dike',
+'jdittmer:ppp0.net' => 'Jan Dittmer',
+'jdittmer:sfhq.hn.org' => 'Jan Dittmer',
+'jdmason:us.ibm.com' => 'Jon Mason',
+'jdow:earthlink.net' => 'Joanne Dow',
+'jdr:farfalle.com' => 'David Ruggiero',
+'jdthood:yahoo.co.uk' => 'Thomas Hood',
+'jdub:us.ibm.com' => 'Josh Boyer',
+'jean-luc.richier:imag.fr' => 'Jean-Luc Richier',
+'jeb.j.cramer:intel.com' => 'Jeb J. Cramer',
+'jef:linuxbe.org' => 'Jean-Francois Dive',
+'jeff.wiedemeier:hp.com' => 'Jeff Wiedemeier',
+'jeffm:csh.rit.edu' => 'Jeff Mahoney',
+'jeffm:novell.com' => 'Jeff Mahoney',
+'jeffm:suse.com' => 'Jeff Mahoney',
+'jeffm:suse.de' => 'Jeff Mahoney',
+'jeffml:pobox.com' => 'Jeff Lightfoot',
+'jeffpc:optonline.net' => 'Josef \'Jeff\' Sipek',
+'jeffs:accelent.com' => 'Jeff Sutherland', # lbdb
+'jejb:fuzzy.(none)' => 'James Bottomley',
+'jejb:ios.(none)' => 'James Bottomley',
+'jejb:jet.(none)' => 'James Bottomley', # wild guess
+'jejb:malley.(none)' => 'James Bottomley',
+'jejb:mulgrave.(none)' => 'James Bottomley', # from shortlog
+'jejb:pashleys.(none)' => 'James Bottomley',
+'jejb:raven.il.steeleye.com' => 'James Bottomley',
+'jejb:titanic.il.steeleye.com' => 'James Bottomley',
+'jelenz:edu.rmk.(none)' => 'John Lenz',
+'jelenz:students.wisc.edu' => 'John Lenz',
+'jenna.s.hall:intel.com' => 'Jenna S. Hall', # google
+'jeremy:classic.engr.sgi.com' => 'Jeremy Higdon',
+'jeremy:goop.org' => 'Jeremy Fitzhardinge',
+'jeremy:redfishsoftware.com.au' => 'Jeremy Kerr',
+'jeremy:sgi.com' => 'Jeremy Higdon',
+'jermar:itbs.cz' => 'Jakub Jermar',
+'jerome.forissier:hp.com' => 'Jerome Forissier',
+'jerone:gmail.com' => 'Jerone Young',
+'jes:trained-monkey.org' => 'Jes Sorensen',
+'jes:wildopensource.com' => 'Jes Sorensen',
+'jesse.brandeburg:intel.com' => 'Jesse Brandeburg',
+'jesse:cola.voip.idv.tw' => 'Wen-chien Jesse Sung',
+'jet:gyve.org' => 'Masatake Yamato',
+'jfbeam:bluetronic.net' => 'Ricky Beam',
+'jgarzik:fokker2.devel.redhat.com' => 'Jeff Garzik',
+'jgarzik:hum.(none)' => 'Jeff Garzik',
+'jgarzik:mandrakesoft.com' => 'Jeff Garzik',
+'jgarzik:pobox.com' => 'Jeff Garzik',
+'jgarzik:redhat.com' => 'Jeff Garzik',
+'jgarzik:rum.normnet.org' => 'Jeff Garzik',
+'jgarzik:tout.normnet.org' => 'Jeff Garzik',
+'jgmyers:netscape.com' => 'John Myers',
+'jgreen:users.sourceforge.net' => 'Josh Green',
+'jgrimm2:us.ibm.com' => 'Jon Grimm',
+'jgrimm:death.austin.ibm.com' => 'Jon Grimm',
+'jgrimm:jgrimm.(none)' => 'Jon Grimm',
+'jgrimm:jgrimm.austin.ibm.com' => 'Jon Grimm', # google
+'jgrimm:touki.austin.ibm.com' => 'Jon Grimm', # google
+'jgrimm:touki.qip.austin.ibm.com' => 'Jon Grimm', # google
+'jgt:pobox.com' => 'Jon Thackray',
+'jh:sgi.com' => 'John Hesterberg',
+'jh:suse.cz' => 'Jan Hubicka',
+'jhammer:us.ibm.com' => 'Jack Hammer',
+'jhartmann:addoes.com' => 'Jeff Hartmann',
+'jhe:us.ibm.com' => 'John Engel',
+'jheffner:psc.edu' => 'John Heffner',
+'jhf:rivenstone.net' => 'Joseph Fannin',
+'jhh:lucent.com' => 'Jorge Hernandez-Herrero',
+'jholmes:psu.edu' => 'Jason Holmes',
+'jiho:c-zone.net' => 'Jim Howard',
+'jim.hague:acm.org' => 'Jim Hague',
+'jim.houston:attbi.com' => 'Jim Houston',
+'jim.houston:ccur.com' => 'Jim Houston',
+'jim.houston:comcast.net' => 'Jim Houston',
+'jim:hamachi.net' => 'Jim Collette',
+'jim:jtan.com' => 'Jim Paris',
+'jimix:watson.ibm.com' => 'Jimi Xenidis',
+'jk:ozlabs.org' => 'Jeremy Kerr',
+'jkacur:rogers.com' => 'John Kacur',
+'jkenisto:us.ibm.com' => 'James Keniston',
+'jkluebs:com.rmk.(none)' => 'John K. Luebs',
+'jkmaline:cc.hut.fi' => 'Jouni Malinen',
+'jkt:helius.com' => 'Jack Thomasson',
+'jlamanna:gmail.com' => 'James Lamanna',
+'jlan:engr.sgi.com' => 'Jay Lan',
+'jlan:sgi.com' => 'Jay Lan',
+'jlcooke:certainkey.com' => 'Jean-Luc Cooke',
+'jmcmullan:linuxcare.com' => 'Jason McMullan',
+'jmforbes:linuxtx.org' => 'Justin M. Forbes',
+'jmm:informatik.uni-bremen.de' => 'Moritz Mühlenhoff',
+'jmorris:intercode.com.au' => 'James Morris',
+'jmorris:redhat.com' => 'James Morris',
+'jmorros:intercode.com.au' => 'James Morris',	# it's typo IMHO
+'jmoyer:redhat.com' => 'Jeff Moyer',
+'jmunsin:iki.fi' => 'Jonas Munsin',
+'jnardelli:infosciences.com' => 'Joe Nardelli',
+'jo-lkml:suckfuell.net' => 'Jochen Suckfuell',
+'jochen:jochen.org' => 'Jochen Hein',
+'jochen:scram.de' => 'Jochen Friedrich',
+'joe.korty:ccur.com' => 'Joe Korty',
+'joe:fib011235813.fsnet.co.uk' => 'Joe Thornber',
+'joe:perches.com' => 'Joe Perches',
+'joe:wavicle.org' => 'Joe Burks',
+'joel.becker:oracle.com' => 'Joel Becker',
+'joel.buckley:sun.com' => 'Joel Buckley',
+'joergprante:netcologne.de' => 'Jörg Prante',
+'joern:infradead.org' => 'Jörn Engel',
+'joern:wh.fh-wedel.de' => 'Jorn Engel',
+'joern:wohnheim.fh-wedel.de' => 'Jörn Engel',
+'johan.adolfsson:axis.com' => 'Johan Adolfsson',
+'johann.cardon:free.fr' => 'Johann Cardon',
+'johann.deneux:it.uu.se' => 'Johann Deneux',
+'johann.deneux:laposte.net' => 'Johann Deneux',
+'johannes:erdfelt.com' => 'Johannes Erdfelt',
+'johansen:immunix.com' => 'John Johansen',
+'john.cagle:hp.com' => 'John Cagle',
+'john.l.byrne:hp.com' => 'John L. Byrne',
+'john:deater.net' => 'John Clemens',
+'john:fremlin.de' => 'John Fremlin',
+'john:grabjohn.com' => 'John Bradford',
+'john:larvalstage.com' => 'John Kim',
+'john:neggie.net' => 'John Belmonte',
+'johnf:whitsunday.net.au' => 'John W. Fort',
+'johnpol:2ka.mipt.ru' => 'Evgeniy Polyakov',
+'johnrose:austin.ibm.com' => 'John Rose',
+'johnstul:us.ibm.com' => 'John Stultz',
+'jolt:tuxbox.org' => 'Florian Schirmer',
+'jon:ballardtech.com' => 'Jon Neal',
+'jon:focalhost.com' => 'Jon Oberheide',
+'jon:jon-foster.co.uk' => 'Jon Foster',
+'jon:oberheide.org' => 'Jon Oberheide',
+'jonas.larsson:net.rmk.(none)' => 'Jonas Larsson',
+'jonas:thornblad.net' => 'Jonas Thornblad',
+'jones:ingate.com' => 'Jones Desougi',
+'jongk:linux-m68k.org' => 'Kars de Jong',
+'jonsmirl:gmail.com' => 'Jon Smirl',
+'jonsmirl:yahoo.com' => 'Jon Smirl',
+'joris:eljakim.nl' => 'Joris van Rantwijk',
+'joris:struyve.be' => 'Joris Struyve',
+'josh:emperorlinux.com' => 'Josh Litherland',
+'josh:joshisanerd.com' => 'Josh Myer',
+'josha:sgi.com' => 'Josh Aas',
+'joshk:triplehelix.org' => 'Joshua Kwan',
+'jpaana:s2.org' => 'Jarno Paananen',
+'jparadis:redhat.com' => 'Jim Paradis',
+'jparmele:wildbear.com' => 'Joseph Parmelee',
+'jpk:sgi.com' => 'Jon Krueger',
+'jrsantos:austin.ibm.com' => 'Jose R. Santos',
+'js189202:zodiac.mimuw.edu.pl' => 'Jerzy Szczepkowski',
+'js:convergence.de' => 'Johannes Stezenbach',
+'js:linuxtv.org' => 'Johannes Stezenbach',
+'jschopp:austin.ibm.com' => 'Joel Schopp',
+'jscross:veritas.com' => 'James Cross',
+'jsiemes:web.de' => 'Josef Siemes',
+'jsimmons:heisenberg.transvirtual.com' => 'James Simmons',
+'jsimmons:infradead.org' => 'James Simmons',
+'jsimmons:kozmo.(none)' => 'James Simmons',
+'jsimmons:maxwell.earthlink.net' => 'James Simmons',
+'jsimmons:transvirtual.com' => 'James Simmons',
+'jsimmons:www.infradead.org' => 'James Simmons',
+'jsm:fc.hp.com' => 'John S. Marvin',
+'jsm:udlkern.fc.hp.com' => 'John S. Marvin',
+'jstultz:us.ibm.com' => 'John Stultz',
+'jsun:mvista.com' => 'Jun Sun',
+'jt:bougret.hpl.hp.com' => 'Jean Tourrilhes',
+'jt:bougret.jpl.hp.com' => 'Jean Tourrilhes',	# jpl? Whaa? hpl!
+'jt:hpl.hp.com' => 'Jean Tourrilhes',
+'jthiessen:penguincomputing.com' => 'Justin Thiessen',
+'jtyner:cs.ucr.edu' => 'John Tyner',
+'judd:jpilot.org' => 'Judd Montgomery',
+'juerg:paldo.org' => 'Juerg Billeter',
+'juergen:jstuber.net' => 'Jürgen Stuber',
+'juhl-lkml:dif.dk' => 'Jesper Juhl',
+'jun.nakajima:intel.com' => 'Jun Nakajima',
+'jung-ik.lee:intel.com' => 'Jung-Ik Lee',
+'junkio:cox.net' => 'Junio C. Hamano',
+'junx.yao:intel.com' => 'Yao Jun',
+'jurgen:botz.org' => 'Jürgen Botz',
+'jurij:woodyd.org' => 'Jurij Smakov',
+'jurij:wooyd.org' => 'Jurij Smakov',
+'jwboyer:charter.net' => 'Josh Boyer',
+'jwboyer:infradead.org' => 'Josh Boyer',
+'jwoithe:physics.adelaide.edu.au' => 'Jonathan Woithe',
+'k-suganuma:mvj.biglobe.ne.jp' => 'Kimio Suganuma',
+'k.chmielewski:neostrada.pl' => 'Krzysztof Chmielewski',
+'k.kasprzak:box43.pl' => 'Karol Kasprzak', # by Kristian Peters
+'kaber:coreworks.de' => 'Patrick McHardy',
+'kaber:trash.ne' => 'Patrick McHardy', # typo
+'kaber:trash.net' => 'Patrick McHardy',
+'kadlec:blackhole.kfki.hu' => 'Jozsef Kadlecsik',
+'kai-germaschewski:uiowa.edu' => 'Kai Germaschewski',
+'kai.makisara:kolumbus.fi' => 'Kai Mäkisara',
+'kai.reichert:udo.edu' => 'Kai Reichert',
+'kai:chaos.tp1.ruhr-uni-bochum.de' => 'Kai Germaschewski',
+'kai:germaschewski.name' => 'Kai Germaschewski',
+'kai:tp1.ruhr-uni-bochum.de' => 'Kai Germaschewski',
+'kai:vaio.(none)' => 'Kai Germaschewski',
+'kai:zephyr.physics.uiowa.edu' => 'Kai Germaschewski',
+'kaie:kuix.de' => 'Kai Engert',
+'kaigai:ak.jp.nec.com' => 'KaiGai Kohei',
+'kala:pinerecords.com' => 'Tomas Szepe',
+'kalev:colleduc.ee' => 'Kalev Lember',
+'kalev:smartlink.ee' => 'Kalev Lember',
+'kalin:thinrope.net' => 'Kalin Rumenov Kozhuharov',
+'kambo77:hotmail.com' => 'Kambo Lohan',
+'kamezawa.hiroyu:jp.fujitsu.com' => 'Kamezawa Hiroyuki',
+'kaneshige.kenji:jp.fujitsu.com' => 'Kenji Kaneshige', # lbdb
+'kanoj:vger.kernel.org' => 'Kanoj Sarcar', # sent by Arnaldo Carvalho de Melo
+'kanojsarcar:yahoo.com' => 'Kanoj Sarcar',
+'kaos:melbourne.sgi.com' => 'Keith Owens',
+'kaos:ocs.com.au' => 'Keith Owens',
+'kaos:sgi.com' => 'Keith Owens', # sent by himself
+'kaos:sgi.o' => 'Keith Owens',
+'kare.sars:lmf.ericsson.se' => 'Kåre Särs',
+'karlis:mt.lv' => 'Karlis Peisenieks',
+'kartik_me:hotmail.com' => 'Kartikey Mahendra Bhatt',
+'kas:fi.muni.cz' => 'Jan Kasprzak',
+'kas:informatics.muni.cz' => 'Jan Kasprzak', # lbdb
+'kasperd:daimi.au.dk' => 'Kasper Dupont',
+'katzj:redhat.com' => 'Jeremy Katz',
+'kay.sievers:vrfy.org' => 'Kay Sievers',
+'kaz:earth.email.ne.jp' => 'Kazuto Miyoshi',
+'kazunori:miyazawa.org' => 'Kazunori Miyazawa',
+'kberg:linux1394.org' => 'Steve Kinneberg',
+'kd6pag:qsl.net' => 'John Mock',
+'kde:myrealbox.com' => 'Ismail Donmez',
+'kdesler:soohrt.org' => 'Karsten Desler',
+'kdrader:us.ibm.com' => 'Kurtis D. Rader',
+'keith:tungstengraphics.com' => 'Keith Whitwell',
+'keithu:parl.clemson.edu' => 'Keith Underwood',
+'keithw:tungstengraphics.com' => 'Keith Withwell',
+'ken:mvista.com' => 'Kenneth Sumrall',
+'kenn:linux.ie' => 'Kenn Humborg',
+'kenneth.w.chen:intel.com' => 'Kenneth W. Chen',
+'kernel-hacker:bennee.com' => 'Alex Bennee',
+'kernel-stuff:comcast.net' => 'Parag Warudkar',
+'kernel:axion.demon.nl' => 'Monchi Abbad',
+'kernel:cornelia-huck.de' => 'Cornelia Huck',
+'kernel:jsl.com' => 'Jeffrey S. Laing',
+'kernel:kolivas.org' => 'Con Kolivas',
+'kernel:linuxace.com' => 'Phil Oester',
+'kernel:obster.org' => 'Michael Obster',
+'kernel:sayegh.de' => 'Nabil Sayegh',
+'kernel:steeleye.com' => 'Paul Clements',
+'kettenis:gnu.org' => 'Mark Kettenis',
+'kevcorry:us.ibm.com' => 'Kevin Corry',
+'kevin.curtis:farsite.co.uk' => 'Kevin Curtis',
+'kevin.tian:intel.com' => 'Kevin Tian',
+'kevin:koconnor.net' => 'Kevin O\'Connor',
+'kevin:org.rmk.(none)' => 'Kevin Hilman',
+'kevino:asti-usa.com' => 'Kevin Owen',
+'kevmack:accesscomm.ca' => 'Kevin Mack',
+'key:austin.ibm.com' => 'Kent Yoder',
+'khaho:koti.soon.fi' => 'Ari Juhani Hämeenaho',
+'khali:linux-fr.org' => 'Jean Delvare', # lbdb
+'khalid:fc.hp.com' => 'Khalid Aziz',
+'khalid_aziz:hp.com' => 'Khalid Aziz',
+'khawar.chaudhry:amd.com' => 'Khawar Chaudhry',
+'khc:pc.waw.pl' => 'Krzysztof Halasa',
+'khc:pm.waw.pl' => 'Krzysztof Halasa',
+'kianusch:sk-tech.net' => 'Kianusch Sayah Karadji',
+'kieran:mgpenguin.net' => 'Kieran Morrissey',
+'kihara.seiji:lab.ntt.co.jp' => 'Seiji Kihara',
+'kilgota:banach.math.auburn.edu' => 'Theodore Kilgore',
+'killekulla:rdrz.de' => 'Raphael Zimmerer',
+'kingsley:aurema.com' => 'Cheung Kingsley',
+'kiran:in.ibm.com' => 'Ravikiran G. Thirumalai',
+'kirillx:7ka.mipt.ru' => 'Kirill Korotaev',
+'kishoreak:myw.ltindia.com' => 'Kishore A K',
+'kisza:sch.bme.hu' => 'Andras Kis-Szabo', # google (netfilter-ext HOWTO)
+'kjhall:us.ibm.com' => 'Kylene Hall',
+'kkeil:isdn4linux.de' => 'Karsten Keil',
+'kkeil:suse.de' => 'Karsten Keil',
+'kkourt:cslab.ece.ntua.gr' => 'Kornilios Kourtis',
+'kksx:mail.ru' => 'Kirill Korotaev',
+'kksx:maul.ru' => 'Kirill Korotaev',
+'kl:gjs.cc' => 'Gert-Jan Spoelman',
+'klaas.de.waal:hccnet.nl' => 'Klaas de Waal',
+'klassert:mathematik.ru-chemnitz.de' => 'Steffen Klassert', # typo, leave in
+'klassert:mathematik.tu-chemnitz.de' => 'Steffen Klassert',
+'kmannth:us.ibm.com' => 'Keith Mannthey',
+'kmartens:sonologic.nl' => 'Koen Martens',
+'kml:patheticgeek.net' => 'Kevin Lahey',
+'kmsmith:umich.edu' => 'Kendrick M. Smith',
+'knan:mo.himolde.no' => 'Erik Inge Bolsø',
+'knl_joi:yahoo.com.br' => 'Joilnen Leite',
+'knut_petersen:t-online.de' => 'Knut Petersen',
+'kochi:hpc.bs1.fc.nec.co.jp' => 'Kochi Takayoshi',
+'kolrabi:kolrabi.de' => 'Bjoern Paetzel',
+'kolya:mit.edu' => 'Nickolai Zeldovich',
+'komoriya:paken.org' => 'Takeru Komoriya', # google
+'komujun:nifty.com' => 'Jun Komuro', # google
+'kpc-usbdev:gelato.uiuc.edu' => 'Kevin Cernekee',
+'kpfleming:cox.net' => 'Kevin P. Fleming',
+'kpreslan:redhat.com' => 'Ken Preslan',
+'krautz:gmail.com' => 'Mikkel Krautz',
+'kravetz:us.ibm.com' => 'Mike Kravetz',
+'kraxel:bytesex.org' => 'Gerd Knorr',
+'kraxel:suse.de' => 'Gerd Knorr',
+'krh:bitplanet.net' => 'Kristian Høgsberg',
+'krishnakumar:naturesoft.net' => 'Krishna Kumar',
+'krkumar:us.ibm.com' => 'Krishna Kumar',
+'kronos:kronoz.cjb.net' => 'Luca Tettamanti',
+'kronos:people.it' => 'Luca Tettamanti',
+'krzysztof.h1:wp.pl' => 'Krzysztof Helt',
+'ksakamot:linux-m32r.org' => 'Kei Sakamoto',
+'kszysiu:iceberg.elsat.net.pl' => 'Krzysztof Rusocki',
+'kuba:mareimbrium.org' => 'Kuba Ober',
+'kuebelr:email.uc.edu' => 'Robert Kuebel',
+'kumar.gala:freescale.com' => 'Kumar Gala',
+'kumar.gala:motorola.com' => 'Kumar Gala',
+'kumarkr:us.ibm.com' => 'Krishna Kumar',
+'kunihiro:ipinfusion.com' => 'Kunihiro Ishiguro',
+'kunitake:anchor.jp' => 'KUNITAKE Koichi',
+'kurt.robideau:comtrol.com' => 'Kurt Robideau',	# wild guess
+'kyle:debian.org' => 'Kyle McMartin',
+'kyle:engsoc.carleton.ca' => 'Kyle McMartin',
+'kyle:parisc-linux.org' => 'Kyle McMartin',
+'l.rossato:tiscali.it' => 'Luca Rossato',
+'l.s.r:web.de' => 'René Scharfe',
+'ladis:linux-mips.org' => 'Ladislav Michl',
+'ladis:psi.cz' => 'Ladislav Michl',
+'laforge:gnumonks.org' => 'Harald Welte',
+'laforge:netfilter.org' => 'Harald Welte',
+'laforge:org.rmk.(none)' => 'Harald Welte', # guessed
+'lars.ellenberg:linbit.com' => 'Lars Ellenberg',
+'lathiat:sixlabs.org' => 'Trent Lathiat Lloyd',
+'latten:austin.ibm.com' => 'Joy Latten',
+'laubrycomm:free.fr' => 'Ludovic Aubry',
+'laurent:latil.nom.fr' => 'Laurent Latil',
+'lavarre:iomega.com' => 'Pat LaVarre',
+'lawrence:the-penguin.otak.com' => 'Lawrence Walton',
+'lcapitulino:conectiva.com.br' => 'Luiz Capitulino',
+'lcapitulino:prefeitura.sp.gov.br' => 'Luiz Capitulino',
+'ldb:ldb.ods.org' => 'Luca Barbieri',
+'ldl:aros.net' => 'Lou Langholtz',
+'ldm.adm:hostme.bitkeeper.com' => 'Patrick Mochel', # self
+'ldm:flatcap.org' => 'Richard Russon',
+'leachbj:bouncycastle.org' => 'Bernard Leach',
+'lee:compucrew.com' => 'Lee Nash', # lbdb
+'leendert:watson.ibm.com' => 'Leendert van Doorn',
+'legoll:free.fr' => 'Vincent Legoll', # correction sent by himself
+'leigh:solinno.co.uk' => 'Leigh Brown', # lbdb
+'len.brown2intel.com' => 'Len Brown',
+'len.brown:intel.com' => 'Len Brown',
+'lenb:dhcppc11.' => 'Len Brown',
+'lenb:dhcppc3.' => 'Len Brown',
+'lenb:dhcppc6.' => 'Len Brown',
+'lenehan:twibble.org' => 'Jamie Lenehan',
+'lenz:cs.wisc.edu' => 'John Lenz',
+'leoli:freescale.com' => 'Li Yang',
+'lesanti:sinectis.com.ar' => 'Leandro Santi',
+'lethal:linux-sh.org' => 'Paul Mundt',
+'lethal:unusual.internal.linux-sh.org' => 'Paul Mundt',
+'lev_makhlis:bmc.com' => 'Lev Makhlis',
+'levon:movementarian.org' => 'John Levon',
+'lfo:polyad.org' => 'Luis F. Ortiz',
+'liam.girdwood:com.rmk.(none)' => 'Liam Girdwood',
+'liam.girdwood:wolfsonmicro.com' => 'Liam Girdwood',
+'libor:topspin.com' => 'Libor Michalek',
+'liml:rtr.ca' => 'Mark Lord',
+'linas:austin.ibm.com' => 'Linas Vepstas',
+'linas:linas.org' => 'Linas Vepstas',
+'linas:us.ibm.com' => 'Linas Vepstas',
+'linux-dev:morknet.de' => 'Steffen A. Mork',
+'linux-kernel:borntraeger.net' => 'Christian Bornträger',
+'linux-kernel:n-dimensional.de' => 'Hans Ulrich Niedermann',
+'linux-kernel:vortech.net' => 'Joshua Jackson',
+'linux-usb:gemeinhardt.info' => 'Lars Gemeinhardt',
+'linux-usb:nerds-incorporated.org' => 'Sepp Wijnands',
+'linux:borntraeger.net' => 'Christian Bornträger',
+'linux:brodo.de' => 'Dominik Brodowski',
+'linux:broro.de' => 'Dominik Brodowski',	# typo
+'linux:de.rmk.(none)' => 'Dominik Brodowski',
+'linux:de.rmk.(none2)' => 'Sebastian Henschel',
+'linux:dominikbrodowski.de' => 'Dominik Brodowski',
+'linux:dominikbrodowski.net' => 'Dominik Brodowski',
+'linux:hazard.jcu.cz' => 'Jan Marek',
+'linux:kodeaffe.de' => 'Sebastian Henschel',
+'linux:michaelgeng.de' => 'Michael Geng',
+'linux:rainbow-software.org' => 'Ondrej Zary',
+'linux:sandersweb.net' => 'David Sanders',
+'linux:thorsten-knabe.de' => 'Thorsten Knabe',
+'linux:youmustbejoking.demon.co.uk' => 'Darren Salt',
+'linuxram:us.ibm.com' => 'Ram Pai',
+'linville:redhat.com' => 'John W. Linville',
+'linville:tuxdriver.com' => 'John W. Linville',
+'lionel.bouton:inet6.fr' => 'Lionel Bouton',
+'lists:mdiehl.de' => 'Martin Diehl',
+'lists:wildgooses.com' => 'Ed Wildgoose',
+'livio:ime.usp.br' => 'Livio Baldini Soares',
+'liyang:nerv.cx' => 'Liyang Hu',
+'lklm:lengard.net' => 'Pascal Lengard',
+'lkml001:vrfy.org' => 'Kay Sievers',
+'lkml:einar-lueck.de' => 'Einar Lueck',
+'lkml:felipe-alfaro.com' => 'Felipe Alfaro Solana',
+'lkml:lievin.net' => 'Romain Liévin',
+'lkml:mathfillsmewithgreatjoy.com' => 'Michael Plump',
+'lkml:rtr.ca' => 'Mark Lord',
+'lkml:shemesh.biz' => 'Shachar Shemesh',
+'lkml:steffenspage.de' => 'Steffen Zieger',
+'lm:bitmover.com' => 'Larry McVoy',
+'lm:work.bitmover.com' => 'Larry McVoy',
+'lmb:suse.de' => 'Lars Marowsky-Bree',
+'lmendez19:austin.rr.com' => 'Lonnie Mendez',
+'lnville:tuxdriver.com' => 'John W. Linville', # typo
+'lode_leroy:hotmail.com' => 'Lode Leroy',
+'loftin:ldl.fc.hp.com' => 'Terry Loftin',
+'long.pu:intel.com' => 'Pu Long',
+'lopezp:grupocp.es' => 'Jose A. Lopez',
+'lord:jen.americas.sgi.com' => 'Stephen Lord',
+'lord:laptop.americas' => 'Stephen Lord',
+'lord:laptop.americas.sgi.com' => 'Stephen Lord',
+'lord:penguin.americas.sgi.com' => 'Stephen Lord',
+'lord:sgi.com' => 'Stephen Lord',
+'louis.zhuang:linux.co.intel.com' => 'Louis Zhuang',
+'louis_zhuang:linux.co.intel.com' => 'Louis Zhuang',
+'louisk:cse.unsw.edu.au' => 'Louis Yu-Kiu Kwan',
+'lowekamp:cs.wm.edu' => 'Bruce B. Lowekamp', # lbdb
+'lsml:rtr.ca' => 'Mark Lord', # typo ?
+'luben:splentec.com' => 'Luben Tuikov',
+'luben_tuikov:adaptec.com' => 'Luben Tuikov',
+'luc.vanoostenryck:easynet.be' => 'Luc Van Oostenryck', # lbdb
+'luca.risolia:studio.unibo.it' => 'Luca Risolia',
+'luca:libero.it' => 'Luca Risolia',
+'lucasvr:gobolinux.org' => 'Lucas Correia Villa Real',
+'lucasvr:org.rmk.(none)' => 'Lucas Correia Villa Real',
+'lucasvr:terra.com.br' => 'Lucas Correia Villa Real', # google
+'luming.yu:intel.com' => 'Luming Yu',
+'lunz:falooley.org' => 'Jason Lunz',
+'luto:myrealbox.com' => 'Andy Lutomirski',
+'lw:de.rmk.(none)' => 'Lothar Wassmann',
+'lxie:us.ibm.com' => 'Linda Xie',
+'lxiep:linux.ibm.com' => 'Linda Xie',
+'lxiep:ltcfwd.linux.ibm.com' => 'Linda Xie',
+'lxiep:us.ibm.com' => 'Linda Xie',
+'m.c.p:kernel.linux-systeme.com' => 'Marc-Christian Petersen',
+'m.c.p:wolk-project.de' => 'Marc-Christian Petersen',
+'m.hunold:gmx.de' => 'Michael Hunold',
+'m:mbsks.franken.de' => 'Matthias Bruestle',
+'maalanen:ra.abo.fi' => 'Marcus Alanen',
+'maartendeprez:scarlet.be' => 'Maarten Deprez',
+'mac:melware.de' => 'Armin Schindler',
+'macro:ds2.pg.dga.pl' => 'Maciej W. Rozycki',
+'macro:ds2.pg.gda.pl' => 'Maciej W. Rozycki',
+'macro:linux-mips.org' => 'Maciej W. Rozycki',
+'macro:mips.com' => 'Maciej W. Rozycki',
+'maeda.naoaki:jp.fujitsu.com' => 'Maeda Naoaki',
+'magnus.damm:gmail.com' => 'Magnus Damm',
+'mahalcro:us.ibm.com' => 'Michael A. Halcrow',
+'mail:de.rmk.(none)' => 'Peter Teichmann',
+'mail:gude.info' => 'Gude Analog- und Digitalsysteme GmbH',
+'mail:s-holst.de' => 'Stefan Holst',
+'maillist:jg555.com' => 'Jim Gifford',
+'makisara:abies.metla.fi' => 'Kai Mäkisara',
+'makovick:kmlinux.fjfi.cvut.cz' => 'Jindrich Makovicka',
+'mallikarjuna.chilakala:intel.com' => 'Mallikarjuna R. Chilakala',
+'maloi:phota.to' => 'Andy Molloy',
+'malte.d:gmx.net' => 'Malte Doersam', # google
+'manand:us.ibm.com' => 'Mala Anand',
+'maneesh:in.ibm.com' => 'Maneesh Soni',
+'manfred99:gmx.ch' => 'Manfred Schwarb',
+'manfred:colorfullife.com' => 'Manfred Spraul',
+'manik:cisco.com' => 'Manik Raina',
+'manish:zambeel.com' => 'Manish Lachwani',
+'mannthey:us.ibm.com' => 'Keith Mannthey',
+'marc.leeman:gmail.com' => 'Marc Leeman',
+'marc:mbsi.ca' => 'Marc Boucher',
+'marcel:holtmann.org' => 'Marcel Holtmann', # sent by himself
+'marcelo.tosatti:cyclades.com' => 'Marcelo Tosatti',
+'marcelo.tosatti:cyclades.com.br' => 'Marcelo Tosatti',
+'marcelo:conectiva.com.br' => 'Marcelo Tosatti',
+'marcelo:dhcp-103.cyclades.de' => 'Marcelo Tosatti',
+'marcelo:dmt.cnet' => 'Marcelo Tosatti',
+'marcelo:dmt.cyclades' => 'Marcelo Tosatti',
+'marcelo:freak.distro.conectiva' => 'Marcelo Tosatti', # guessed
+'marcelo:logos.cnet' => 'Marcelo Tosatti', # guessed
+'marcelo:plucky.distro.conectiva' => 'Marcelo Tosatti',
+'marchand:kde.org' => 'Mickael Marchand',
+'marco.cova:studio.unibo.it' => 'Marco Cova',
+'marcus:infa.abo.fi' => 'Marcus Alanen',
+'marcus:ingate.com' => 'Marcus Sundberg',
+'marekm:amelek.gda.pl' => 'Marek Michalkiewicz',
+'margitsw:t-online.de' => 'Margit Schubert-While',
+'marijnk:gmx.co.uk' => 'Marijn Kruisselbrink',
+'marineam:gentoo.org' => 'Michael Marineau',
+'marius:citi.umich.edu' => 'Marius Aamodt Eriksen',
+'mark.fasheh:oracle.com' => 'Mark Fasheh',
+'mark.haigh:spirentcom.com' => 'Mark F. Haigh',
+'mark:alpha.dyndns.org' => 'Mark W. McClelland',
+'mark:hal9000.dyndns.org' => 'Mark W. McClelland',
+'mark:mtfhpc.demon.co.uk' => 'Mark Fortescue',
+'mark:net.rmk.(none)' => 'Mark Hindley',
+'mark_salyzyn:adaptec.com' => 'Mark Salyzyn',
+'markb:wetlettuce.com' => 'Mark Broadbent',
+'markgw:sgi.com' => 'Mark Goodwin',
+'markh:osdl.org' => 'Mark Haverkamp',
+'markhe:veritas.com' => 'Mark Hemment',
+'markus.lidel:shadowconnect.com' => 'Markus Lidel',
+'markzzzsmith:yahoo.com.au' => 'Mark Smith',
+'marr:flex.com' => 'Bill Marr',
+'martin-langer:gmx.de' => 'Martin Langer',
+'martin.bene:icomedias.com' => 'Martin Bene',
+'martin.bligh:us.ibm.com' => 'Martin J. Bligh',
+'martin.lubich:gmx.at' => 'Martin Lubich',
+'martin.schwidefsky:debitel.net' => 'Martin Schwidefsky',
+'martin.wilck:fujitsu-siemens.com' => 'Martin Wilck',
+'martin:bruli.net' => 'Martin Brulisauer',
+'martin:mdiehl.de' => 'Martin Diehl',
+'martin:meltin.net' => 'Martin Schwenke',
+'martine.silbermann:hp.com' => 'Martine Silbermann',
+'masaki-c:nict.go.jp' => 'Masaki Chikama',
+'masanari.iida:hp.com' => 'Masanari Iida', # lbdb
+'masbock:us.ibm.com' => 'Max Asbock',
+'maschaffner:gmx.ch' => 'Martin Schaffner',
+'mashirle:us.ibm.com' => 'Shirley Ma',
+'mason:suse.com' => 'Chris Mason',
+'master:sectorb.msk.ru' => 'Vladimir B. Savkin',
+'mat.loikkanen:synopsys.com' => 'Mat Loikkanen',
+'mathieu:newview.com' => 'Mathieu Chouquet-Stringer',
+'matt_domsch:dell.com' => 'Matt Domsch', # sent by himself
+'matthew.e.tolentino:intel.com' => 'Matt Tolentino',
+'matthew:wil.cx' => 'Matthew Wilcox',
+'matthewc:cse.unsw.edu.au' => 'Matthew Chapman',
+'matthewn:snapgear.com' => 'Matthew Natalier',
+'matthias.andree:gmx.de' => 'Matthias Andree', # added by himself
+'matthias.christian:tiscali.de' => 'Matthias-Christian Ott',
+'matthias.kunze:gmx-topmail.de' => 'Matthias Kunze',
+'matthias:net.rmk.(none)' => 'Matthias Burghardt',
+'mauelshagen:redhat.com' => 'Heinz J. Mauelshagen',
+'mauelshagen:sistina.com' => 'Heinz J. Mauelshagen',
+'maverick:eskuel.net' => 'Mathieu Lesniak',
+'maxim:de.ibm.com' => 'Maxim Shchetynin',
+'maxk:qualcomm.com' => 'Maksim Krasnyanskiy',
+'maxk:viper.(none)' => 'Maksim Krasnyanskiy', # from shortlog
+'maxk:viper.qualcomm.com' => 'Maksim Krasnyanskiy',
+'mb:ozaba.mine.nu' => 'Magnus Boden',
+'mbellon:mvista.com' => 'Mark Bellon',
+'mbligh:aracnet.com' => 'Martin J. Bligh',
+'mbp:samba.org' => 'Martin Pool', # lbdb
+'mbp:sourcefrog.net' => 'Martin Pool',
+'mbp:vexed.ozlabs.hp.com' => 'Martin Pool',
+'mbrancaleoni:tiscali.it' => 'Matteo Brancaleoni',
+'mbroemme:plusserver.de' => 'Maik Broemme',
+'mbuesch:freenet.de' => 'Michael Buesch',
+'mcgrof:ruslug.rutgers.edu' => 'Luis R. Rodriguez',
+'mcgrof:studorgs.rutgers.edu' => 'Luis R. Rodriguez',
+'mchan:broadcom.com' => 'Michael Chan',
+'mchouque:online.fr' => 'Mathieu Chouquet-Stringer',
+'mckellj:iomega.com' => 'John McKell',
+'mcp:linux-systeme.de' => 'Marc-Christian Petersen',
+'mdharm-scsi:one-eyed-alien.net' => 'Matthew Dharm',
+'mdharm-usb:one-eyed-alien.net' => 'Matthew Dharm',
+'mdharm:momenco.com' => 'Matthew Dharm',
+'mdharm:one-eyed-alien.net' => 'Matthew Dharm',
+'mdiehl:mdiehl.de' => 'Martin Diehl',
+'mdomsch:dell.com' => 'Matt Domsch', # lbdb
+'mds:paradyne.com' => 'Mark D. Studebaker',
+'mebrown:michaels-house.net' => 'Michael E. Brown',
+'mec:shout.net' => 'Michael Elizabeth Chastain',
+'medaglia:undl.org.br' => 'Carlos Eduardo Medaglia Dyonisio',
+'meissner:suse.de' => 'Marcus Meissner',
+'menard.fabrice:wanadoo.fr' => 'Fabrice Menard',
+'metolent:snoqualmie.dp.intel.com' => 'Matt Tolentino',
+'mfedyk:matchmail.com' => 'Mike Fedyk',
+'mgalgoci:redhat.com' => 'Matthew Galgoci',
+'mgoodman:csua.berkeley.edu' => 'Mark Goodman',
+'mgreer:mivsta.com' => 'Mark A. Greer', # typo
+'mgreer:mvista.com' => 'Mark A. Greer', # lbdb
+'mhf:linuxmail.org' => 'Michael Frank',
+'mhoffman:lightlink.com' => 'Mark M. Hoffman',
+'mhopf:innominate.com' => 'Mark-André Hopf',
+'mhtran:us.ibm.com' => 'Mike Tran',
+'mhuth:mvista.com' => 'Mark Huth',
+'mhw:wittsend.com' => 'Michael H. Warfield',
+'micah:navi.cx' => 'Micah Dowty',
+'michael.kerrisk:gmx.net' => 'Michael Kerrisk',
+'michael.krauth:web.de' => 'Michael Krauth',
+'michael.ni:hp.com' => 'Michael Ni',
+'michael.veeck:gmx.net' => 'Michael Veeck',
+'michael.waychison:sun.com' => 'Mike Waychison',
+'michael:com.rmk.(none)' => 'Michael Opdenacker',
+'michael:ellerman.id.au' => 'Michael Ellerman',
+'michael:metaparadigm.com' => 'Michael Clark',
+'michael_e_brown:dell.com' => 'Michael E. Brown', # lbdb
+'michael_pruznick:mvista.com' => 'Michael Pruznick',
+'michaelc:cs.wisc.edu' => 'Mike Christie', # lbdb
+'michaelw:foldr.org' => 'Michael Weber', # google
+'michal:harddata.com' => 'Michal Jaegermann',
+'michal:info.rmk.(none)' => 'Michal Rokos',
+'michal:logix.cz' => 'Michal Ludvig',
+'michal:rokos.info' => 'Michal Rokos',
+'michal_dobrzynski:mac.com' => 'Michal Dobrzynski',
+'michel.marti:objectxp.com' => 'Michel Marti',
+'michel:daenzer.net' => 'Michel Dänzer',
+'miguel:cetuc.puc-rio.br' => 'Miguel Freitas', # lbdb
+'mika:osdl.org' => 'Mika Kukkonen',
+'mikael.starvik:axis.com' => 'Mikael Starvik',
+'mikal:stillhq.com' => 'Michael Still',
+'mike.miller:hp.com' => 'Mike Miller',
+'mike:aiinc.ca' => 'Michael Hayes',
+'mikem:beardog.cca.cpqcorp.net' => 'Mike Miller',
+'mikenc:us.ibm.com' => 'Mike Christie',
+'mikep:linuxtr.net' => 'Mike Phillips',
+'miklos:szeredi.hu' => 'Miklos Szeredi',
+'mikma:users.sourceforge.net' => 'Mikael Magnusson',
+'mikpe:csd.uu.se' => 'Mikael Pettersson',
+'mikpe:user.it.uu.se' => 'Mikael Pettersson',
+'mikukkon:gmail.com' => 'Mika Kukkonen',
+'mikulas:artax.karlin.mff.cuni.cz' => 'Mikulas Patocka',
+'miles:gnu.org' => 'Miles Bader',
+'miles:lsi.nec.co.jp' => 'Miles Bader',
+'miles:mctpc71.ucom.lsi.nec.co.jp' => 'Miles Bader',
+'miles:megapathdsl.net' => 'Miles Lane',
+'milli:acmeps.com' => 'Michael Milligan',
+'miltonm:bga.com' => 'Milton D. Miller II',
+'miltonm:realtime.net' => 'Milton D. Miller II',
+'mingo:earth2.(none)' => 'Ingo Molnar',
+'mingo:elte.hu' => 'Ingo Molnar',
+'mingo:redhat.com' => 'Ingo Molnar',
+'minyard:acm.org' => 'Corey Minyard',
+'minyard:mvista.com' => 'Corey Minyard',
+'miquels:cistron.net' => 'Miquel van Smoorenburg',
+'miquels:cistron.nl' => 'Miquel van Smoorenburg',
+'mirage:kaotik.org' => 'Tiago Sousa',
+'mita:yacht.ocn.ne.jp' => 'Akinobu Mita',
+'mitch.a.williams:intel.com' => 'Mitch Williams',
+'mitch:sfgoth.com' => 'Mitchell Blank Jr.',
+'miura:da-cha.org' => 'Hiroshi Miura',
+'miurahr:nttdata.co.jp' => 'Hiroshi Miura',
+'miyazawa:linux-ipv6.org' => 'Kazunori Miyazawa',
+'miyoshi:hpc.bs1.fc.nec.co.jp' => 'Kazuto Miyoshi',
+'mj:ucw.cz' => 'Martin Mares',
+'mjagdis:eris-associates.co.uk' => 'Mike Jagdis',
+'mjc:redhat.com' => 'Mark J. Cox',
+'mk:linux-ipv6.org' => 'Mitsuru Kanda',
+'mkp:mkp.net' => 'Martin K. Petersen', # lbdb
+'mkrikis:yahoo.com' => 'Martins Krikis',
+'mlachwani:mvista.com' => 'Manish Lachwani',
+'mlang:delysid.org' => 'Mario Lang', # google
+'mlev:despammed.com' => 'Lev Makhlis',
+'mlindner:syskonnect.de' => 'Mirko Lindner',
+'mlocke:mvista.com' => 'Montavista Software, Inc.',
+'mlord:pobox.com' => 'Mark Lord',
+'mlotek:foobar.pl' => 'Michal Mlotek',
+'mludvig:suse.cz' => 'Michal Ludvig',
+'mmagallo:debian.org' => 'Marcelo E. Magallon',
+'mmcclell:bigfoot.com' => 'Mark McClelland',
+'mmelchior:xs4all.nl' => 'Matthijs Melchior',
+'mochel:bambi.(none)' => 'Patrick Mochel',
+'mochel:digitalimplant.org' => 'Patrick Mochel',
+'mochel:geena.pdx.osdl.net' => 'Patrick Mochel',
+'mochel:hera.kernel.org' => 'Patrick Mochel',
+'mochel:kernel.bkbits.net' => 'Patrick Mochel',
+'mochel:linux.site' => 'Patrick Mochel',
+'mochel:osdl.org' => 'Patrick Mochel',
+'mochel:segfault.osdl.org' => 'Patrick Mochel',
+'mochel:segfault.osdlab.org' => 'Patrick Mochel',
+'moilanen:austin.ibm.com' => 'Jake Moilanen',
+'moilanen:us.ibm.com' => 'Jake Moilanen',
+'mort:bork.org' => 'Martin Hicks',
+'mort:green.i.bork.org' => 'Martin Hicks',
+'mort:sgi.com' => 'Martin Hicks',
+'mort:wildopensource.com' => 'Martin Hicks',
+'mostrows:speakeasy.net' => 'Michal Ostrowski',
+'mostrows:watson.ibm.com' => 'Michal Ostrowski',
+'movits:bloomberg.com' => 'Mordechai Ovits',
+'moz:compsoc.man.ac.uk' => 'John Levon',
+'mplayer:jburgess.uklinux.net' => 'Jon Burgess',
+'mpm:selenic.com' => 'Matt Mackall',
+'mporter:cox.net' => 'Matt Porter',
+'mporter:kernel.crashing.org' => 'Matt Porter',
+'mroos:linux.ee' => 'Meelis Roos',
+'mrr:nexthop.com' => 'Mathew Richardson',
+'mru:inprovide.com' => 'Måns Rullgård',
+'mru:kth.se' => 'Måns Rullgård',
+'msalter:redhat.com' => 'Mark Salter',
+'msdemlei:cl.uni-heidelberg.de' => 'Markus Demleitner',
+'mst:mellanox.co.il' => 'Michael S. Tsirkin',
+'mstjohns:mindspring.com' => 'Michael StJohns',
+'msw:redhat.com' => 'Matt Wilson',
+'mtk-lkml:gmx.net' => 'Michael Kerrisk',
+'mufasa:sis.com.tw' => 'Mufasa Yang', # sent by himself
+'muizelaar:rogers.com' => 'Jeff Muizelaar',
+'mulix:actcom.co.il' => 'Muli Ben-Yehuda', # sent by himself
+'mulix:mulix.org' => 'Muli Ben-Yehuda',
+'muneda.takahiro:jp.fujitsu.com' => 'Muneda Takahiro',
+'mw:microdata-pos.de' => 'Michael Westermann',
+'my:post.utfors.se' => 'Mikael Ylikoski',
+'mzyngier:freesurf.fr' => 'Marc Zyngier',
+'mzzhgg:de.rmk.(none)' => 'Lennart Poettering',
+'n0ano:n0ano.com' => 'Don Dugger',
+'n1gp:hotmail.com' => 'Richard Koch',
+'nacc:us.ibm.com' => 'Nishanth Aravamudan',
+'nahshon:actcom.co.il' => 'Itai Nahshon',
+'nakam:linux-ipv6.org' => 'Masahide Nakamura',
+'nanhai.zou:intel.com' => 'Zou Nanhai',
+'nas:e-trolley.de' => 'Nabil Sayegh',
+'natalie.protasevich:unisys.com' => 'Natalie Protasevich',
+'nathanl:austin.ibm.com' => 'Nathan Lynch',
+'nathans:bruce.melbourne.sgi.com' => 'Nathan Scott',
+'nathans:sgi.com' => 'Nathan Scott',
+'naveenb:cisco.com' => 'Naveen Burmi', # lbdb
+'nboullis:debian.org' => 'Nicolas Boullis',
+'nbryant:optonline.net' => 'Nathan Bryant',
+'ncunningham:cyclades.com' => 'Nigel Cunningham',
+'ncunningham:linuxmail.org' => 'Nigel Cunningham',
+'ncunningham:users.sourceforge.net' => 'Nigel Cunningham',
+'neal:bakerst.org' => 'Neal Stephenson',
+'neil:bortnak.com' => 'Neil Bortnak',
+'neilb:cse.unsw.edu.au' => 'Neil Brown',
+'neilt:slimy.greenend.org.uk' => 'Neil Turton',
+'nemosoft:smcc.demon.nl' => 'Nemosoft Unv.',
+'netfilter:interlinx.bc.ca' => 'Brian J. Murrell',
+'nfont:austin.ibm.com' => 'Nathan Fontenot',
+'nhorman:gmail.com' => 'Neil Horman',
+'nhorman:redhat.com' => 'Neil Horman',
+'nib:cookinglinux.org' => 'Nicolas Bouliane',
+'nick.holloway:pyrites.org.uk' => 'Nick Holloway',
+'nickpiggin:cyberone.com.au' => 'Nick Piggin',
+'nickpiggin:yahoo.com.au' => 'Nick Piggin',
+'nico:cam.org' => 'Nicolas Pitre',
+'nico:org.rmk' => 'Nicolas Pitre',
+'nico:org.rmk.(none)' => 'Nicolas Pitre',
+'nicolas.aspert:epfl.ch' => 'Nicolas Aspert',
+'nicolas.mailhot:laposte.net' => 'Nicolas Mailhot',
+'nicolas:boichat.ch' => 'Nicolas Boichat',
+'nicolas:dupeux.net' => 'Nicolas Dupeux',
+'nigel.croxon:hp.com' => 'Nigel Croxon',
+'nikai:nikai.net' => 'Nicolas Kaiser',
+'nikita:namesys.com' => 'Nikita Danilov',
+'nikkne:hotpop.com' => 'Nikola Knezevic',
+'niraj17:iitbombay.org' => 'Niraj Kumar',
+'nitin.a.kamble:intel.com' => 'Nitin A. Kamble',
+'nitin.hande:sun.com' => 'Nitin Hande',
+'niv:us.ibm.com' => 'Nivedita Singhvi',
+'nivedita:w-nivedita.beaverton.ibm.com' => 'Nivedita Singhvi',
+'nkbj:image.dk' => 'Niels Kristian Bech Jensen',
+'nkiesel:tbdnetworks.com' => 'Norbert Kiesel',
+'nlaredo:transmeta.com' => 'Nathan Laredo',
+'nmiell:attbi.com' => 'Nicholas Miell',
+'noah:caltech.edu' => 'Noah J. Misch',
+'nobita:t-online.de' => 'Andreas Busch',
+'noll:mathematik.tu-darmstadt.de' => 'Andre Noll',
+'noodles:earth.li' => 'Jonathan McDowell',
+'normalperson:yhbt.net' => 'Eric Wong',
+'not:just.any.name' => 'John Fremlin',
+'notting:redhat.com' => 'Bill Nottingham',
+'npollitt:mvista.com' => 'Nick Pollitt',
+'nreilly:magma.ca' => 'Nicholas Reilly',
+'nstraz:sgi.com' => 'Nathan Straz',
+'ntfs:flatcap.org' => 'Richard Russon', # lbdb
+'ntl:pobox.com' => 'Nathan T. Lynch',
+'numlock:freesurf.ch' => 'Joël Bourquard',
+'nuno:itsari.org' => 'Nuno Monteiro',
+'obelix123:toughguy.net' => 'Raj',		# Hmm..
+'obi:saftware.de' => 'Andreas Oberritter',
+'obiwan:mailmij.org' => 'Danny Tholen',
+'od:suse.de' => 'Olaf Dabrunz',
+'oe:port.de' => 'Heinz-Juergen Oertel',
+'ogasawara:osdl.org' => 'Leann Ogasawara',
+'okir:suse.de' => 'Olaf Kirch', # lbdb
+'okurth:gmx.net' => 'Oliver Kurth',
+'olaf.boehm:lanner.de' => 'Olaf Boehm',
+'olaf.dietsche#list.linux-kernel:t-online.de' => 'Olaf Dietsche',
+'oleg:tv-sign.ru' => 'Oleg Nesterov',
+'olh:suse.de' => 'Olaf Hering',
+'oliendm:us.ibm.com' => 'Dave Olien',
+'oliver.heilmann:drkw.com' => 'Oliver Heilmann',
+'oliver.neukum:lrz.uni-muenchen.de' => 'Oliver Neukum',
+'oliver.spang:siemens.com' => 'Oliver Spang',
+'oliver:neukum.name' => 'Oliver Neukum',
+'oliver:neukum.org' => 'Oliver Neukum',
+'oliver:oenone.homelinux.org' => 'Oliver Neukum',
+'oliver:vermuden.neukum.org' => 'Oliver Neukum',
+'olof:austin.ibm.com' => 'Olof Johansson',
+'olsimar:wanadoo.fr' => 'Olsimar',		# ??
+'omkhar:rogers.com' => 'Omkhar Arasaratnam',
+'orange:fobie.net' => 'Örjan Persson',
+'orjan.friberg:axis.com' => 'Orjan Friberg',
+'ornati:fastwebnet.it' => 'Paolo Ornati',
+'ortylp:3miasto.net' => 'Paul Ortyl',
+'os:emlix.com' => 'Oskar Schirmer', # sent by himself
+'oskar.senft:gmx.de' => 'Oskar Senft',
+'ossi:kde.org' => 'Oswald Buddenhagen',
+'osst:riede.org' => 'Willem Riede',
+'otaylor:redhat.com' => 'Owen Taylor',
+'otte:gnome.org' => 'Benjamin Otte',
+'ouellettes:videotron.ca' => 'Stephane Ouellette',
+'overby:sgi.com' => 'Glen Overby',
+'oxymoron:waste.org' => 'Oliver Xymoron',
+'p.guehring:futureware.at' => 'Philipp Gühring',
+'p.lavarre:ieee.org' => 'Pat LaVarre',
+'p2:ace.ulyssis.sutdent.kuleuven.ac.be' => 'Peter De Shrijver',
+'p:draigbrady.com' => 'Pádraig Brady',
+'p_gortmaker:yahoo.com' => 'Paul Gortmaker',
+'pablo:eurodev.net' => 'Pablo Neira',
+'pablo:menichini.com.ar' => 'Pablo Menichini',
+'pam.delaney:lsil.com' => 'Pamela Delaney',
+'panagiotis.issaris:mech.kuleuven.ac.be' => 'Panagiotis Issaris',
+'panto:intracom.gr' => 'Pantelis Antoniou',
+'paschal:rcsis.com' => 'David Paschal',
+'pasky:ucw.cz' => 'Petr Baudis',
+'pat:computer-refuge.org' => 'Patrick Finnegan',
+'patch:luckynet.dynu.com' => '"Lightweight Patch Manager"', # lbdb
+'patl:users.sourceforge.net' => 'Patrick J. LoPresti',
+'patmans:ibm.com' => 'Patrick Mansfield',
+'patmans:us.ibm.com' => 'Patrick Mansfield',
+'patrick.boettcher:desy.de' => 'Patrick Boettcher',
+'patrick:dreker.de' => 'Patrick Dreker', # lbdb
+'patrick:tykepenguin.com' => 'Patrick Caulfield',
+'patrick:wildi.com' => 'Patrick Wildi',
+'paubert:iram.es' => 'Gabriel Paubert',
+'paul+nospam:wurtel.net' => 'Paul Slootman',
+'paul.clements:steeleye.com' => 'Paul Clements',
+'paul.focke:pandora.be' => 'Paul Focke',
+'paul.mundt:nokia.com' => 'Paul Mundt',
+'paul.mundt:timesys.com' => 'Paul Mundt', # google
+'paul:allied-universal.com' => 'Paul King',
+'paul:kungfoocoder.org' => 'Paul Wagland', # lbdb
+'paul:serice.net' => 'Paul Serice',
+'paul:wagland.net' => 'Paul Wagland', # lbdb
+'pauld:egenera.com' => 'Philip R. Auld',
+'paulkf:microgate.com' => 'Paul Fulghum',
+'paulm:routefree.com' => 'Paul Mielke',
+'paulmck:us.ibm.com' => 'Paul E. McKenney',
+'paulsch:haywired.net' => 'Paul B. Schroeder',
+'paulus:au1.ibm.com' => 'Paul Mackerras',
+'paulus:cargo.(none)' => 'Paul Mackerras',
+'paulus:nanango.paulus.ozlabs.org' => 'Paul Mackerras',
+'paulus:quango.(none)' => 'Paul Mackerras', # lk, Alan Cox 20030904
+'paulus:quango.ozlabs.ibm.com' => 'Paul Mackerras',
+'paulus:samba.org' => 'Paul Mackerras',
+'paulus:tango.paulus.ozlabs.org' => 'Paul Mackerras',
+'pavel (at) ucw.cz' => 'Pavel Machek',
+'pavel:janik.cz' => 'Pavel Janík',
+'pavel:suse.cz' => 'Pavel Machek',
+'pavel:ucw.cz' => 'Pavel Machek',
+'pavenis:latnet.lv' => 'Andris Pavenis',
+'pavlas:nextra.cz' => 'Zdenek Pavlas',
+'pavlic:de.ibm.com' => 'Frank Pavlic',
+'pavlin:icir.org' => 'Pavlin Radoslavov',
+'pazke:donpac.ru' => 'Andrey Panin',
+'pazke:orbita1.ru' => 'Andrey Panin',
+'pbadari:us.ibm.com' => 'Badari Pulavarty',
+'pbouchand:cyberdeck.com' => 'Patrice Bouchand',
+'pcaulfie:redhat.com' => 'Patrick Caulfield',
+'pdelaney:lsil.com' => 'Pam Delaney',
+'pe1rxq:amsat.org' => 'Jeroen Vreeken',
+'pebl:math.ku.dk' => 'Peter Berg Larsen',
+'pee:erkkila.org' => 'Paul E. Erkkila',
+'pekon:fi.muni.cz' => 'Petr Konecny',
+'pekon:informatics.muni.cz' => 'Petr Konecny',
+'pelle:dsv.su.se' => 'Per Olofsson',
+'pelzi:flying-snail.de' => 'Andreas Feldner',
+'penberg:cs.helsinki.fi' => 'Pekka Enberg',
+'penguin:muskoka.com' => 'Paul Gortmaker',
+'pepe:attika.ath.cx' => 'Piotr Kaczuba',
+'pepinto:student.dei.uc.pt' => 'Pedro Emanuel M. D. Pinto',
+'per.winkvist:telia.com' => 'Per Winkvist',
+'per.winkvist:uk.com' => 'Per Winkvist',
+'perex:perex.cz' => 'Jaroslav Kysela',
+'perex:petra.perex-int.cz' => 'Jaroslav Kysela', # guessed
+'perex:pnote.perex-int.cz' => 'Jaroslav Kysela',
+'perex:suse.cz' => 'Jaroslav Kysela',
+'perrye:linuxmail.org' => 'Perry Gilfillan', # lbdb
+'peter.oberparleiter:de.ibm.com' => 'Peter Oberparleiter',
+'peter:bergner.org' => 'Peter Bergner',
+'peter:cadcamlab.org' => 'Peter Samuelson',
+'peter:christensen' => 'Peter Christensen',
+'peter:chubb.wattle.id.au' => 'Peter Chubb',
+'peter:developers.dk' => 'Peter Christensen',
+'peter:p12n.org' => 'Peter Samuelson',
+'peter:pantasys.com' => 'Peter Buckingham',
+'peter:programming.kicks-ass.net' => 'Peter Zijlstra',
+'peter_pregler:email.com' => 'Peter Pregler',
+'peterc:au.rmk.(none)' => 'Peter Chubb',
+'peterc:chubb.wattle.id.au' => 'Peter Chubb',
+'peterc:gelato.unsw.edu.au' => 'Peter Chubb',
+'peterm:redhat.com' => 'Peter Martuccelli',
+'peterm:remware.demon.co.uk' => 'Peter Milne',
+'peterm:uk.rmk.(none)' => 'Peter Milne',
+'petero2:telia.com' => 'Peter Osterlund',
+'petkan:mastika.' => 'Petko Manolov',
+'petkan:mastika.dce.bg' => 'Petko Manolov',
+'petkan:mastika.lnxw.com' => 'Petko Manolov',
+'petkan:nucleusys.com' => 'Petko Manolov',
+'petkan:rakia.dce.bg' => 'Petko Manolov',
+'petkan:rakia.hell.org' => 'Petko Manolov',
+'petkan:tequila.dce.bg' => 'Petko Manolov',
+'petkan:users.sourceforge.net' => 'Petko Manolov',
+'petkov:uni-muenster.de' => 'Borislav Petkov',
+'petr:scssoft.com' => 'Petr Sebor',
+'petr:vandrovec.name' => 'Petr Vandrovec',
+'petri.koistinen:fi.rmk.(none)' => 'Petri T. Koistinen', # by himself
+'petri.koistinen:iki.fi' => 'Petri T. Koistinen', # by himself
+'petrides:redhat.com' => 'Ernie Petrides',
+'pfg:sgi.com' => 'Pat Gefre',
+'pg:futureware.at' => 'Philipp Gühring',
+'phelps:dstc.edu.au' => 'Ted Phelps',
+'phil.el:wanadoo.fr' => 'Philippe Elie',
+'phil:fifi.org' => 'Philippe Troin',
+'phil:ipom.com' => 'Phil Dibowitz',
+'philipc:snapgear.com' => 'Philip Craig',
+'philipp:void.at' => 'Philipp Friedrich',
+'philippe.bertin:pandora.be' => 'Philippe Bertin',
+'phillim2:comcast.net' => 'Mike Phillips',
+'phillips:arcor.de' => 'Daniel Phillips',
+'piggin:cyberone.com.au' => 'Nick Piggin',
+'piggy:timesys.com' => 'La Monte H.P. Yarroll',
+'pilo.c:wanadoo.fr' => 'Pilo Chambert',
+'pingc:wacom.com' => 'Ping Cheng',
+'pisa:cmp.felk.cvut.cz' => 'Pavel Pisa',
+'pixi:burble.org' => 'Maurice S. Barnum',
+'pj:sgi.com' => 'Paul Jackson',
+'pjones:redhat.com' => 'Peter Jones',
+'pkot:linuxnews.pl' => 'Pawel Kot',
+'pkot:ziew.org' => 'Pawel Kot',
+'plars:austin.ibm.com' => 'Paul Larson',
+'plars:linuxtestproject.org' => 'Paul Larson',
+'plcl:telefonica.net' => 'Pedro Lopez-Cabanillas',
+'pluto:ds14.agh.edu.pl' => 'Pawel Sikora',
+'pluto:pld-linux.org' => 'Pawel Sikora',
+'pmanolov:lnxw.com' => 'Petko Manolov',
+'pmarques:grupopie.com' => 'Paulo Marques',
+'pmaydell:chiark.greenend.org.uk' => 'Peter Maydell',
+'pmclean:linuxfreak.ca' => 'Patrick McLean',
+'pmeda:akamai.com' => 'Prasanna Meda',
+'pmenage:ensim.com' => 'Paul Menage',
+'pnelson:andrew.cmu.edu' => 'Peter Nelson',
+'pnelson:suse.cz' => 'Peter Nelson',
+'pontus.fuchs:tactel.se' => 'Pontus Fuchs',
+'porter:cox.net' => 'Matt Porter',
+'poup:poupinou.org' => 'Bruno Ducrot',
+'pozsy:uhulinux.hu' => 'Pozsar Balazs',
+'pp:ee.oulu.fi' => 'Pekka Pietikäinen',
+'pp:netppl.fi' => 'Pekka Pietikäinen',
+'ppc64:brule.rchland.ibm.com' => 'Peter Bergner',
+'ppopov:embeddedalley.com' => 'Pete Popov',
+'pragnesh.sampat:timesys.com' => 'Pragnesh Sampat',
+'praka:pobox.com' => 'Andrew Vasquez',
+'praka:users.sourceforge.net' => 'Andrew Vasquez',
+'prakashkc:gmx.de' => 'Prakash Cheemplavam',
+'prakashp:arcor.de' => 'Prakash Punnoor',
+'prarit:sgi.com' => 'Prarit Bhargava',
+'prasanna:in.ibm.com' => 'Prasanna S. Panchamukhi', # lbdb
+'pratik.solanki:timesys.com' => 'Pratik Solanki',
+'prof.bj:freemail.hu' => 'Prof. BJ',
+'prom:berlin.ccc.de' => 'Ingo Albrecht',
+'proski:gnu.org' => 'Pavel Roskin',
+'proski:org.rmk' => 'Pavel Roskin',
+'proski:org.rmk.(none)' => 'Pavel Roskin',
+'psimmons:flash.net' => 'Patrick Simmons',
+'ptiedem:de.ibm.com' => 'Peter Tiedemann',
+'ptushnik:gmail.com' => 'Vasia Pupkin',
+'purna:jcom.home.ne.jp' => 'Yusuf Wilajati Purna',
+'pwaechtler:mac.com' => 'Peter Wächtler',
+'pwil3058:bigpond.net.au' => 'Peter Williams',
+'pzad:pobox.sk' => 'Peter Zubaj',
+'q:kampsax.dtu.dk' => 'Dennis Jørgensen',
+'qboosh:pld-linux.org' => 'Jakub Bogusz',
+'qboosh:pld.org.pl' => 'Jakub Bogusz',
+'quade:hsnr.de' => 'Jürgen Quade',
+'quinlan:transmeta.com' => 'Daniel Quinlan',
+'quintela:mandrakesoft.com' => 'Juan Quintela',
+'r.a.mercer:blueyonder.co.uk' => 'Adam Mercer',
+'r.e.wolff:bitwizard.nl' => 'Rogier Wolff', # lbdb
+'r.e.wolff:harddisk-recovery.nl' => 'Rogier Wolff',
+'r.marek:sh.cvut.cz' => 'Rudolf Marek',
+'r.s.bultje:students.uu.nl' => 'Ronald S. Bultje',
+'radford:golemgroup.com' => 'Jim Radford',
+'radford:indigita.com' => 'Jim Radford',
+'rafael.espindola:gmail.com' => 'Rafael Ávila de Espíndola',
+'raghavendra.koushik:s2io.com' => 'Raghavendra Koushik',
+'rainer.weikusat:sncag.com' => 'Rainer Weikusat',
+'raivis:mt.lv' => 'Raivis Bucis',
+'ralf:dea.linux-mips.net' => 'Ralf Bächle',
+'ralf:linux-mips.org' => 'Ralf Bächle',
+'ralphs:org.rmk.(none)' => 'Ralph Siemsen',
+'ramon.rey:hispalinux.es' => 'Ramón Rey Vicente',
+'ramune:net-ronin.org' => 'Daniel A. Nobuto',
+'randolph:tausq.org' => 'Randolph Chung',
+'randy.dunlap:verizon.net' => 'Randy Dunlap',
+'rankincj:yahoo.com' => 'Chris Rankin',
+'ranty:debian.org' => 'Manuel Estrada Sainz',
+'ranty:ranty.pantax.net' => 'Manuel Estrada Sainz',
+'rask:sygehus.dk' => 'Rask Ingemann Lambertsen',
+'rathamahata:ehouse.ru' => 'Sergey S. Kostyliov',
+'rathamahata:php4.ru' => 'Sergey S. Kostyliov',
+'raul:pleyades.net' => 'Raul Nunez de Arenas Coronado',
+'raven:themaw.net' => 'Ian Kent',
+'ravinandan.arakali:neterion.com' => 'Ravinandan Arakali',
+'ravinandan.arakali:s2io.com' => 'Ravinandan Arakali',
+'ray-lk:madrabbit.org' => 'Ray Lee',
+'rbh00:utsglobal.com' => 'Richard Hitt', # asked him, he prefers Richard
+'rbradetich:uswest.net' => 'Ryan Bradetich',
+'rbt:mtlb.co.uk' => 'Robert Cardell',
+'rbultje:ronald.bitfreak.net' => 'Ronald Bultje',
+'rco3:2005dauphin.org' => 'Robert C. Olsen, III',
+'rct:frus.com' => 'Bob Tracy',
+'rct:gherkin.frus.com' => 'Bob Tracy',
+'rddunlap:org.rmk.(none)' => 'Randy Dunlap',
+'rddunlap:osdl.org' => 'Randy Dunlap',
+'reality:delusion.de' => 'Udo A. Steinberg',
+'redbliss:libero.it' => 'Leopoldo Cerbaro',
+'reeja.john:amd.com' => 'Reeja John',
+'reiser:namesys.com' => 'Hans Reiser',
+'rem:osdl.org' => 'Bob Miller',
+'remy.bruno:trinnov.com' => 'Remy Bruno',
+'rene.herman:keyaccess.nl' => 'Rene Herman', # lbdb
+'rene.herman:nl.rmk.(none)' => 'Rene Herman',
+'rene.rebe:gmx.net' => 'Rene Rebe',
+'rene.scharfe:lsrfire.ath.cx' => 'Rene Scharfe',
+'rgcrettol:datacomm.ch' => 'Roger Crettol',
+'rgooch:atnf.csiro.au' => 'Richard Gooch',
+'rgooch:ras.ucalgary.ca' => 'Richard Gooch',
+'rgooch:safe-mbox.com' => 'Richard Gooch',
+'rgs:linalco.com' => 'Roberto Gordo Saez',
+'rhim:cc.gatech.edu' => 'Himanshu Raj',
+'rhirst:linuxcare.com' => 'Richard Hirst',
+'rhw:infradead.org' => 'Riley Williams',
+'richard.brunner:amd.com' => 'Richard Brunner',
+'richard.curnow:superh.com' => 'Richard Curnow',
+'richm:oldelvet.org.uk' => 'Richard Mortimer',
+'ricklind:us.ibm.com' => 'Rick Lindsley',
+'riel:conectiva.com.br' => 'Rik van Riel',
+'riel:imladris.surriel.com' => 'Rik van Riel',
+'riel:redhat.com' => 'Rik van Riel',
+'riel:surriel.com' => 'Rik van Riel',
+'rja:sgi.com' => 'Russ Anderson',
+'rjmx:rjmx.net' => 'Ron Murray',
+'rjw:sisk.pl' => 'Rafael J. Wysocki',
+'rjweryk:uwo.ca' => 'Rob Weryk',
+'rkagan:mail.ru' => 'Roman Kagan',
+'rl:hellgate.ch' => 'Roger Luethi',
+'rlievin:free.fr' => 'Romain Liévin',
+'rlrevell:joe-job.com' => 'Lee Revell',
+'rmiller:duskglow.com' => 'Russell Miller',
+'rmk+lkml:arm.linux.org.uk' => 'Russell King',
+'rmk+pcmcia:arm.linux.org.uk' => 'Russell King',
+'rmk-pci:arm.linux.org.uk' => 'Russell King',
+'rmk:arm.linux.org.uk' => 'Russell King',
+'rmk:flint.arm.linux.org.uk' => 'Russell King',
+'rml:novell.com' => 'Robert Love',
+'rml:tech9.net' => 'Robert Love',
+'rml:ximian.com' => 'Robert Love',
+'rnp:paradise.net.nz' => 'Richard Procter',
+'rob:landley.net' => 'Rob Landley',
+'rob:osinvestor.com' => 'Rob Radez',
+'robert.olsson:data.slu.se' => 'Robert Olsson',
+'robert.picco:hp.com' => 'Robert Picco',
+'robertd:vantagecontrols.com' => 'Robert Daniels',
+'robin.farine:ch.rmk.(none)' => 'Robin Farine',
+'robin.farine:org.rmk.(none)' => 'Robin Farine',
+'robin.jag:free.fr' => 'Gérard Robin',
+'robn:verdi.et.tudelft.nl' => 'Rob van Nieuwkerk',
+'roe:sgi.com' => 'Dean Roe',
+'roehrich:sgi.com' => 'Dean Roehrich',
+'rohde:duff.dk' => 'Rasmus Rohde',
+'rohit.seth:intel.com' => 'Seth Rohit',
+'rol:as2917.net' => 'Paul Rolland',
+'roland:frob.com' => 'Roland McGrath',
+'roland:redhat.com' => 'Roland McGrath',
+'roland:topspin.com' => 'Roland Dreier',
+'roland:tospin.com' => 'Roland Dreier', # typo
+'romain.lievin:esisar.inpg.fr' => 'Romain Liévin',
+'romain.lievin:wanadoo.fr' => 'Romain Liévin',
+'romain:lievin.net' => 'Romain Liévin',
+'romain:orebokech.com' => 'Romain Francoise',
+'roman.fietze:telemotive.de' => 'Roman Fietze',
+'romieu:cogenit.fr' => 'François Romieu',
+'romieu:fr.zoreil.com' => 'François Romieu',
+'ron:rongage.org' => 'Ron Gage',
+'root:coderock.org' => 'Domen Puncer',
+'root:viper.(none)' => 'Maxim Krasnyansky',
+'ross:datscreative.com.au' => 'Ross Dickson',
+'rostedt:goodmis.org' => 'Steven Rostedt',
+'rover:tob.ru' => 'Sergei Golod',
+'rpjday:mindspring.com' => 'Robert P. J. Day',
+'rpurdie:net.rmk.(none)' => 'Richard Purdie',
+'rpurdie:rpsys.net' => 'Richard Purdie',
+'rread:clusterfs.com' => 'Robert Read',
+'rsa:us.ibm.com' => 'Ryan S. Arnold',
+'rscott:attbi.com' => 'Rob Scott',
+'rsewell:cableone.net' => 'Rick Sewell',
+'rsewill:cableone.net' => 'Rick Sewill',
+'rth:are.twiddle.net' => 'Richard Henderson',
+'rth:dorothy.sfbay.redhat.com' => 'Richard Henderson',
+'rth:dot.sfbay.redhat.com' => 'Richard Henderson',
+'rth:eeyore.twiddle.net' => 'Richard Henderson',
+'rth:fidel.sfbay.redhat.com' => 'Richard Henderson',
+'rth:heffalump.twiddle.home' => 'Richard Henderson',
+'rth:kanga.(none)' => 'Richard Henderson',
+'rth:kanga.twiddle.home' => 'Richard Henderson',
+'rth:kanga.twiddle.net' => 'Richard Henderson',
+'rth:splat.sfbay.redhat.com' => 'Richard Henderson',
+'rth:tigger.twiddle.net' => 'Richard Henderson',
+'rth:twiddle.net' => 'Richard Henderson',
+'rth:vsop.sfbay.redhat.com' => 'Richard Henderson',
+'rtjohnso:eecs.berkeley.edu' => 'Robert T. Johnson',
+'ruben:ugr.es' => 'Ruben Garcia',
+'ruber:engr.es' => 'Ruben Garcia',
+'ruby.joker:op.pl' => 'Ruby Joker',
+'rufus-kernel:hackish.org' => 'Peter Nelson',
+'rui.sousa:laposte.net' => 'Rui Sousa',
+'runet:innovsys.com' => 'Rune Torgersen',
+'russb:emc.com' => 'Brett Russ',
+'russell_d_cagle:mindspring.com' => 'Russell Cagle', # google
+'rusty:au1.ibm.com' => 'Rusty Russell',
+'rusty:linux.co.intel.com' => 'Rusty Lynch',
+'rusty:rustcorp.com.au' => 'Rusty Russell',
+'rusty:stinkycat.com' => 'Rusty Lynch',
+'rv:eychenne.org' => 'Hervé Eychenne',
+'rvinson:linuxbox.(none)' => 'Randy Vinson',
+'rvinson:mvista.com' => 'Randy Vinson',
+'rwhron:earthlink.net' => 'Randy Hron',
+'rwhron:net.rmk.(none)' => 'Randy Hron',
+'ryan:michonline.com' => 'Ryan Anderson',
+'ryan:spitfire.gotdns.org' => 'Ryan Cumming',
+'rz:linux-m68k.org' => 'Richard Zidlicky',
+'s.doyon:videotron.ca' => 'Stéphane Doyon',
+'s.esser:e-matters.de' => 'Stefan Esser',
+'sabala:students.uiuc.edu' => 'Michal Sabala', # google
+'saidi:umich.edu' => 'Ali Saidi',
+'sailer:scs.ch' => 'Thomas Sailer',
+'sakugawa:linux-m32r.org' => 'Mamoru Sakugawa',
+'sam:mars.ravnborg.org' => 'Sam Ravnborg',
+'sam:ravnborg.org' => 'Sam Ravnborg',
+'samel:mail.cz' => 'Vitezslav Samel',
+'sameske:de.ibm.com' => 'Volker Sameske',
+'samuel.thibault:ens-lyon.fr' => 'Samuel Thibault',
+'samuel.thibault:ens-lyon.org' => 'Samuel Thibault',
+'samuel.thibault:fnac.net' => 'Samuel Thibault', # lbdb
+'samuel:ibrium.se' => 'Samuel Rydh',
+'sandeen:sgi.com' => 'Eric Sandeen',
+'sanders:mvista.com' => 'Scott Anderson',
+'santiago:newphoenix.net' => 'Santiago A. Nullo', # sent by self
+'santil:us.ibm.com' => 'Santiago Leon',
+'sarolaht:cs.helsinki.fi' => 'Pasi Sarolahti',
+'sascha:de.rmk.(none)' => 'Sascha Hauer',
+'sashak:smlink.com' => 'Sasha Khapyorsky',
+'saw:saw.sw.com.sg' => 'Andrey V. Savochkin',
+'sawa:yamamoto.gr.jp' => 'sawa',
+'scameron:quandary.cca.cpqcorp.net' => 'Steve Cameron',
+'scd:broked.org' => 'Steven Dake',
+'schaffner:gmx.li' => 'Martin Schaffner',
+'scheel:vnet.ibm.com' => 'Jeff Scheel',
+'schierlm:gmx.de' => 'Michael Schierl',
+'schlicht:uni-mannheim.de' => 'Thomas Schlichter',
+'schlicht:uni-mannheimn.de' => 'Thomas Schlichter',	# it's typo IMHO
+'schmitz:opal.biophys.uni-duesseldorf.de' => 'Michael Schmitz',
+'schoenfr:gaaertner.de' => 'Erik Schoenfelder',
+'scholnik:radar.nrl.navy.mil' => 'Dan Scholnik',
+'schwab:suse.de' => 'Andreas Schwab',
+'schwidefsky:de.ibm.com' => 'Martin Schwidefsky',
+'scjody:modernduck.com' => 'Jody McIntyre',
+'scole:zianet.com' => 'Steven Cole', # lk, Alan Cox 20030904
+'scott.bailey:eds.com' => 'Scott Bailey',
+'scott.feldman:intel.com' => 'Scott Feldman',
+'scott:concord.org' => 'Scott Cytacki',
+'scott:pantastik.com' => 'Scott Russell',
+'scott:sonic.net' => 'Scott Doty',
+'scott_anderson:mvista.com' => 'Scott Anderson',
+'scottm:minion.yyz.somanetworks.com' => 'Scott Murray',
+'scottm:somanetworks.com' => 'Scott Murray',
+'scriptkiddie:wp.pl' => 'Marek Szuba',
+'sct:redhat.com' => 'Stephen C. Tweedie',
+'sdake:mvista.com' => 'Steven Dake',
+'sds:epoch.ncsc.mil' => 'Stephen D. Smalley',
+'sds:tislabs.com' => 'Stephen D. Smalley',
+'sds:tycho.nsa.gov' => 'Stephen D. Smalley',
+'se.witt:gmx.net' => 'Sebastian Witt',
+'sean.hefty:intel.com' => 'Sean Hefty',
+'sean.mcgoogan:superh.com' => 'Sean McGoogan',
+'sean:mess.org' => 'Sean Young',
+'seanlkml:rogers.com' => 'Sean Estabrooks',
+'sebastian.droege:gmx.de' => 'Sebastian Dröge',
+'sebek64:post.cz' => 'Marcel Sebek',
+'seife:suse.de' => 'Stefan Seyfried',
+'sergio.gelato:astro.su.se' => 'Sergio Gelato',
+'serue:us.ibm.com' => 'Serge Hallyn',
+'set:pobox.com' => 'Paul Thompson',
+'seto.hidetoshi:jp.fujitsu.com' => 'Hidetoshi Seto',
+'sezero:superonline.com' => 'Özkan Sezer',
+'sezeroz:ttnet.net.tr' => 'Özkan Sezer',
+'sfbest:us.ibm.com' => 'Steve Best',
+'sfeldma:pobox.com' => 'Scott Feldman',
+'sfr:au1.ibm.com' => 'Stephen Rothwell',
+'sfr:canb.auug.org.au' => 'Stephen Rothwell',
+'sfrench:sambaltcdom.austin.ibm.com' => 'Steve French',
+'sfrench:smft41.(none)' => 'Steve French',
+'sfrench:us.ibm.com' => 'Steve French',
+'sfrost:snowman.net' => 'Stephen Frost',
+'sgrubb:redhat.com' => 'Steve Grubb',
+'shaggy:austin.ibm.com' => 'Dave Kleikamp',
+'shaggy:kleikamp.austin.ibm.com' => 'Dave Kleikamp',
+'shaggy:kleikamp.dyn.webahead.ibm.com' => 'Dave Kleikamp',
+'shaggy:shaggy.austin.ibm.com' => 'Dave Kleikamp', # lbdb
+'shahamit:gmx.net' => 'Amit Shah',
+'shaharf:voltaire.com' => 'Shahar Frank',
+'shai:ftcon.com' => 'Shai Fultheim',
+'shai:scalex86.org' => 'Shai Fultheim',
+'shaoh.li:gmail.com' => 'Li Shaohua',
+'shaohua.li:intel.com' => 'Li Shaohua',
+'shawn.starr:rogers.com' => 'Shawn Starr',
+'shbader:de.ibm.com' => 'Stefan Bader',
+'sheilds:msrl.com' => 'Michael Shields', # typo
+'shemminger:osdl.org' => 'Stephen Hemminger',
+'shep:alum.mit.edu' => 'Tim Shepard',
+'shields:msrl.com' => 'Michael Shields',
+'shingchuang:via.com.tw' => 'Shing Chuang',
+'shmulik.hen:intel.com' => 'Shmulik Hen',
+'shoujun:masterofpi.org' => 'Timmy Yee',
+'shrybman:aei.ca' => 'Shane Shrybman',
+'shrybman:sympatico.ca' => 'Shane Shrybman',
+'shurick:sectorb.msk.ru' => 'Alexander V. Inyukhin',
+'siegfried.hildebrand:fernuni-hagen.de' => 'Siegfried Hildebrand',
+'silicon:falcon.sch.bme.hu' => 'Szilárd Pásztor', # google
+'simcha:chatka.org' => 'Jan Topinski',
+'simlo:phys.au.dk' => 'Esben Nielsen',
+'simon.derr:bull.net' => 'Simon Derr',
+'simon:instant802.com' => 'Simon Barber',
+'simon:thekelleys.org.uk' => 'Simon Kelley',
+'simonb:lipsyncpost.co.uk' => 'Simon Burley',
+'sivanich:sgi.com' => 'Dimitri Sivanich',
+'sjackman:gmail.com' => 'Shaun Jackman',
+'sjean:cookinglinux.org' => 'Samuel Jean',
+'sjhill:realitydiluted.com' => 'Steven J. Hill',
+'skewer:terra.com.br' => 'Marcelo Abreu',
+'skip.ford:verizon.net' => 'Skip Ford',
+'skolodynski:com.rmk.(none)' => 'Slawomir Kolodynski',
+'skraw:ithnet.com' => 'Stephan von Krawczynski',
+'skyrelighten:yahoo.co.kr' => 'Donggyoo Lee',
+'sl:lineo.com' => 'Stuart Lynne',
+'slansky:usa.net' => 'Petr Slansky',
+'sleddog:us.ibm.com' => 'Dave Boutcher',
+'slee:netengine1.com' => 'Soohoon Lee',
+'slpratt:austin.ibm.com' => 'Steven Pratt',
+'sluskyb:paranoiacs.org' => 'Ben Slusky',
+'sm0407:nurfuerspam.de' => 'Stefan Meyknecht',
+'smb:smbnet.de' => 'Stefan M. Brandl',
+'smurf:osdl.org' => 'Nathan Dabney',
+'smurf:play.smurf.noris.de' => 'Matthias Urlichs',
+'smurf:smurf.noris.de' => 'Matthias Urlichs',
+'snailtalk:linux-mandrake.com' => 'Geoffrey Lee', # by himself
+'sndirsch:suse.de' => 'Stefan Dirsch',
+'sneakums:zork.net' => 'Sean Neakums',
+'soete.joel:tiscali.be' => 'Joel Soete',
+'sojka:planetarium.cz' => 'Michal Sojka',
+'solar:openwall.com' => 'Solar Designer',
+'solca:guug.org' => 'Otto Solares',
+'solt2:dns.toxicfilms.tv' => 'Maciej Soltysiak',
+'solt:dns.toxicfilms.tv' => 'Maciej Soltysiak',
+'songqf9:yahoo.ca' => 'Alex Song',
+'sonic_amiga:rambler.ru' => 'Pavel Fedin',
+'sonny:burdell.org' => 'Sonny Rao',
+'soruk:eridani.co.uk' => 'Michael McConnell',
+'sparclinux:abeckmann.de' => 'Andreas Beckmann',
+'sparker:sun.com' => 'Steven Parker', # by Duncan Laurie
+'sparse:chrisli.org' => 'Christopher Li',
+'spitalnik:penguin.cz' => 'Jan Spitalnik',
+'spock:gentoo.org' => 'Michal Januszewski',
+'sprite:sprite.fr.eu.org' => 'Jeremie Koenig',
+'spse:secret.org.uk' => 'Simon Evans', # by Kristian Peters
+'spstarr:sh0n.net' => 'Shawn Starr',
+'spyro:com.rmk.(none)' => 'Ian Molton',
+'spyro:f2s.com' => 'Ian Molton',
+'src:flint.arm.linux.org.uk' => 'Russell King',
+'sreenib:lsil.com' => 'Sreenivas Bagalkote',
+'sri:us.ibm.com' => 'Sridhar Samudrala',
+'sridhar:dyn9-47-18-140.beaverton.ibm.com' => 'Sridhar Samudrala',
+'sridhar:dyn9-47-18-86.beaverton.ibm.com' => 'Sridhar Samudrala',
+'sridhar:x1-6-00-10-a4-8b-06-f6.attbi.com' => 'Sridhar Samudrala',
+'sriharivijayaraghavan:yahoo.com.au' => 'Srihari Vijayaraghavan',
+'sripathik:in.ibm.com' => 'Sripathi Kodi',
+'srk:thekelleys.org.uk' => 'Simon Kelley',
+'srompf:isg.de' => 'Stefan Rompf',
+'sryoungs:au.rmk.(none)' => 'Steve Youngs', # guessed
+'sryoungs:bigpond.net.au' => 'Steve Youngs', # GnuPG key servers
+'stanley.wang:linux.co.intel.com' => 'Stanley Wang',
+'starvik:axis.com' => 'Mikael Starvik',
+'stefan.becker:nokia.com' => 'Stefan Becker',
+'stefan.eletzhofer:eletztrick.de' => 'Stefan Eletzhofer',
+'stefan.macher:web.de' => 'Stefan Macher',
+'stefan:desire.ch' => 'Stefan Ott',
+'steiner:sgi.com' => 'Jack Steiner',
+'stekloff:w-stekloff.beaverton.ibm.com' => 'Daniel Stekloff',
+'stelian.pop:fr.alcove.com' => 'Stelian Pop',
+'stelian:popies.net' => 'Stelian Pop',
+'stephan.walter:epfl.ch' => 'Stephan Walter',
+'stephane.galles:free.fr' => 'Stephane Galles', # guessed
+'stephanm:muc.de' => 'Stephan Maciej',
+'stephen:phynp6.phy-astr.gsu.edu' => 'Stephen Leonard',
+'stern:rowland.harvard.edu' => 'Alan Stern',
+'stern:rowland.org' => 'Alan Stern', # lbdb
+'steve.cameron:hp.com' => 'Stephen Cameron',
+'steve:chygwyn.com' => 'Steven Whitehouse',
+'steve:gw.chygwyn.com' => 'Steven Whitehouse',
+'steve:kbuxd.necst.nec.co.jp' => 'Steve Baur',
+'steve:navaho.co.uk' => 'Steve Hill',
+'steved:redhat.com' => 'Steve Dickson',
+'stevef:linux-udp14619769uds.austin.ibm.com' => 'Steve French',
+'stevef:linux.local' => 'Steve French', # guessed
+'stevef:smf-t23.(none)' => 'Steve French',
+'stevef:smfhome.smfdom' => 'Steve French',
+'stevef:smfhome.smfsambadom' => 'Steve French',
+'stevef:smfhome1.austin.rr.com' => 'Steve French',
+'stevef:smfhome1.smfdom' => 'Steve French',
+'stevef:smfhome1.smfsambadom' => 'Steve French',
+'stevef:smfhome2.austin.rr.com' => 'Steve French',
+'stevef:stevef95.austin.ibm.com' => 'Steve French',
+'stevef:steveft21.austin.ibm.com' => 'Steve French',
+'stevef:steveft21.ltcsamba' => 'Steve French',
+'stevel:mvista.com' => 'Steve Longerbeam',
+'stewart:inverse.wetlogic.net' => 'Paul Stewart',
+'stewart:linux.org.au' => 'Stewart Smith',
+'stewart:wetlogic.net' => 'Paul Stewart',
+'stewartsmith:mac.com' => 'Stewart Smith',
+'stkn:gentoo.org' => 'Stefan Knoblich',
+'stoffel:lucent.com' => 'John Stoffel',
+'stone_wang:sohu.com' => 'Stone Wang',
+'strosake:us.ibm.com' => 'Michael Strosaker',
+'stsp:aknet.ru' => 'Stas Sergeev',
+'stuart_hayes:dell.com' => 'Stuart Hayes',
+'stuartm:connecttech.com' => 'Stuart MacDonald',
+'stuber:loria.fr' => 'Jürgen Stuber',
+'suckfish:ihug.co.nz' => 'Ralph Loader',
+'sud:latinsud.com' => 'Alex Grijander',
+'sugai:isl.melco.co.jp' => 'Naoto Sugai',
+'sullivan:austin.ibm.com' => 'Mike Sullivan',
+'suncobalt.adm:hostme.bitkeeper.com' => 'Tim Hockin', # by Duncan Laurie
+'sundarapandian.duraijai:intel.com' => 'Sundarapandian Durairaj',
+'sunil.saxena:intel.com' => 'Sunil Saxena',
+'suparna:in.ibm.com' => 'Suparna Bhattacharya',
+'suresh.b.siddha:intel.com' => 'Suresh B. Siddha',
+'suresh.krishnan:ericsson.ca' => 'Suresh Krishnan',
+'sv:sw.com.sg' => 'Vladimir Simonov',
+'svm:kozmix.org' => 'Sander van Malssen',
+'svrmgrl:gmx.net' => 'Rainer Kümmerle',
+'swanson:uklinux.net' => 'Alan Swanson',
+'swiergot:intersec.pl' => 'Jaroslaw Swierczynski',
+'sxking:qwest.net' => 'Steven King',
+'sylvain.meyer:worldonline.fr' => 'Sylvain Meyer',
+'syntax:pa.net' => 'Daniel E. Markle',
+'syrjala:sci.fi' => 'Ville Syrjala',
+'szepe:pinerecords.com' => 'Tomas Szepe',
+'sziwan:hell.org.pl' => 'Karol Kozimor',
+'szuk:telusplanet.net' => 'Scott Zuk',
+'t-kochi:bq.jp.nec.com' => 'Takayoshi Kochi', # not a typo
+'t-kouchi:mvf.biglobe.ne.jp' => 'Takayoshi Kouchi',
+'t:timothyparkinson.com' => 'Timothy Parkinson',
+'tab:snarc.org' => 'Vincent Hanquez',
+'tadavis:lbl.gov' => 'Thomas Davis',
+'tai:imasy.or.jp' => 'Taisuke Yamada',
+'taka:valinux.co.jp' => 'Hirokazu Takahashi',
+'takamiya:po.ntts.co.jp' => 'Noriaki Takamiya',
+'takata.hirokazu:renesas.com' => 'Hirokazu Takata',
+'takata:linux-m32r.org' => 'Hirokazu Takata',
+'takis:lumumba.luc.ac.be' => 'Panagiotis Issaris',
+'tali:admingilde.org' => 'Martin Waitz',
+'tao:acc.umu.se' => 'David Weinehall', # by himself
+'tao:kernel.org' => 'David Weinehall', # by himself
+'tapio:iptime.fi' => 'Tapio Laxström',
+'taral:taral.net' => 'Jean-Philippe Sugarbroad', # Muli Ben-Yehuda on lk
+'tausq:debian.org' => 'Randolph Chung',
+'tausq:parisc-linux.org' => 'Randolph Chung',
+'tcallawa:redhat.com' => "Tom 'spot' Callaway",
+'tchen:on-go.com' => 'Thomas Chen',
+'tduffy:sun.com' => 'Tom Duffy',
+'teanropo:cc.jyu.fi' => 'Tero Roponen',
+'tejohnson:yahoo.com' => 'Todd E. Johnson',
+'telendiz:eircom.net' => 'Telemaque Ndizihiwe',
+'temnota+kernel:kmv.ru' => 'Andrey Melnikov',
+'temnota:kmv.ru' => 'Andrey Melnikov',
+'tero_niemela:yahoo.com' => 'Tero Niemela',
+'tes:sgi.com' => 'Timothy Shimmin',
+'tetapi:utu.fi' => 'Tero Pirkkanen', # by Kristian Peters
+'tglx:de.rmk.(none)' => 'Thomas Gleixner',
+'tglx:linutronix.de' => 'Thomas Gleixner',
+'tgraf:suug.ch' => 'Thomas Graf',
+'th122948:scl1.sfbay.sun.com' => 'Tim Hockin', # by Duncan Laurie
+'th122948:scl3.sfbay.sun.com' => 'Tim Hockin', # by Duncan Laurie
+'tharbaugh:lnxi.com' => 'Thayne Harbaugh',
+'thchou:ali.com.tw' => 'T. H. Chou', # Alan Cox
+'thiel:ksan.de' => 'Florian Thiel', # lbdb
+'thockin:freakshow.cobalt.com' => 'Tim Hockin',
+'thockin:google.com' => 'Tim Hockin',
+'thockin:sun.com' => 'Tim Hockin',
+'thoffman:arnor.net' => 'Torrey Hoffman',
+'thomas.koeller:baslerweb.com' => 'Thomas Koeller',
+'thomas.schlichter:web.de' => 'Thomas Schlichter',
+'thomas.wahrenbruch:kobil.com' => 'Thomas Wahrenbruch',
+'thomas:bender.thinknerd.de' => 'Thomas Walpuski',
+'thomas:habets.pp.se' => 'Thomas Habets',
+'thomas:horsten.com' => 'Thomas Horsten',
+'thomas:osterried.de' => 'Thomas Osterried',
+'thomas:plx.com' => 'Thomas Leibold',
+'thomas:stewarts.org.uk' => 'Thomas Stewart',
+'thomas:winischhofer.net' => 'Thomas Winischhofer', # whois
+'thomr9am:ss1000.ms.mff.cuni.cz' => 'Rudo Thomas',
+'thor:math.tu-berlin.de' => 'Thomas Richter',
+'thornber:redhat.com' => 'Joe Thornber',
+'thornber:sistina.com' => 'Joe Thornber',
+'thoss:de.ibm.com' => 'Steffen Thoss',
+'thunder7:xs4all.nl' => 'Jurriaan Kalkman',
+'thunder:keepsake.ch' => 'Tonnerre Anklin',
+'thunder:ngforever.de' => 'Thunder From The Hill',
+'tigran:aivazian.name' => 'Tigran Aivazian',
+'tigran:veritas.com' => 'Tigran Aivazian',
+'tim.bird:am.sony.com' => 'Tim Bird',
+'tim.chick:conexant.com' => 'Tim Chick',
+'tim:cambrant.com' => 'Tim Cambrant', # lbdb
+'tim:physik3.uni-rostock.de' => 'Tim Schmielau',
+'tim_t_murphy:dell.com' => 'Tim T. Murphy',
+'timw:splhi.com' => 'Tim Wright',
+'tinglett:vnet.ibm.com' => 'Todd Inglett',
+'tiwai:suse.de' => 'Takashi Iwai',
+'tj:home-tj.org' => 'Tejun Heo',
+'tklauser:nuerscht.ch' => 'Tobias Klauser',
+'tkooda-patch-kernel:devsec.org' => 'Thor Kooda',
+'tlnguyen:snoqualmie.dp.intel.com' => 'Tom L. Nguyen',
+'tmattox:engr.uky.edu' => 'Tim Mattox',
+'tmcreynolds:nvidia.com' => 'Tom McReynolds',
+'tmolina:cablespeed.com' => 'Thomas Molina',
+'tmolina:cox.net' => 'Thomas Molina',
+'tnt:246tnt-laptop.lan.ayanami.246tnt.com' => 'Sylvain Munaut',
+'tnt:246tnt.com' => 'Sylvain Munaut',
+'tobias.lorenz:gmx.net' => 'Tobias Lorenz',
+'tokunaga.keiich:jp.fujitsu.com' => 'Keiichiro Tokunaga',
+'tol:stacken.kth.se' => 'Tomas Olsson',
+'tom.l.nguyen:intel.com' => 'Tom L. Nguyen',
+'tomd:csds.uidaho.edu' => 'Thomas DuBuisson',
+'tomita:cinet.co.jp' => 'Osamu Tomita',
+'toml:us.ibm.com' => 'Tom Lendacky',
+'tomlins:cam.org' => 'Ed Tomlinson',
+'tommy.christensen:tpack.net' => 'Tommy Christensen',
+'tommy:home.tig-grr.com' => 'Tom Marshall',
+'tomy.luck:intel.com' => 'Tony Luck',
+'tony.cureington:hp.com' => 'Tony Cureington',
+'tony.luck:intel.com' => 'Tony Luck',
+'tony:atomide.com' => 'Tony Lindgren',
+'tony:bakeyournoodle.com' => 'Tony Breeds',
+'tony:cantech.net.au' => 'Anthony J. Breeds-Taurima',
+'tony:com.rmk.(none)' => 'Tony Lindgren',
+'tonyb:cybernetics.com' => 'Tony Battersby',
+'toojays:toojays.net' => 'John Steele Scott',
+'torben.mathiasen:hp.com' => 'Torben Mathiasen',
+'torque:ukrpost.net' => 'Yury Umanets',
+'torsten.scherer:uni-bielefeld.de' => 'Torsten Scherer',
+'torvalds:linux.local' => 'Linus Torvalds',
+'toshihiro.kobayashi:com.rmk.(none)' => 'Toshihiro Kobayashi',
+'tpoynor:mvista.com' => 'Todd Poynor',
+'trevor.pering:intel.com' => 'Trevor Pering',
+'trimmer:infiniconsys.com' => 'Todd Rimmer',
+'trini:bill-the-cat.bloom.county' => 'Tom Rini',
+'trini:kernel.crashing.org' => 'Tom Rini',
+'trini:mvista.com' => 'Tom Rini',
+'trini:opus.bloom.county' => 'Tom Rini',
+'trini:org.rmk.(none)' => 'Tom Rini',
+'tripperda:nvidia.com' => 'Terence Ripperda',
+'tritol:trilogic.cz' => 'Lubomír Bláha',
+'trivial:rustcorp.com.au' => 'Rusty Russell',
+'trond.myklebust:fys.uio.no' => 'Trond Myklebust',
+'trond.myklebust:netapp.com' => 'Trond Myklebust',
+'trondmy:trondhjem.org' => 'Trond Myklebust',
+'tsbogend:alpha.franken.de' => 'Thomas Bogendoerfer',
+'tsk:ibakou.com' => 'Kawazoe Tomonori',
+'tspat:de.ibm.com' => 'Thomas Spatzier',
+'ttodorov:web.de' => 'Todor Todorov',
+'tuncer.ayaz:gmx.de' => 'Tuncer M. Zayamut Ayaz', # lbdb
+'tv:debian.org' => 'Tommi Virtanen',
+'tv:lio96.de' => 'Thomas Voegtle',
+'tv:tv.debian.net' => 'Tommi Virtanen',
+'tvignaud:mandrakesoft.com' => 'Thierry Vignaud',
+'tvrtko.ursulin:sophos.com' => 'Tvrtko A. Ursulin',
+'tvrtko:net4u.hr' => 'Tvrtko A. Ursulin',
+'twaugh:redhat.com' => 'Tim Waugh',
+'twogood:users.sourceforge.net' => 'David Eriksson',
+'typhoon.adm:hostme.bitkeeper.com' => 'Dave Dillow', # himself on lk
+'tytso:mit.edu' => "Theodore Y. Ts'o", # web.mit.edu/tytso/www/home.html
+'tytso:snap.thunk.org' => "Theodore Y. Ts'o",
+'tytso:think.thunk.org' => "Theodore Y. Ts'o", # guessed
+'tytso:thunk.org' => "Theodore Ts'o",
+'tzachar:cs.bgu.ac.il' => 'Nir Tzachar',
+'u233:shaw.ca' => 'Trent Whaley',
+'uaca:alumni.uv.es' => 'Ulisses Alonso Camaró',
+'umka:namesys.com' => 'Yury Umanets',
+'ungod:developers.dk' => 'Peter Christensen',
+'urban.widmark:enlight.net' => 'Urban Widmark',
+'urban:teststation.com' => 'Urban Widmark',
+'uros:kss-loka.si' => 'Uros Bizjak',
+'util:deuroconsult.ro' => 'Catalin Boie',
+'utz.bacher:de.ibm.com' => 'Utz Bacher',
+'uwe.bugla:gmx.de' => 'Uwe Bugla',
+'uwe.koziolek:gmx.net' => 'Uwe Koziolek',
+'uweigand:de.ibm.com' => 'Ulrich Weigand',
+'uzi:uzix.org' => 'Joshua Uziel',
+'vadim:cs.washington.edu' => 'Vadim Lobanov',
+'valdis.kletnieks:vt.edu' => 'Valdis Kletnieks',
+'valko:linux.karinthy.hu' => 'Laszlo Valko',
+'vandrove:cz.rmk.(none)' => 'Petr Vandrovec',
+'vandrove:vc.cvut.cz' => 'Petr Vandrovec',
+'vanl:megsinet.net' => 'Martin H. VanLeeuwen',
+'varenet:parisc-linux.org' => 'Thibaut Varene',
+'vatsa:in.ibm.com' => 'Srivatsa Vaddagiri',
+'vberon:mecano.gme.usherb.ca' => 'Vincent Béron',
+'vda:port.imtp.ilyichevsk.odessa.ua' => 'Denis Vlasenko',
+'vegarwa:online.no' => 'Vegard Wærp',
+'venkatesh.pallipadi:intel.com' => 'Venkatesh Pallipadi',
+'venza:brownhat.org' => 'Daniele Venzano', # by request
+'vernux:us.ibm.com' => 'Vernon Mauery',
+'vesely:gjh.sk' => 'Jozef Vesely',
+'vesselin:alphawave.com.au' => 'Vesselin Kostadiov',
+'vfort:provident-solutions.com' => 'Vernon A. Fort',
+'vgoyal:in.ibm.com' => 'Vivek Goyal',
+'vherva:niksula.hut.fi' => 'Ville Herva',
+'vinay-rc:naturesoft.net' => 'Vinay K. Nallamothu',
+'vinay.nallamothu:gsecone.com' => 'Vinay K. Nallamothu',
+'vince:arm.linux.org.uk' => 'Vincent Sanders',
+'vince:kyllikki.org' => 'Vincent Sanders',
+'vinsci:floss.(none)' => 'Leonard Norrgard',
+'viro:math.psu.edu' => 'Alexander Viro',
+'viro:parcelfarce.linux.org.uk' => 'Alexander Viro',
+'viro:parcelfarce.linux.theplanet.co.uk' => 'Alexander Viro',
+'viro:www.linux.org.uk' => 'Alexander Viro',
+'vladimir.grouzdev:jaluna.com' => 'Vladimir Grouzdev',
+'vladislav.yasevich:hp.com' => 'Vladislav Yasevich',
+'vlobanov:speakeasy.net' => 'Vadim Lobanov',
+'vmlinuz386:yahoo.com.ar' => 'Gerardo Exequiel Pozzi', # lbdb
+'vnourval:tcs.hut.fi' => 'Ville Nuorvala',		# Can't spell his own login?
+'vnuorval:tcs.hut.fi' => 'Ville Nuorvala',
+'vojta:math.berkeley.edu' => 'Paul Vojta',
+'vojtech:kernel.bkbits.net' => 'Vojtech Pavlik',
+'vojtech:silver.ucw.cz' => 'Vojtech Pavlik',
+'vojtech:suse.cz' => 'Vojtech Pavlik',
+'vojtech:twilight.ucw.cz' => 'Vojtech Pavlik',
+'vojtech:ucw.cz' => 'Vojtech Pavlik', # added by himself
+'vrajesh:eecs.umich.edu' => 'Rajesh Venkatasubramanian',
+'vrajesh:umich.edu' => 'Rajesh Venkatasubramanian',
+'vs:namesys.com' => 'Vladimir Saveliev',
+'vs:tribesman.namesys.com' => 'Vladimir Saveliev',
+'vsu:altlinux.ru' => 'Sergey Vlasov',
+'vvs:sw.ru' => 'Vasily Averin',
+'wa:almesberger.net' => 'Werner Almesberger',
+'wahrenbruch:kobil.de' => 'Thomas Wahrenbruch',
+'waltabbyh:comcast.net' => 'Walt Holman',
+'walter.harms:informatik.uni-oldenburg.de' => 'Walter Harms',
+'wang:ai.mit.edu' => 'Edward Wang',
+'wangzhongjun:ccoss.com.cn' => 'Wang Zhongjun',
+'warlord:mit.edu' => 'Derek Atkins',
+'warp:mercury.d2dc.net' => 'Zephaniah E. Hull',
+'wayne:stallion.oz.au' => 'Wayne Piekarski',
+'wcohen:redhat.com' => 'Will Cohen',
+'wd:denx.de' => 'Wolfgang Denk',
+'webvenza:libero.it' => 'Daniele Venzano',
+'weeve:gentoo.org' => 'Jason Wever',
+'wei_ni:ali.com.tw' => 'Wei Ni',			# Guessed
+'weicht:in.tum.de' => 'Thomas Weich',
+'weigand:immd1.informatik.uni-erlangen.de' => 'Ulrich Weigand',
+'weihs:linux1394.org' => 'Manfred Weihs',
+'wein:de.ibm.com' => 'Stefan Weinhuber',
+'wellnhofer:aevum.de' => 'Nick Wellnhofer',
+'wensong:linux-vs.org' => 'Wensong Zhang',
+'wenxiong:us.ibm.com' => 'Wen Xiong',
+'werner:almesberger.net' => 'Werner Almesberger',
+'wes:infosink.com' => 'Wes Schreiner',
+'wesolows:foobazco.org' => 'Keith M. Wesolowski',
+'wessmith:sgi.com' => 'Wesley Smith',
+'wfg:mail.ustc.edu.cn' => 'Fengguang Wu',
+'wg:malloc.de' => 'Wolfram Gloger', # lbdb
+'wharms:bfs.de' => 'Walter Harms',
+'whitney:math.berkeley.edu' => 'Wayne Whitney',
+'whydoubt:yahoo.com' => 'Jeff Smith',
+'wiget:pld-linux.org' => 'Artur Frysiak',
+'will:sowerbutts.com' => 'William R. Sowerbutts',
+'will_dyson:pobox.com' => 'Will Dyson',
+'willschm:us.ibm.com' => 'Will Schmidt',
+'willy:debian.org' => 'Matthew Wilcox',
+'willy:fc.hp.com' => 'Matthew Wilcox',
+'willy:org.rmk' => 'Matthew Wilcox',
+'willy:org.rmk.(none)' => 'Matthew Wilcox',
+'willy:parisc-linux.org' => 'Matthew Wilcox',
+'willy:w.ods.org' => 'Willy Tarreau',
+'wilsonc:abocom.com.tw' => 'Wilson Chen', # google
+'wim:iguana.be' => 'Wim Van Sebroeck',
+'wli:holomorphy.com' => 'William Lee Irwin III',
+'wodecki:gmx.de' => 'Wiktor Wodecki',
+'wolfgang.fritz:gmx.net' => 'Wolfgang Fritz', # by Kristian Peters
+'wolfgang:iksw-muees.de' => 'Wolfgang Muees',
+'wolfgang:top.mynetix.de' => 'Wolfgang Mauerer',
+'woody:org.rmk.(none)' => 'Woody Suwalski',
+'wouter-kernel:fort-knox.rave.org' => 'Wouter Van Hemel',
+'wriede:riede.org' => 'Willem Riede',
+'wrlk:riede.org' => 'Willem Riede',
+'wstinson:infonie.fr' => 'William Stinson',
+'wstinson:wanadoo.fr' => 'William Stinson',
+'wtogami:redhat.com' => 'Warren Togami',
+'xavier.bestel:free.fr' => 'Xavier Bestel',
+'xavier.bru:bull.net' => 'Xavier Bru',
+'xkaspa06:stud.fee.vutbr.cz' => 'Tomas Kasparek',
+'xma:us.ibm.com' => 'Shirley Ma',
+'xose.vazquez:gmail.com' => 'Xose Vazquez Perez', # per request
+'xose:wanadoo.es' => 'Xose Vazquez Perez', # lbdb
+'xschmi00:stud.feec.vutbr.cz' => 'Michal Schmidt',
+'y.rutschle:com.rmk.(none)' => 'Yves Rutschle',
+'y.rutschle:indigovision.com' => 'Yves Rutschle',
+'ya:slamail.org' => 'Yaacov Akiba Slama',
+'yanmin.zhang:intel.com' => 'Yanmin Zhang',
+'yasuyuki.kozakai:toshiba.co.jp' => 'Yasuyuki Kozakai',
+'yekkim:pacbell.net' => 'Mickey Stein',
+'yi.zhu:intel.com' => 'Yi Zhu',
+'yinah:couragetech.com.cn' => 'Yin Aihua',
+'yoav.zach:intel.com' => 'Yoav Zach',
+'yoav_zach:yahoo.com' => 'Yoav Zach',
+'yokota:netlab.is.tsukuba.ac.jp' => 'Yokota Hiroshi',
+'yoshfuji:linux-ipv6.o0rg' => 'Hideaki Yoshifuji',
+'yoshfuji:linux-ipv6.org' => 'Hideaki Yoshifuji', # lbdb
+'yoshfuji:nuts.ninka.net' => 'Hideaki Yoshifuji',
+'ysato:users.sourceforge.jp' => 'Yoshinori Sato', # lbdb
+'ysauyuki.kozakai:toshiba.co.jp' => 'Yasuyuki Kozakai', # typo
+'yuasa:hh.iij4u.or.jp' => 'Yoichi Yuasa',
+'yuri:acronis.com' => 'Yuri Per', # lbdb
+'yust:anti-leasure.ru' => 'Alex Yustasov',
+'yuvalt:gmail.com' => 'Yuval Turgeman',
+'zach.brown:oracle.com' => 'Zach Brown',
+'zach:vmware.com' => 'Zachary Amsden',
+'zaitcev:redhat.com' => 'Pete Zaitcev',
+'zaitcev:yahoo.com' => 'Pete Zaitcev',
+'zap:homelink.ru' => 'Andrew Zabolotny',
+'zap:ru.rmk.(none)' => 'Andrew Zabolotny',
+'zdzichu:irc.pl' => 'Tomasz Torcz',
+'zecke:flint.arm.linux.org.uk' => 'Holger Freyther',
+'zecke:org.rmk.(none)' => 'Holger Freyther',
+'zeevon:debian.org' => 'Warren A. Layton',
+'zhenyu.z.wang:intel.com' => 'Zhenyu Z. Wang',
+'zinx:epicsol.org' => 'Zinx Verituse',
+'zippel:linux-m68k.org' => 'Roman Zippel',
+'zli4:cs.uiuc.edu' => 'Zhenmin Li',
+'zubarev:us.ibm.com' => 'Irene Zubarev', # google
+'zupae234:yahoo.co.jp' => 'Naoki Shibata',
+'zw:superlucidity.net' => 'Zach Welch',
+'zwane:arm.linux.org.uk' => 'Zwane Mwaikambo',
+'zwane:commfireservices.com' => 'Zwane Mwaikambo',
+'zwane:fsmlabs.com' => 'Zwane Mwaikambo',
+'zwane:holomorphy.com' => 'Zwane Mwaikambo',
+'zwane:linux.realnet.co.sz' => 'Zwane Mwaikambo',
+'zwane:linuxpower.ca' => 'Zwane Mwaikambo',
+'zwane:mwaikambo.name' => 'Zwane Mwaikambo',
+'zzz:anda.ru' => 'Denis Zaitsev',
+'~~~~~~thisentrylast:forconvenience~~~~~' => 'Cesar Brutus Anonymous'
+);
+
+sub doprint(\%@ ); # forward declaration
+
+my $myname;
+my %address_unknown;
+my %address_found_in_from;
+
+# get name associated with an "email address" formatted
+# BK_USER,BK_HOST tuple
+sub rmap_address($$) {
+    my $in = shift;
+    my $markunknown = shift;
+
+    confess "empty string passed to rmap_address" unless $in;
+    my $key = lc $in;
+    # try hash lookup first, return result if any
+    if (defined $addresses{obfuscate $key}) {
+	return $addresses{obfuscate $key};
+    }
+    # try matching against all regexps in listed order
+    # return result if any
+    foreach my $ar (@addrregexps) {
+	if ($in =~ m/^$ar->[0]$/) {
+	    return $ar->[1];
+	}
+    }
+    # when the address is unknown, return the unchanged input
+    # and mark the address as unknown (so it can be printed in --warn
+    # mode).
+    if ($markunknown) {
+	$address_unknown{$key} = 1;
+    }
+    return $in;
+}
+
+# case insensitive string comparison
+# FIXME: use locale?
+sub caseicmp { uc($a) cmp uc($b) };
+
+# case insensitive string comparison by surname
+# Strings are of the form
+# "Firstname Surname <mailaddress>"
+# or
+# "<mailaddress>"
+sub caseicmpbysurname {
+  my $alast = "";
+  my $blast = "";
+  if ($a =~ m/(\S+)\s*(\(.*\))?(\s\<|$)/) { $alast = $1; }
+  if ($b =~ m/(\S+)\s*(\(.*\))?(\s\<|$)/) { $blast = $1; }
+  return uc($alast . $a) cmp uc($blast . $b);
+}
+
+my ($author, $address, $name);
+# * $address is always an email address
+# * $author can be the email address or Joe N. Sixpack II <joe6@example.com>
+#   (ready formatted to print)
+# * $name is the name (Joe N. Sixpack II) or the mail address
+#   (<joe6@example.com>)
+
+sub get_name()   { return $name; }
+sub get_author() { return $author; }
+
+# This table maps MODE => { myhash }
+# myhash knows the keys "index" and "print" to choose the respective functions
+my %table =
+  (
+   'oneline' => { 'index' => \&get_name,
+		  'print' => \&print_oneline,
+		  'parse' => \&parse_file },
+   'terse'   => { 'index' => \&get_name,
+		  'print' => \&print_terse,
+		  'parse' => \&parse_file },
+   'grouped' => { 'index' => \&get_author,
+		  'print' => \&print_grouped,
+		  'parse' => \&parse_file },
+   'full'    => { 'index' => \&get_author,
+		  'print' => \&print_full,
+		  'parse' => \&parse_file },
+   'fixup'   => { 'index' => sub { },
+		  'print' => sub { },
+		  'parse' => \&fixup_file },
+   'resolve' => { 'index' => sub { },
+		  'print' => sub { },
+		  'parse' => \&resolve }
+  );
+
+# temp store
+my $indexby;
+
+# The sort function we will use
+my $namesortfunc;
+
+# Global store #############
+# We store our options here.
+my %opt;
+
+# As we are parsing, the log is accumulated in the @cur array.  When
+# we are done with one item (end of input or new mail address found),
+# stuff a copy of this @cur array into the %log hash.
+sub append_item(\%@)
+# arguments: reference to hash
+#            array to push
+{
+  my $log = shift;
+  my @cur = @_;
+  my $re = qr'((http|bk|ssh)://.*|[-a-zA-Z0-9.@()]+:\S+)';
+  return unless @cur;
+  return unless &$indexby;
+  return if $opt{ignoremerge} and $cur[0] =~ m/Merge $re into $re/;
+  return if $opt{ignoremerge} and $cur[0] =~ m/^Merge$/;
+  $log->{&$indexby} = () unless defined $log->{&$indexby};
+
+  # strip trailing blank lines
+  my $t;
+  do {
+      $t = pop(@cur);
+  } while (defined $t and $t eq '');
+  push @cur, $t;
+
+  # store the array
+  push @{$log->{&$indexby}}, [@cur];
+}
+
+# Remove duplicates from hash, without changing the order.
+# Prefix duplicates with the count.
+sub countdups(@) {
+  my %t;
+  croak "do not call removedups() in scalar context" unless wantarray;
+  my @u = grep (!$t{lc $_}++, @_);
+  return map {
+    $t{lc $_} > 1 ? sprintf("%d x ", $t{lc $_}) . $_ : $_;
+  } @u;
+}
+
+# Remove duplicates from array, without changing the order. The
+# duplicates need not follow each other, so A B A is properly
+# stripped down to A B
+sub removedups(@) {
+  my %t;
+  croak "do not call removedups() in scalar context" unless wantarray;
+  return grep (!$t{lc $_}++, @_);
+}
+
+# Compress the hash passed in, depending on the --compress and --count
+# options in the %opt hash.
+sub compress(@) {
+  croak "do not call compress() in scalar context" unless wantarray;
+  if ($opt{compress}) {
+    if ($opt{count}) {
+      return countdups(@_);
+    } else {
+      return removedups(@_);
+    }
+  } else {
+    return @_;
+  }
+}
+
+# report write error, exit
+# do not return
+sub write_error() {
+  croak "Write error: $!\nAborting";
+  exit (1);
+}
+
+# implementation of "grouped" output:
+# author:
+#   first line of log1
+#   first line of log2
+sub print_grouped(\%) {
+  my $log = shift;
+  for (sort $namesortfunc keys %$log) {
+    my @lines = compress(map { $_->[0] . "\n"; } @{$log->{$_}});
+    if ($opt{width}) {
+      @lines = map { expand(wrap($indent1, $indent, ($_))); } @lines;
+    } else {
+      @lines = map { "$indent1$_" } @lines;
+    }
+    printtag($_) or write_error();
+    print join("", @lines), "\n" or write_error();
+  }
+}
+
+# implementation of "full" output
+# author:
+#   o log1
+#     more information on changeset1
+#   o log2
+#     more information on changeset2
+sub print_full(\%) {
+  my $log = shift;
+  for (sort $namesortfunc keys %$log) {
+    printtag($_) or write_error();
+    foreach (compress(@{$log->{$_}})) {
+      my @lines = map { s/^\t//; "$_\n"; } @$_;
+      if ($opt{width}) {
+	@lines = expand(wrap($indent1, $indent, @lines));
+      } else {
+	@lines = map { "$indent$_"; } @lines;
+	substr($lines[0], $[, length($indent1)) = $indent1;
+      }
+      print join("", @lines), "\n"  or write_error();
+    }
+  }
+  print "\n"  or write_error();
+}
+
+# implementation of "terse" output
+# with --swap          without --swap
+# author1: log1        log1    (author1)
+# author1: log2        log2    (author2)
+# author2: log3        log3    (author3)
+sub print_terse(\%) {
+  my $log = shift;
+  for (sort $namesortfunc keys %$log) {
+    my $a = $_;
+    if ($opt{width}) {
+      if ($opt{swap}) {
+	foreach (compress(map { $_->[0]; } @{$log->{$_}})) {
+	  my @lines = expand(wrap($indent1, $indent, ("$a: $_")));
+	  print join("\n", @lines), "\n"  or write_error();
+	}
+      } else {
+	# width, but not swap set
+	foreach (compress(map { $_->[0]; } @{$log->{$_}})) {
+	  my @addr = expand(split(/\n/, wrap('', $indent, " ($a)")));
+	  my @lines = expand(split(/\n/, wrap($indent1, $indent, ($_))));
+
+	  if (length($lines[$#lines]) + length($addr[0]) > $opt{width}) {
+	    push @lines, '';
+	  }
+	  $lines[$#lines] .= sprintf("%*s", $opt{width}
+				     - length($lines[$#lines]), $addr[0]);
+	  shift @addr;
+	  print join("\n", @lines), "\n"  or write_error();
+	  foreach (@addr) {
+	    printf "%*s\n", $opt{width}, $_  or write_error();
+	  }
+	}
+      }
+    } else {
+      # using the ?: operator within the map is more maintainable, but
+      # less efficient.
+      if ($opt{swap}) {
+	print join("\n", map { "$indent1$a: $_" }
+		   compress(map { $_->[0]; } @{$log->{$_}})), "\n"
+		     or write_error();
+      } else {
+	print join("\n", map { "$indent1$_ ($a)" }
+		   compress(map { $_->[0]; } @{$log->{$_}})), "\n"
+		     or write_error();
+      }
+    }
+  }
+}
+
+# implementation of "oneline" output
+# which is similar to terse but reformats to one line exactly
+# with --swap          without --swap
+# author1: log1        log1    (author1)
+# author1: log2        log2    (author2)
+# author2: log3        log3    (author3)
+sub print_oneline(\%) {
+  my $log = shift;
+  for (sort $namesortfunc keys %$log) {
+    my $a = $_;
+    if ($opt{width}) {
+      if ($opt{swap}) {
+	foreach (compress(map { $_->[0]; } @{$log->{$_}})) {
+	  my $str = "$a: $_";
+	  if (length($str) > $opt{width}) {
+	    printf "%-.*s...\n", $opt{width}-3, $indent1 . "$a: $_"
+	      or write_error();
+	  } else {
+	    printf "%-.*s\n", $opt{width}, $indent1 . "$a: $_"
+	      or write_error();
+	  }
+	}
+      } else { # not swapping
+	foreach (compress(map { $_->[0]; } @{$log->{$_}})) {
+	  my $l = $opt{width} - length($indent1) - length($a) - 3;
+	  if (length($_) > $l) {
+	    $l -= 3;
+	    printf "%s%-*.*s... (%s)\n", $indent1, $l, $l, $_, $a;
+	  } else {
+	    printf "%s%-*.*s (%s)\n", $indent1, $l, $l, $_, $a;
+	  }
+	}
+      }
+    } else {
+      # not $opt{width} -> same as print_terse
+      print_terse(%$log);
+    }
+  }
+}
+
+# Abbreviate all components of the name except the last.  If capital
+# Roman numerals form the last component, leave that and the previous
+# component alone.
+sub abbreviate_name($ ) {
+  return () unless (@_  and $_[0]);
+  my @a = split /\s+/, $_[0];
+
+  # dito for comments
+
+  for (my $i = 0; $i < $#a; $i++) {
+    # treat Roman numerals as last part of name
+    last if ($a[$i] =~ /^[IVXLCMD]+$/);
+    # do not abbreviate comments
+    last if ($a[$i+1] =~ /^\(/);
+    $a[$i] =~ s/^(.).*/$1./;
+  }
+  return join(" ", @a);
+}
+
+sub fixup_file(\%$$ ) {
+# arguments: %log hash
+#            file name
+#            file handle (IO::Handle or IO::File)
+  croak unless wantarray;
+  my $log = shift;
+  my $fn = shift;
+  my $fh = shift;
+  my $nre = '\S+[:@]\S+';
+
+  while($_ = $fh -> getline) {
+    chomp;
+    # grouped/full mode
+    if (/^<($nre)>:?$/) {
+      my $a = $1;
+      if ($a =~ /:/) { $a = unveil($a); }
+      my $name = rmap_address($a, 1);
+      if ($name ne $a) { # found name
+	print "$name:\n";
+      } else {
+	print "$_\n";
+      }
+      next;
+    }
+    # oneline/terse mode, unswapped
+    if (/\s+\(($nre)\)$/) {
+      my $a = $1;
+      if ($a =~ /:/) { $a = unveil($a); }
+      my $name = rmap_address($a, 1);
+      if ($name ne $a) { # found name
+	s/\($nre\)$/$name/;
+      }
+      print "$_\n";
+      next;
+    }
+    # oneline/terse mode, swapped
+    if (/^$indent1($nre): /) {
+      my $a = $1;
+      if ($a =~ /:/) { $a = unveil($a); }
+      my $name = rmap_address($a, 1);
+      if ($name ne $a) { # found name
+	s/^$indent1$nre:/$indent1$name:/;
+      }
+      print "$_\n";
+      next;
+    }
+    print "$_\n";
+  }
+  return ();
+}
+
+sub resolve(\%$$ ) {
+# arguments: %log hash
+#            file name
+#            file handle (IO::Handle or IO::File)
+  croak unless wantarray;
+  my $log = shift;
+  my $fn = shift;
+  my $fh = shift;
+  # assume the TLD is all-alphabetic for now.
+  my $mre = '[a-zA-Z0-9.-]+\@[a-zA-Z0-9.()-]+\.[a-zA-Z]+';
+
+  while ($_ = $fh -> getline) {
+      chomp;
+      if (/($mre)/) {
+	  my $r = rmap_address($1, 1);
+	  s/$mre/$r/;
+      }
+      print "$_\n";
+  }
+
+  return ();
+}
+
+sub treat_addr_name(\$\$) {
+    my ($address, $name) = @_;
+    my $havename = $$name ne $$address;
+    my $author;
+
+    if ($opt{'obfuscate'}) {
+	$$address = obfuscate $$address;
+    }
+
+    if ($havename) {
+	# Last, First (optional comment)
+	# -> First Last (optional comment)
+	if ($$name =~ /^([^,]+),\s*([^(\s]*)\s*(\(.*\))?/) {
+	    $$name = "$2 $1";
+	    if (defined $3) { $$name .= " " . $3; }
+	}
+	# LAST First (optional comment)
+	# -> First Last (optional comment)
+	if ($$name =~ /^([A-Z]+)\s+([^(\s]*)\s*(\(.*\))?/) {
+	    my ($u, $f) = ($2, $1);
+	    my ($ul) = lc $2;
+	    $ul =~ s/^.//;
+	    $$name = sprintf "%-.1s%s %s", $u, $ul, $f;
+	    if (defined $3) { $$name .= " " . $3; }
+	}
+	if ($opt{'abbreviate-names'}) {
+	    $$name = abbreviate_name($$name);
+	}
+	if ($opt{'omitaddresses'}) {
+	    $author = $$name;
+	} else {
+	    $author = $$name . ' <' . $$address . '>';
+	}
+    } else { # $havename
+	# must obfuscate name since it contains an address still
+	if ($opt{obfuscate}) {
+	    $$name = obfuscate $$name;
+	}
+	$author = '<' . $$address . '>';
+    }
+    return $author;
+}
+
+# Treat address
+# INPUT: Tuple of Name, Address scalars
+# OUTPUT: Tuple of Name, Address, Author scalars in an array
+sub treat_address($$) {
+    my $n = shift;
+    my $a = lc shift;
+    my $au;
+    my $tmp;
+
+    if (($tmp = rmap_address($a, 0)) eq $a) {
+	if ($n =~ /\s+/) {
+	    # not found, but only add if two words or more in name.
+	    $address_found_in_from{$a} = sprintf "'%s' => '%s',",
+	    obfuscate $a, $n; # FIXME: has this any effect?
+	}
+    } else {
+	$n = $tmp;
+    }
+    $au = treat_addr_name($a, $n);
+    return ($n, $a, $au);
+}
+
+# Read a file and parse it into the %log hash.
+sub parse_file(\%$$ ) {
+# arguments: %log hash
+#            file name
+#            file handle (IO::Handle or IO::File)
+  croak unless wantarray;
+  my $log = shift;
+  my $fn = shift;
+  my $fh = shift;
+  my @prolog;
+  local $_;
+
+  # initialize
+  my @cur = ();
+  my $first = 0;
+  my $firstpar = 0;
+  my $namepref = 1; # where address is from
+  # 1 - BK; 0 - Signed-off-by; 2 - From
+  undef $address;
+
+  ###############################################################
+  # Linus' intended logic is:
+  # - preference is given to From: (namepref 2)
+  # - lacking From:, use the first Signed-off-by: we encounter
+  #   (namepref 1) (BUT this really doesn't work too well)
+  # - lacking that information, use BK user info (namepref 0)
+  ###############################################################
+
+  # now go!
+
+  # NOTE: the first @cur item can consist of multiple lines in the
+  # source file which are joined together. This happens when the first
+  # paragraph is longer than a single line.
+  while($_ = $fh -> getline) {
+    chomp;
+    s/^  (\S)/\t$1/;
+    # expand all tabs but the first
+    $_ = expand($_);
+    s/^        /\t/;
+      if ($debug) {
+	  print "line: $_\n";
+      }
+
+    if (defined $address and $opt{multi}
+	and m{^[^<[:space:]]} and not m{^commit }) {
+      # if we are in multi mode, if we encounter a non-address
+      # left-justified line, flush all data and print the header. The
+      # 'defined $address' trick lets this only trigger to switch back
+      # from "log entry" to "prolog" mode
+      append_item(%$log, @cur); @cur = ();
+      doprint(%$log, @prolog);
+      print "\n" or write_error(); # print blank line between changelogs
+      @prolog = ($_);
+      undef %$log;
+      undef $address;
+    } elsif (m{^<([^>]+)>} or m{^Author: (.*) <(.*)>}) {
+      # go figure if a line starts with an address, if so, take it
+      # resolve the address to a name if possible
+      append_item(%$log, @cur); @cur = ();
+      $address = lc($2);
+      $address =~ s/\[[^]]+\]$//;
+      $name = rmap_address($address, 1);
+      $name = $1 if ($name eq $address);
+      $author = treat_addr_name($address, $name);
+      $first = 1;
+      $firstpar = 1;
+      print STDERR " BK-CHANGESET $author\n" if $debug;
+      $namepref = 1;
+    } elsif (/^\s+From:?\s*"?([^"]*)"?\s+\<(.*)\>\s*$/) {
+      my @nameauthor = treat_address($1, $2);
+      if ($namepref < 2) {
+	  ($name, $address, $author) = @nameauthor;
+	  $namepref = 2;
+	  print STDERR " FROM  $author\n" if $debug;
+      } else {
+	  print STDERR " SKIPPED FROM  $author\n" if $debug;
+      }
+    } elsif (/^\s+Signed[- _]off[- _]by:\s*"?([^"]*)"?\s+\<(.*)\>\s*$/i) {
+      my @nameauthor = treat_address($1, $2);
+      if ($namepref < 0) {
+	  ($name, $address, $author) = @nameauthor;
+	  $namepref = 0;
+	  print STDERR " SIGNED-OFF-BY  $author\n" if $debug;
+      } else {
+	  print STDERR " SKIPPED SIGNED-OFF-BY  $author\n" if $debug;
+      }
+    } elsif ($first && m/^Date:   /) {
+	    print STDERR "date...\n" if $debug;
+    } elsif ($first && m/^    $/) {
+	    print STDERR "blank line...\n" if $debug;
+    } elsif ($first && m/^(?:[[:space:]]{4}|\t)(.*)$/) {
+      # we have a "first" line after an address, take it,
+      # strip common redundant tags
+
+      # kill "PATCH" tag
+      s/^\s*\[PATCH\]//;
+      s/^\s*PATCH//;
+      s/^\s*[-:]+\s*//;
+
+      # strip trailing colon or period, and if we strip one,
+      # we don't parse further lines as part of the first paragraph
+      if (s/[:.]+\s*$//) { $firstpar = 0; }
+
+      # kill leading and trailing whitespace for consistent indentation
+      s/^\s+//; s/\s+$//;
+
+      push @cur, $_;
+      $first = 0;
+
+#    } elsif (defined $address) {
+    } elsif (defined $address && m/^(?:[[:space:]]{4}|\t)(.*)$/ ) {
+      # second or subsequent lines -- if in first paragraph,
+      # append this line to the first log line.
+      if (m/^\s*$/) { $firstpar = 0; }
+      elsif (m/^\s*[-*o\#]/) { $firstpar = 0; }
+#      if ($firstpar) {
+#	s/^\s*/ /;
+#	$cur[0] .= $_;
+#      } else {
+#	push @cur, $_;
+#      }
+      # we don't parse further lines as part of the first paragraph
+      if (s/[:.]+\s*$//) { $firstpar = 0; }
+
+    } elsif (m/^(commit|tree|parent|committer) / || m/^\s*$/) {
+      # Skip unused header lines
+
+    } else {
+      # store header before a changelog
+      push @prolog, $_;
+    }
+  } # while more lines in file
+
+  if ($fh -> error) {
+    die "Error while reading from \"$fn\": $!";
+  }
+
+  # at file end, flush @cur array to %log.
+  append_item(%$log, @cur);
+
+  return @prolog;
+}
+
+# print a word-wrapped name or mail address, followed by a trailing colon.
+# used by print_grouped and print_full
+# passes the return value of print back up
+sub printtag($ ) {
+  my $a = shift;
+  $a .= ':';
+  return print $opt{width} ? expand(wrap("", "", ($a))) : $a, "\n";
+}
+
+sub selftest() {
+    my $rc = 0;
+    foreach my $i (keys %addresses) {
+	if ($i eq unveil $i) {
+	    print STDERR "Warning: address '$i' is not obfuscated!\n";
+	}
+    }
+    foreach my $address (unveil keys %addresses) {
+	foreach my $ar (@addrregexps) {
+	    if ($address =~ m/^$ar->[0]$/) {
+		print STDERR "Warning: address '$address'\n";
+		print STDERR "  shadows regexp '$ar->[0]'\n";
+		$rc = 1;
+	    }
+	}
+    }
+    return $rc;
+}
+
+# === MAIN PROGRAM ===============================================
+# Command line arguments
+# What options do we support?
+my @opts = ("help|?|h", "man", "mode=s", "compress!", "count!", "width:i",
+	    "swap!", "merge!", "warn!", "multi!", "abbreviate-names!",
+	    "by-surname!", "selftest", "ignoremerge!", "omitaddresses!",
+	    "obfuscate!", "warnverbose!");
+#	    "bitkeeper|bk!");
+
+# How do we parse them?
+if ($Getopt::Long::VERSION gt '2.24') {
+  Getopt::Long::Configure("gnu_getopt");
+}
+
+# set default options
+$opt{mode} = 'grouped';
+$opt{warn} = 1;
+$opt{omitaddresses} = 1;
+$opt{obfuscate} = 1;
+
+# set up proper environment
+$ENV{PATH} = '/bin:/usr/bin:/usr/local/bin';
+$0 =~ tr|-a-zA-Z0-9_./||cd;
+# untaint $0
+$0 =~ m/(.*)/;
+$0 = $1;
+# get a path-stripped version of $0 in $myname
+$0 =~ m/^(.*\/)?([^\/]+)$/;
+$myname = $2;
+$myname =~ tr/a-zA-Z0-9_.-//cd;
+
+# Parse from environment, temporarily storing the original @ARGV.
+if (defined $ENV{LINUXKERNEL_BK_FMT}) {
+  my @savedargs = @ARGV;
+  @ARGV = parse_line('\s+', 0, $ENV{LINUXKERNEL_BK_FMT});
+  GetOptions(\%opt, @opts)
+    or pod2usage(-verbose => 0,
+		 -message => $myname . ': error in $LINUXKERNEL_BK_FMT');
+  push @ARGV, @savedargs;
+}
+
+# Parse command line. Handle help, check for errors.
+GetOptions(\%opt, @opts) or pod2usage(-verbose => 0);
+pod2usage(-verbose => 1) if $opt{help};
+pod2usage(-verbose => 2) if $opt{man};
+pod2usage(-verbose => 0,
+	  -message => ("$myname: Unknown mode specified.\nValid modes are:\n    "
+		       . join(" ", sort keys %table) . "\n"))
+  unless defined $table{$opt{mode}};
+pod2usage(-verbose => 0,
+	  -message => "$myname: No files given, refusing to read from a TTY.")
+  if (not $opt{selftest} and not $opt{bitkeeper}
+	  and (@ARGV == 0) and (-t STDIN));
+pod2usage(-verbose => 0,
+	  -message => "$myname: Must have one or two arguments in --bitkeeper mode.")
+  if ($opt{bitkeeper} && (@ARGV < 1 || @ARGV > 2));
+pod2usage(-verbose => 0,
+	  -message => "$myname: You cannot use --merge and --multi at the same time.")
+  if ($opt{merge} and $opt{multi});
+
+# Shortcut for programmer convenience :-)
+$indexby = $table{$opt{mode}}->{'index'};
+
+# --count implies --compress
+if ($opt{count}) { $opt{compress} = 1; }
+
+# --ignoremerge is deprecated
+if ($opt{ignoremerge}) {
+    print STDERR "--ignoremerge is deprecated. Replacement:\n"
+    . 'bk changes -d\'$unless(:MERGE:){<:P:@:HOST:>\n $each(:C:){\t(:C:)\n}\n\''
+    . "\n";
+}
+
+# Set the sort function
+$namesortfunc = \&caseicmp;
+if ($opt{'by-surname'}) { $namesortfunc = \&caseicmpbysurname; }
+
+# if --width is without argument or the argument is zero,
+# try to figure $COLUMNS or fall back to 80.
+if (exists $opt{width} and not $opt{width}) {
+  $opt{width} = $ENV{COLUMNS} ? $ENV{COLUMNS} : 80;
+}
+
+# Print the passed-in array linewise, checking for write errors
+# Then call the configured function to print %log formatted
+sub doprint(\%@ ) {
+  my $log = shift;
+  print join("\n", @_), "\n" or write_error();
+  my $f_print = $table{$opt{mode}}->{'print'};
+  if (defined $f_print) { &$f_print($log); }
+}
+
+# --------------------------------------------------------------------
+# Global initializations
+$Text::Tabs::tabstop = 8;
+$Text::Wrap::huge = 'wrap';
+if ($opt{width}) {
+  $Text::Wrap::columns = $opt{width};
+}
+
+if ($debug) {
+  print STDERR "DEBUG: Options summary:\n";
+  while (my ($k, $v) = each %opt) { print STDERR "DEBUG:   '$k' => '$v'\n"; }
+  print STDERR "DEBUG: Arguments summary:\n";
+  foreach (@ARGV) { print STDERR "DEBUG:   '$_'\n"; }
+}
+
+if ($opt{selftest}) {
+    my $rc = selftest();
+    printf "selftest %s.\n", $rc ? "failed" : "passed";
+    exit $rc;
+}
+
+# Main program
+my @prolog;
+my %log;
+
+if($opt{bitkeeper}) {
+  # in Bitkeeper mode, try to figure the change set, and connect the
+  # bk program to our stdin.
+  die "not yet implemented";
+} elsif (@ARGV) {
+  # file names
+  foreach my $fn (@ARGV) {
+    my $fh = new IO::File;
+    $fh->open($fn, "r")
+      or die "cannot open \"$fn\": $!\nAborting";
+    push @prolog, &{$table{$opt{'mode'}}->{'parse'}}(\%log, $fn, $fh);
+    if (not $opt{merge}) {
+      doprint(%log, @prolog);
+      undef %log;
+    }
+    undef @prolog;
+  }
+
+  if ($opt{merge}) {
+    doprint(%log, ());
+  }
+} else {
+  # stdin
+  my @prolog;
+  my $fh = new IO::Handle;
+  $fh->fdopen(fileno(STDIN), "r")
+    or die "cannot open stdin: $!\nAborting";
+  @prolog = &{$table{$opt{'mode'}}->{'parse'}}(\%log, "stdin", $fh);
+  doprint(%log, @prolog);
+}
+
+# Flush STDOUT to prevent clobbering STDOUT with 2>&1-style redirections.
+$| = 1;
+
+# Warn about unknown addresses
+if ($opt{warn}) {
+  if (scalar keys %address_found_in_from) {
+      my $havebanner = 0;
+    foreach (sort caseicmp keys %address_found_in_from) {
+      if ($address_unknown{$_}) {
+	  print STDERR "Notice: these address mappings should be added after clean-up:\n" unless $havebanner++;
+	  print STDERR $address_found_in_from{$_}, "\n" or write_error();
+	  delete $address_unknown{$_};
+	  delete $address_found_in_from{$_};
+      }
+    }
+  }
+  if ($opt{warnverbose} and scalar keys %address_found_in_from) {
+    print STDERR "Info: these address mappings could be added after clean-up:\n";
+    foreach (sort caseicmp keys %address_found_in_from) {
+      print STDERR $address_found_in_from{$_}, "\n" or write_error();
+      delete $address_unknown{$_};
+      delete $address_found_in_from{$_};
+    }
+  }
+  foreach (sort caseicmp keys %address_unknown) {
+    print STDERR "Warning: unknown address \"$_\"\n" or write_error();
+  }
+}
+
+__END__
+=head1 NAME
+
+lk-changelog.pl - Reformat BitKeeper ChangeLog for Linux Kernel
+
+=head1 SYNOPSIS
+
+lk-changelog.pl [options] [file [...]]
+
+Try lk-changelog.pl --help or lk-changelog.pl --man for more information.
+
+=head1 OPTIONS
+
+ -h, --help          print this short help
+     --man           print the manual page for this program
+
+     --[no]compress  if true, suppress duplicate entries
+     --[no]count     if true, fold duplicate entries into one,
+                     prefixing it with the count. Implies --compress.
+     --[no]swap      in terse and oneline mode, swap address and log entry.
+     --[no]merge     treat all files on command line as one big file
+                     and suppress the prolog
+     --[no]multi     states that multiple changelogs are in one file
+     --[no]warn      warn about unknown addresses. Default: set!
+     --[no]warnverbose
+                     suggest more addresses to be added from
+                     Signed-off-by and From lines. Default: unset.
+                     Use with caution!
+     --[no]abbreviate-names
+                     abbreviate all but the last name
+     --[no]by-surname
+                     sort entries by surname
+     --[no]omitaddresses
+                     omit "email address" when a name is known
+     --[no]obfuscate
+                     obfuscate "email address" in output
+
+     --mode=MODE     specify the output format (use --man to find out more)
+     --width[=WIDTH] specify the line length, if omitted: $COLUMNS or 80.
+                     text lines will not exceed this length.
+
+     --selftest      perform some self tests (for developers of this script)
+
+Warning: Neither --compress nor --count are currently functional with
+--mode=full.
+
+=head1 DESCRIPTION
+
+Summarizes or reformats BitKeeper ChangeLogs for Linux Kernel 2.X.
+
+Addresses of patch authors are determined with the following precedence:
+
+=over
+
+=item 1. From: line
+
+=item 2. Signed-off-by
+
+=item 3. BK user/host
+
+=back
+
+--mode options are:
+
+=over
+
+=item oneline - a one-line-per-change format (supports --swap)
+
+=item terse - a shortened one-paragraph-per-change format (supports --swap)
+
+=item ordered - shortened changes grouped by sorted author
+
+=item full - full changes grouped by sorted author
+
+=item fixup - a special mode (since 0.166)
+
+This mode replaces addresses by names if the addresses are known. Useful
+to postprocess this script's output after new addresses have been added.
+Besides addresses that are replaced by names, the output is the verbatim
+input. No ordering or grouping takes place.
+
+=item resolve - another special mode (since 0.171)
+
+This mode is a quick mode that will try to map all mail addresses to
+names, up to one per input line. You can run this mode on bk changes
+output directly.
+
+=back
+
+=head1 ENVIRONMENT
+
+=over
+
+=item LINUXKERNEL_BK_FMT
+
+Default options. These have the same meaning and syntax as the command
+line options and are parsed before them, so you can override defaults
+set in this variable on the command line. B<Example:> If you put
+--swap here and --noswap on your command line, --noswap takes
+precedence.
+
+=item LINUXKERNEL_BK_FMT_DEBUG
+
+If this evaluates to "true" when used as Perl expression, i. e. it is a
+nonempty string or a number other than 0, enable debugging.
+
+=back
+
+
+
+=head1 EXAMPLES
+
+=over
+
+=item "What am I about to pull?"
+
+bk changes -R -m | lk-changelog.pl | less
+
+=item Reformat ChangeLog-2.5.17, displaying all changes grouped by
+  their author (that is the default mode, but we specify it anyways),
+  with 76 character wide lines:
+
+ lk-changelog.pl --mode=grouped --width=76 ChangeLog-2.5.17
+
+=item Reformat ChangeLog-2.5.18, displaying all changes and their
+      author on in "-ac changelog style", with 80 character wide lines:
+
+ lk-changelog.pl --mode=terse --width=80 ChangeLog-2.5.18
+
+=item Reformat 2.4.19-pre ChangeLogs (several in one file) from your mailer:
+
+Use the pipe command to pipe the mail into:
+
+ lk-changelog.pl --multi --mode=terse --width=80
+
+=back
+
+=head1 AUTHOR
+
+=over
+
+=item * Matthias Andree <matthias.andree@gmx.de>
+
+Main developer
+
+=item * Marcus Alanen <maalanen@abo.fi>
+
+=item * Tomas Szepe <szepe@pinerecords.com>
+
+=item * Vitezslav Samel <samel@mail.cz>
+
+Has dug out several dozens of addresses.
+
+=item * Further help from:
+
+Albert D. Cahalan <acahalan@cs.uml.edu>, Robinson Maureira Castillo
+<rmaureira@alumno.inacap.cl>, Greg Kroah-Hartman <greg@kroah.com>, Zack
+Brown <zbrown@tumblerings.org>, Linus Torvalds <torvalds@osdl.org>.
+
+=back
+
+=head1 BUGS
+
+=over
+
+=item * The header is not wrapped for --width character wide lines.
+
+=item * The implementation is not yet finished.
+
+=item * This manual page is incomplete.
+
+=item * --compress does not currently work with --mode=full.
+
+=item * does not detect if the changelog is already summarized (as in Marcelo's 2.4.19-pre9 announcement on the list)
+
+=back
+
+=head1 TODO
+
+=over
+
+=item * --compress-me-harder
+
+ To merge
+   o iget_locked  [1/6]
+   o iget_locked  [2/6]
+   ...
+   o iget_locked  [6/6]
+ into
+   o iget_locked  [1..6/6]
+
+=item * Integrate Bitkeeper
+
+=back
+
+=cut

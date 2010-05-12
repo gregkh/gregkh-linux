@@ -1,0 +1,421 @@
+#!/usr/bin/perl
+
+#
+# This is a generic script to dump the contents of all the text-based MIME
+# parts in a MIME message. It was originally written to fit into Greg K-H's
+# x.sh script and was later expanded to be more generic. It takes an email
+# message, and spits out headers and the body, as well as the decoded portion
+# of any text-type attachments.
+#
+# Written by Phil Dibowitz <phil@ipom.com> on 10/19/06
+#
+# $Id: mime_dump,v 1.12 2007/01/04 01:17:44 phil Exp $
+#
+
+use strict;
+use warnings;
+use Getopt::Long qw(:config bundling);
+use Email::MIME;
+use File::HomeDir;
+use Data::Dumper;
+
+use constant VERSION => "1.4";
+use constant DEFAULT_SEPARATOR => "\n\n";
+use constant METHOD_FILE => 0;
+use constant METHOD_STDIN => 1;
+use constant SECTION_BEGIN => 0;
+use constant SECTION_END => 1;
+use constant GLOBAL_CONFIG => "/etc/mime_dump.conf";
+use constant LOCAL_CONFIG_FILE => ".mime_dump.conf";
+
+my $opts = {};
+GetOptions($opts,
+	'debug|d',
+	'file|f=s',
+	"from|F",
+	'help|h',
+	'html|H',
+	'headers=s',
+	'indent|i',
+	'separator|s=s',
+	'verbose|v')
+	|| die();
+
+if (exists($opts->{'help'})) {
+	help();
+	exit 0;
+}
+
+
+#
+# Read our config files, and combine them with the options
+# to build our settings
+#
+my $settings = build_settings($opts);
+
+#
+# Pull in message
+#
+my @lines;
+if ($settings->{'method'} == METHOD_STDIN) {
+	@lines = <STDIN>;
+} else {
+	open(INPUT,$settings->{'file'})
+		|| die("ERROR: Couldn't open $settings->{'file'}");
+	@lines = <INPUT>;
+	close(INPUT)
+		|| die("ERROR: Couldn't close $settings->{'file'}");
+}
+
+if (scalar(@lines) == 0) {
+	print "ERROR: 0 lines read!\n";
+	exit 1;
+}
+
+#
+# Get envelope "from" if available
+#
+my $e_from = '';
+if ($lines[0] =~ /^From /) {
+	$e_from = shift @lines;
+	chomp($e_from);
+}
+
+#
+# Get our message in one scalar for Email::MIME
+#
+my $msg = join('',@lines);
+
+#
+# Parse the message
+#
+my $parsed = Email::MIME->new($msg);
+my @parts = $parsed->parts;
+
+#
+# Print the headers
+#
+if ($settings->{'from'} == 1 && $e_from ne '') {
+	print "$e_from\n";
+}
+my @headers;
+if (scalar(@{$settings->{'headers'}}) == 0) {
+	@headers = $parsed->header_names();
+} else {
+	@headers = @{$settings->{'headers'}};
+}
+
+foreach my $hdr (@headers) {
+	foreach my $inst ($parsed->header($hdr)) {
+		print "$hdr: " . $inst . "\n";
+	}
+}
+
+#
+# Separator
+#
+print $settings->{'separator'};
+
+#
+# For debugging
+#
+#print Dumper(\@parts);
+#exit;
+
+#
+# Loop through all MIME parts. If it's plain text, print it.
+#
+my $indent=0;
+foreach my $part (@parts) {
+	parse_part($part,$indent);
+}
+
+################################################
+#
+# BEGIN SUBS
+#
+
+#
+# This is a recursive function to parse a single MIME-part passed into it
+#
+sub parse_part
+{
+	my ($part,$indent) = @_;
+
+	debug("In parse_part");
+
+	#
+	# Setup padding
+	#
+	my $pad = '';
+	if ($settings->{'indent'} == 1) {
+		for (my $i = 0; $i < $indent;$i++) {
+			$pad .= "\t";
+		}
+		debug("Pad is \'$pad\'");
+	}
+	
+	#
+	# If we're in verbose mode, print headers
+	#
+
+	my $type = $part->content_type();
+
+	#
+	# Some buggy email apps (git included) don't set this. If it's not
+	# set, we assume text/plain and hope for the best.
+	#
+	if (!defined($type)) {
+		$type = 'text/plain';
+	}
+
+	print_sec(SECTION_BEGIN,\$pad,$indent) if ($settings->{'verbose'} == 1);
+
+	if ($type =~ /multipart\//) {
+		foreach my $subpart ($part->parts()) {
+			parse_part($subpart,$indent+1);
+		}
+	} elsif ($type =~ /text\/html/ && $settings->{'html'} != 1) {
+		return;
+	} elsif ($type =~ /text\//) {
+		debug("type: $type");
+		print_pad(\$pad,$part->body);
+		print_pad(\$pad,$settings->{'separator'})
+			if (!exists($opts->{'mark-sections'}));
+	} else {
+		print_pad(\$pad,"Skipping part of type $type\n")
+			if ($settings->{'verbose'} == 1);
+	}
+
+	print_sec(SECTION_END,\$pad,$indent) if ($settings->{'verbose'} == 1);
+
+	return;
+
+}
+
+#
+# Help
+#
+sub help
+{
+	print "mime_dump " . VERSION . "\n\n";
+	print "Usage: $0 [<options>]\n\n";
+
+	print "mime_dump takes in a MIME-encoded message, recurses through\n";
+	print "the MIME parts (including MIME nested in MIME) and prints all\n";
+	print "parts that are of type text/* EXCEPT for text/html.\n\n";
+
+	print "Options are as follows:\n";
+	print "    -d, --debug\n";
+	print "\tTurn on debugging output\n";
+	print "    -f, --file <file>\n";
+	print "\tRather than read from STDIN, read the email from";
+	print " <file>.\n";
+	print "    -F, --from\n";
+	print "\tPrint envelope \"From \" header, if available\n";
+	print "    -h, --help\n";
+	print "\tThis message.\n";
+	print "    -H, --html\n";
+	print "\tInclude HTML\n";
+	print "    --headers <header1>[,<header2>,...]\n";
+	print "\tOnly print these headers\n";
+	print "    -i, --indent\n";
+	print "\tIndent enclosure one tab\n";
+	print "    -s, --separator <sep>\n";
+	print "\tUse <sep> to separate various MIME parts.\n";
+	print "    -v, --verbose\n";
+	print "\tVerbose. This option prints headers around each enclosure"
+		. "and\n\timplies -i\n\n";
+
+	print "Note: You may also give mime_dump input on STDIN. For";
+	print " example:\n\techo email.txt | mime_dump\n";
+	print "Specifying the -f option tells mime_dump to ignore anything";
+	print " on STDIN.\n\n";
+
+	print "A global config file can be defined in /etc/mime_dump.conf,\n";
+	print "and local ones in ~/.mime_dump.conf. This file has\n";
+	print "'key = value' pairs with the same name as long options listed\n";
+	print "above. All options _except_ \'file\' and \'help\' are allowed\n";
+	print "in the config file. A sample config file looks like:\n\n";
+
+	print "\tverbose=1\n\tdebug=0\n\n";
+
+	print "Obviously, you don't need to define all config options in the\n";
+	print "file. Note that command-line options override config files.\n\n";
+}
+
+#
+# Print a string pre-pending each line with a pad (usually a tab)
+#
+sub print_pad
+{
+	my ($pad_ptr,$msg) = @_;
+	my $pad = $$pad_ptr;
+	my @lines = split(/\n/,$msg);
+	foreach my $line (@lines) {
+		print "${pad}${line}\n";
+	}
+}
+
+#
+# Print a section header/footer
+#
+sub print_sec
+{
+	my ($pos,$pad_ptr,$indent) = @_;
+
+	$msg = ($pos) ? "== END" : " BEGIN";
+
+	print_pad($pad_ptr,"==================$msg ENCLOSURE LEVEL $indent"
+		. " =========================\n")
+		if ($settings->{'verbose'} == 1);
+
+}
+
+#
+# Read in a config file assuming key-pairs and sticks them all in a hash.
+# 
+#  NOTE1: This sub assumes you've already checked for the existance of a file
+#  NOTE2: This does no checking on the data and you should check the data
+#         returned before using it.
+#
+sub read_config
+{
+	my ($file,$conf) = @_;
+
+	open(CONF,"<$file") || die("ERROR: Couldn't open $file");
+	
+	foreach my $line (<CONF>) {
+		next if ($line =~ /^#|^$/);
+		chomp($line);
+		my ($key,$val) = split(/\s*=\s*/,$line,2);
+		$conf->{$key} = $val;
+	}
+
+}
+
+#
+# Print a debug message.
+#
+sub debug
+{
+	my $msg = shift;
+
+	print "DEBUG: $msg\n" if ($settings->{'debug'} == 1);
+}
+
+#
+# Takes in the command line options, reads the global and local config files,
+# the defaults (0 except where defined in a constant above), and combines
+# them into a settings object.
+#
+sub build_settings
+{
+	my $opts = shift;
+
+	#
+	# Set defaults
+	#
+	my $flags = {
+		'debug' => 0,
+		'html' => 0,
+		'indent' => 0,
+		'verbose' => 0,
+		'from' => 0,
+		};
+
+	my $nonflags = {
+		'separator' => DEFAULT_SEPARATOR,
+		'method' => METHOD_FILE,
+		'headers' => [],
+		'file' => '',
+		};
+
+	#
+	# This is where the final settings go
+	#
+	my $settings = {};
+
+	#
+	# Grab config file
+	#
+	my $config = {};
+	read_config(GLOBAL_CONFIG,$config) if (-r GLOBAL_CONFIG);
+	my $local_config = home() . '/' . LOCAL_CONFIG_FILE;
+	read_config($local_config,$config) if (-r $local_config);
+
+	#
+	# Pull in all flags
+	#
+	foreach my $key (keys(%{$flags})) {
+		# start with the default
+		$settings->{$key} = $flags->{$key};
+		
+		# config-file overrides default
+		$settings->{$key} = 1
+			if (exists($config->{$key}) && $config->{$key} == 1);
+
+		# command-line option overrides that
+		$settings->{$key} = 1
+			if (exists($opts->{$key}));
+	}
+	
+	#
+	# If verbose is on, we turn on indent
+	#
+	$settings->{'indent'} = 1 if ($settings->{'verbose'} == 1);
+	
+	#
+	# Pull in defaults for all non-flags - then handle each
+	# individually
+	#
+	foreach my $key (keys(%{$nonflags})) {
+		$settings->{$key} = $nonflags->{$key};
+	}
+
+	#
+	# Most of them are the same...
+	#
+	for my $key ('separator', 'file') {
+		$settings->{$key} = $config->{$key} if (exists($config->{$key}));
+		$settings->{$key} = $opts->{$key} if (exists($opts->{$key}));
+	}
+
+	# Extra step for separator
+	my $key = '';
+
+	$key = 'separator';
+	$settings->{$key} =~ s/\\n/\n/g;
+	$settings->{$key} =~ s/\\r/\r/g;
+	$settings->{$key} =~ s/\\t/\t/g;
+
+	# Headers needs special handling
+	$key = 'headers';
+	@{$settings->{$key}} = split(/\s*,\s*/,$config->{$key})
+		if (exists($config->{$key}));
+	@{$settings->{$key}} = split(/\s*,\s*/,$opts->{$key})
+		if (exists($opts->{$key}));
+
+	#
+	# If -f is passed in, we read from that file.
+	# Otherwise, we make sure STDIN isn't a terminal (i.e.
+	# it's a pipe or was redirected into is). Otherwise, we fail.
+	#
+	if (exists($settings->{'file'}) && $settings->{'file'} ne '') {
+		$settings->{'method'} = METHOD_FILE;
+	} elsif (! -t STDIN) {
+		$settings->{'method'} = METHOD_STDIN;
+	} else {
+		print STDERR "ERROR: No file was specified on the command line"
+			. " or sent in on STDIN.\n";
+		exit 1;
+	}
+	
+	if ($settings->{'method'} == METHOD_FILE && ! -r $settings->{'file'} ) {
+		print STDERR "ERROR: $opts->{'file'} not readable\n";
+		exit 1;
+	}
+
+	return $settings;
+}
+

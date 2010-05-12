@@ -1,0 +1,40 @@
+From: Greg KH <gregkh@suse.de>
+To: Linus Torvalds <torvalds@linux-foundation.org>, Andrew Morton <akpm@linux-foundation.org>
+Cc: linux-kernel@vger.kernel.org
+Subject: [GIT PATCH] driver core fixes for 2.6.34-git
+
+Here are 3 patches for your 2.6.34-git tree.
+
+Two documentation updates, and one fix for the sysfs attribute warning
+that people have reported.
+
+Please pull from:
+	master.kernel.org:/pub/scm/linux/kernel/git/gregkh/driver-core-2.6.git/
+
+All of these patches have been in the linux-next and mm trees.
+
+The patches will be sent as a follow-on to this message to lkml for
+people to see.
+
+thanks,
+
+greg k-h
+
+------------
+
+ Documentation/HOWTO                   |    2 +-
+ Documentation/stable_kernel_rules.txt |    9 ++++-----
+ drivers/hwmon/asus_atk0110.c          |    4 ++++
+ 3 files changed, 9 insertions(+), 6 deletions(-)
+
+---------------
+
+Jiri Kosina (1):
+      sysfs: use sysfs_attr_init in ASUS atk0110 driver
+
+Randy Dunlap (1):
+      Documentation/HOWTO: update git home URL
+
+Stefan Richter (1):
+      Documentation: -stable rules: upstream commit ID requirement reworded
+

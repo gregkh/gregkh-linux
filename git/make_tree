@@ -1,0 +1,13 @@
+#!/bin/bash
+
+DIR=$1
+
+mkdir $DIR
+cd $DIR
+mkdir .git
+cp ~/linux/git/bleed-2.6.git/HEAD .git/
+cp -rl ~/linux/git/bleed-2.6.git/objects/ .git/objects/
+
+sh ~/linux/git/update_to_head
+
+

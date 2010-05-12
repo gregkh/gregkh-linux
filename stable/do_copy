@@ -1,0 +1,9 @@
+#!/bin/bash
+
+VERSION=$1
+if [ "$VERSION" == "" ] ; then
+	VERSION="."
+fi
+echo "VERSION=$VERSION"
+
+git ls-files -o | grep $VERSION | xargs -i  cp {} -v ..

@@ -1,0 +1,175 @@
+#!/bin/bash
+#
+# Copyright 2005 Greg Kroah-Hartman <gregkh@suse.de>
+#
+# Released under the GPL v2 only.
+#
+# Horrible hack of a script to let kernel maintainers, who use quilt
+# export a series of patches in a form that is rolled up, and in-order
+# for others to pick up and use.  Examples of this is for the -mm releases.
+#
+
+# Here are the things you should modify:
+
+# AUTHOR is your name, it will be pre-appended to all patches
+AUTHOR=gregkh
+
+# TMP is where you want everything to happen.  You need to have a base kernel
+# version (specified by KERNEL) in here, all unpacked.  This is also where the
+# end result files will be placed.
+TMP=~/linux/tmp
+
+# PATCH_DIR is the location of your quilt patches.  There should be a file in
+# here called "series" and a bunch of patches in subdirectories below that (the
+# subdirs are how you divide stuff up by TREES)
+PATCH_DIR=~/linux/patches
+
+
+# GIT_DIR is where the kernel git tree is at.  It will be used to clone
+# from, as well as where we get our starting git commit id to base everything
+# off of.
+GIT_DIR=~/linux/gregkh-2.6
+
+# KERNEL is the base kernel version your quilt series is against.  You need to
+# have this kernel tree already uncompressed and waiting in the TMP directory
+if [ -f "$PATCH_DIR/version" ] ; then
+	KERNEL=`cat $PATCH_DIR/version`
+else
+	KERNEL=2.6.17-rc3-git5
+fi
+
+pushd .
+cd $GIT_DIR
+echo "pwd = `pwd`"
+HEAD=`git show | head -n 1 | cut -f 2 -d ' '`
+echo "HEAD=$HEAD"
+popd
+echo "pwd = `pwd`"
+
+
+# TREES is a list of the different sets of kernel patches you wish to produce.
+# If you only have one set of patches, this can be a single value.  The strings
+# here need to have a subdirectory in the PATCH_DIR to get the patches from.
+#TREES="driver i2c pci usb devfs"
+#TREES="driver pci usb driver-class"
+#TREES="driver-core pci usb ldp"
+#TREES="driver-core.current usb.current driver-core usb ldp.next ldp"
+TREES="driver-core.current tty.current usb.current staging.current driver-core tty usb staging"
+
+
+# Don't touch anything below here, unless you really want to...
+
+do_it() {
+	NEW=$BASE-$TREE
+	CLEAN_TREE="$BASE$OLD_TREE"
+	BASENAME=`echo "$AUTHOR" "$SERIES" "$TREE" | \
+		awk '{ printf("%s-%02d-%s\n", $1, $2, $3, $4);}'`
+	TMPDIR=$TMP/$BASENAME
+
+	echo "Building series file for $TREE"
+	chmod 644 $PATCH_DIR/$TREE/*.patch
+	rm -rf $TMPDIR
+	mkdir $TMPDIR
+	echo "Use the 'series' file in this directory to determine the order in" > $TMPDIR/README
+	echo "which to apply the patches." >> $TMPDIR/README
+	echo "" >> $TMPDIR/README
+#	echo "These patches are based on the $KERNEL version of the kernel." >> $TMPDIR/README
+	echo "These patches are based on the $HEAD git id of the kernel." >> $TMPDIR/README
+	echo "Applying them to any other kernel version might not work at all." >> $TMPDIR/README
+	touch $TMPDIR/series
+#	echo "# BASE $KERNEL" >> $TMPDIR/series
+	echo "# BASE $HEAD" >> $TMPDIR/series
+	echo "# NEXT_BASE $NEXT_BASE" >> $TMPDIR/series
+	count=1
+	for x in `grep "^$TREE\/" $PATCH_DIR/series`
+	do
+		file=`basename $x`
+		if [ -f $PATCH_DIR/$x ]; then
+			cp -a $PATCH_DIR/$x $TMPDIR/$file
+			echo "$file" >> $TMPDIR/series
+			let count++
+		else
+			echo "File $PATCH_DIR/$x is not found, aborting!"
+			exit 1;
+		fi
+	done
+
+	echo "Creating $NEW kernel tree"
+	rm -rf $NEW
+	cp -alp $CLEAN_TREE $NEW
+
+	# apply quilt series
+	cd $NEW
+	QUILT_PATCHES=$TMPDIR QUILT_SERIES=$TMPDIR/series quilt push -aq --quiltrc
+	#rm $TMPDIR/series
+	cd ..
+
+	# TODO put "changelog" in patch.
+	echo "diffing $CLEAN_TREE and $NEW"
+	rm -f $BASENAME-$KERNEL.patch
+	diff -Naur -X $CLEAN_TREE/Documentation/dontdiff $CLEAN_TREE $NEW > $BASENAME-$KERNEL.patch
+
+	echo "cleaning up quilt remnants $NEW"
+	rm -rf $NEW/.pc
+
+	echo "Patch is at $BASENAME-$KERNEL.patch"
+	echo "Dir of patches is at $TMPDIR"
+	echo ""
+	let SERIES++
+}
+
+BASE=linux-$KERNEL
+# make sure we have a base tree to diff off of.
+if [ ! -d "$TMP/$BASE" ] ; then
+	echo "I need $TMP/$BASE present in order to work properly."
+	exit 1
+fi
+
+# create the common base tree to diff off of
+BASE=linux-tmp
+if [ -d "$TMP/$BASE" ] ; then
+	rm -rf $TMP/$BASE
+fi
+git clone ~/linux/gregkh-2.6/ $TMP/$BASE
+pushd .
+cd $TMP/$BASE
+git checkout $HEAD
+popd
+
+# make sure everything is readable by world for when we upload the patches
+find $PATCH_DIR -type f | xargs chmod 644
+
+# initialize some variables
+SERIES=1
+OLD_TREE=""
+NEXT_BASE=""
+
+# do the work
+cd $TMP
+
+for TREE in $TREES
+do
+	do_it
+	if [ "X$OLD_TREE" != "X" ] ; then
+		echo "Cleaning up $BASE$OLD_TREE"
+		rm -rf $BASE$OLD_TREE
+		echo ""
+	fi
+	OLD_TREE="-$TREE"
+	NEXT_BASE="$TREE"
+done
+
+# TODO put "changelog" in patch.
+
+echo ""
+echo "diffing $BASE and $NEW"
+rm -f $AUTHOR-all-$KERNEL.patch
+diff -Naur -X $BASE/Documentation/dontdiff $BASE $NEW > $AUTHOR-all-$KERNEL.patch
+echo "Patch is at $AUTHOR-all-$KERNEL.patch"
+
+
+if [ "X$OLD_TREE" != "X" ] ; then
+	echo "Cleaning up $BASE$OLD_TREE"
+	rm -rf $BASE$OLD_TREE
+fi
+

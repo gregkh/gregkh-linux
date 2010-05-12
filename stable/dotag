@@ -1,0 +1,17 @@
+#!/bin/bash
+
+if [ $# -ne 1 ]; then
+	echo -e "Usage:\t $0 release_number\ne.g.\t $0 2.6.11.12"
+	exit 1
+fi
+
+RELEASE=$1
+echo "tagging stable release $RELEASE"
+echo "[ret] to continue ^C to quit"
+read
+
+
+# tag it
+git tag -u kroah.com -m "This is the $RELEASE stable release" v$RELEASE
+
+exit

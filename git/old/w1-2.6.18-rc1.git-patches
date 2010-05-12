@@ -1,0 +1,40 @@
+From: Greg KH <gregkh@suse.de>
+To: Linus Torvalds <torvalds@osdl.org>, Andrew Morton <akpm@osdl.org>
+Cc: linux-kernel@vger.kernel.org, Evgeniy Polyakov <johnpol@2ka.mipt.ru>
+Subject: [GIT PATCH] W1 patches for 2.6.18-rc1
+
+Here are some tiny w1 patches that have been in the -mm tree for a
+while.  They fix a bug, remove an unneeded .h file, and update the
+	MAINTAINERS file.
+
+Please pull from:
+	git://git.kernel.org/pub/scm/linux/kernel/git/gregkh/w1-2.6.git/
+or from:
+	master.kernel.org:/pub/scm/linux/kernel/git/gregkh/w1-2.6.git/
+if it isn't synced up yet.
+
+The full patch series will sent to the linux-kernel mailing list, if
+anyone wants to see them.
+
+thanks,
+
+greg k-h
+
+
+ MAINTAINERS                 |    1 -
+ drivers/w1/masters/ds2482.c |    2 +-
+ drivers/w1/w1_io.h          |   36 ------------------------------------
+ 3 files changed, 1 insertions(+), 38 deletions(-)
+ delete mode 100644 drivers/w1/w1_io.h
+
+---------------
+
+Adrian Bunk:
+      w1: remove drivers/w1/w1.h
+
+Ben Gardner:
+      w1: fix idle check loop in ds2482
+
+Evgeniy Polyakov:
+      W1: remove w1 mail list from lm_sensors.
+

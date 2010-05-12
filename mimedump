@@ -1,0 +1,109 @@
+#!/usr/bin/perl -w
+
+=head1 NAME
+
+mimedump - dump out the contents of a parsed MIME message
+
+=head1 DESCRIPTION
+
+Read a MIME stream from the stdin, and dump its contents to the stdout.
+
+=head1 SYNOPSIS
+
+    mimedump < mime.containing.mailbox
+
+=head1 AUTHOR
+
+Andreas Koenig suggested this, and wrote the original code.
+Eryq perverted the hell out of it.
+
+Modified by James Bottomley purely to flatten mime mailboxes
+(i.e. mailbox with mime attachements in -> fully flat plain text
+mailbox out)
+
+=cut
+
+use MIME::Parser;
+
+#------------------------------
+#
+# dump_entity ENTITY, NAME
+#
+# Recursive routine for dumping an entity.
+#
+sub dump_entity {
+    my ($entity, $name) = @_;
+    defined($name) or $name = "'anonymous'";
+    my $IO;
+
+    # Output the body:
+    my @parts = $entity->parts;
+    if (@parts) {                     # multipart...
+	my $i;
+	foreach $i (0 .. $#parts) {       # dump each part...
+	    dump_entity($parts[$i], ("$name, part ".(1+$i)));
+	}
+    }
+    else {                            # single part...	
+
+	# Get MIME type, and display accordingly...
+	my ($type, $subtype) = split('/', $entity->head->mime_type);
+	my $body = $entity->bodyhandle;
+	if ($IO = $body->open("r")) {
+	    print FDOUT $_ while (defined($_ = $IO->getline));
+	    $IO->close;
+	}
+	else {       # d'oh!
+	    print "$0: couldn't find/open '$name': $!";
+	}
+    }
+    1;
+}
+
+#------------------------------
+#
+# main
+#
+sub main {
+    $message='';
+
+    open(FDIN, "<".$ARGV[0]) || die("No from file");
+    open(FDOUT, ">".$ARGV[1]) || die("No to file");
+    
+    $from = <FDIN>;
+    while(1) {
+	$message='';
+	die "Incorrectly formatted mailbox" unless ($from =~ /^From /);
+	print FDOUT $from;
+
+	$show_line = 1;
+	while(<FDIN>) {
+	    last if (m/^From /);
+	    $message .= $_;
+	    print FDOUT if ($show_line);
+	    $show_line = 0 if (m/^$/);
+	}
+	$from = $_;
+    
+	# Create a new MIME parser:
+	my $parser = new MIME::Parser;
+    
+	# Create and set the output directory:
+	(-d "mimedump-tmp") or mkdir "mimedump-tmp",0755 or die "mkdir: $!";
+	(-w "mimedump-tmp") or die "can't write to directory";
+	$parser->output_dir("mimedump-tmp");
+    
+	# Read the MIME message:
+	$entity = $parser->parse_data($message) or die "couldn't parse MIME stream";
+
+	# Dump it out:
+	dump_entity($entity);
+	last if(!defined($from));
+    }
+    system("rm -fr mimedump-tmp");
+}
+exit(&main ? 0 : -1);
+
+#------------------------------
+1;
+

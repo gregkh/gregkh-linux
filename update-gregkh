@@ -1,0 +1,6 @@
+rsync -avP -e ssh --delete --exclude=".git"	patches/	gregkh@master.kernel.org:/pub/linux/kernel/people/gregkh/gregkh-2.6/patches/
+#rsync -avP -e ssh --delete 	backups/	gregkh@master.kernel.org:/pub/linux/kernel/people/gregkh/backups
+
+rsync -avP -e ssh --delete	tmp/gregkh-*	gregkh@master.kernel.org:/pub/linux/kernel/people/gregkh/gregkh-2.6/
+
+#scp make_patchsets tmp/*.patch gregkh@master.kernel.org:/pub/linux/kernel/people/gregkh/gregkh-2.6/

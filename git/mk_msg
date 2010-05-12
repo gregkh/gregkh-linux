@@ -1,0 +1,15 @@
+#!/bin/bash
+
+TMP_FILE=$1
+
+echo > $TMP_FILE
+#git diff origin..HEAD | diffstat -p1 >> $TMP_FILE
+git diff -M --stat --summary origin..HEAD >> $TMP_FILE
+echo >> $TMP_FILE
+echo "---------------" >> $TMP_FILE
+echo >> $TMP_FILE
+git log --no-merges origin..HEAD | git shortlog  >> $TMP_FILE
+git format-patch -M -n origin..HEAD
+
+echo "git send-email --to linux-pci@atrey.karlin.mff.cuni.cz --no-chain-reply-to *.patch"
+

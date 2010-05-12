@@ -1,0 +1,65 @@
+#!/bin/sh
+
+if [ x$ARCH == x ]
+then
+	echo '$ARCH' unset
+	exit 1
+fi
+
+
+if [ x"$DISTCC_HOSTS" != x ]
+then
+	DISTCC="distcc"
+	if [ x$J == x ]
+	then
+		J=256
+	fi
+else
+	if [ x$J == x ]
+	then
+		J=$(expr $(grep processor /proc/cpuinfo | wc -l) \* 4)
+	fi
+fi
+
+XARCH="$ARCH-unknown-linux-gnu"
+I=vmlinux
+
+[ $ARCH = alpha ] &&	CT=gcc-4.1.0-glibc-2.3.6
+[ $ARCH = arm ] &&	CT=gcc-3.4.5-glibc-2.3.6
+[ $ARCH = i386 ] &&	CT=gcc-4.1.0-glibc-2.3.6 && XARCH=i686-unknown-linux-gnu && I=bzImage
+[ $ARCH = ia64 ] &&	CT=gcc-3.4.5-glibc-2.3.6
+[ $ARCH = m68k ] &&	CT=gcc-4.1.0-glibc-2.3.6
+[ $ARCH = mips ] &&	CT=gcc-3.4.5-glibc-2.3.6
+[ $ARCH = s390 ] &&	CT=gcc-4.1.0-glibc-2.3.6
+[ $ARCH = sh ] &&	CT=gcc-3.4.5-glibc-2.3.6 && XARCH=sh4-unknown-linux-gnu
+[ $ARCH = sparc ] &&	CT=gcc-4.1.0-glibc-2.3.6
+[ $ARCH = sparc64 ] &&	CT=gcc-3.4.5-glibc-2.3.6
+[ $ARCH = x86_64 ] &&	CT=gcc-4.0.2-glibc-2.3.6 && I=bzImage
+[ $ARCH = parisc ] &&	CT=gcc-4.0.2-glibc-2.3.6 && I=bzImage
+[ $ARCH = powerpc ] &&  CT=gcc-4.1.0-glibc-2.3.6 && XARCH=powerpc64-unknown-linux-gnu
+
+if [ $# -eq 0 ]
+then
+	WHAT="$I modules"
+else
+	WHAT="$*"
+fi
+
+PATH=$PATH:/opt/crosstool/$CT/$XARCH/bin export PATH
+
+export CROSS_COMPILE=/opt/crosstool/$CT/$XARCH/bin/$XARCH-
+
+export CC="$DISTCC /opt/crosstool/$CT/$XARCH/bin/$XARCH-gcc"
+
+FAILED=0
+
+if [ "$ECHO" != "" ]
+then
+	echo CROSS_COMPILE=$CROSS_COMPILE CC=\"$CC\" make -j$J $* CC=\"$CC\" $WHAT || FAILED=1
+else
+	nice -20 make -j$J $* CC="$CC" $WHAT 2>~/tmp/log-$ARCH || FAILED=1
+fi
+
+cat ~/tmp/log-$ARCH
+[ "$FAILED" != "0" ] && echo "**FAILED**"
+exit $FAILED

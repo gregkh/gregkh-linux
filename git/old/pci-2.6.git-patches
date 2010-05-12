@@ -1,0 +1,37 @@
+From: Greg KH <gregkh@suse.de>
+To: Linus Torvalds <torvalds@osdl.org>, Andrew Morton <akpm@osdl.org>
+Cc: linux-kernel@vger.kernel.org, linux-pci@atrey.karlin.mff.cuni.cz, pcihpd-discuss@lists.sourceforge.net, Guennadi Liakhovetski <g.liakhovetski@gmx.de>
+Subject: [GIT PATCH] PCI fixes for 2.6.25-rc6 git tree
+
+Here are two PCI fixes for your 2.6.25-rc6 git tree.
+
+They are:
+	- revert a troublesome PCI patch
+	- iommu lockdep reporting fix
+
+Please pull from:
+	master.kernel.org:/pub/scm/linux/kernel/git/gregkh/pci-2.6.git/
+
+All of these patches have been in the -mm tree for a while, as well as
+-next.
+
+thanks,
+
+greg k-h
+
+
+-------------
+
+ drivers/pci/intel-iommu.c |    7 +++++++
+ drivers/pci/pci.c         |   21 ---------------------
+ include/linux/pci.h       |    4 ----
+ 3 files changed, 7 insertions(+), 25 deletions(-)
+
+---------------
+
+Andrew Morton (1):
+      PCI: revert "pcie: utilize pcie transaction pending bit"
+
+Mark Gross (1):
+      PCI: iova: lockdep false alarm fix
+

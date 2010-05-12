@@ -1,0 +1,87 @@
+From: Greg KH <greg@kroah.com>
+To: Linus Torvalds <torvalds@osdl.org>, Andrew Morton <akpm@osdl.org>
+Cc: linux-kernel@vger.kernel.org, devel@linuxdriverproject.org
+Subject: [GIT PATCH] STAGING fixes for 2.6.34-git
+
+Here are a bunch of tiny staging bugfixes and a few new device ids for
+your 2.6.34-git tree.
+
+Please pull from:
+	master.kernel.org:/pub/scm/linux/kernel/git/gregkh/staging-2.6.git/
+
+All of these patches have been in the linux-next and mm trees.
+
+The patches will be sent as a follow-on to this message to the
+driver-devel list for people to see.
+
+thanks,
+
+greg k-h
+
+--------------
+
+ drivers/staging/dt3155/dt3155_drv.c        |    4 ++--
+ drivers/staging/hv/Hv.c                    |    2 +-
+ drivers/staging/hv/RndisFilter.c           |    1 +
+ drivers/staging/hv/netvsc_drv.c            |    3 +--
+ drivers/staging/iio/accel/lis3l02dq_core.c |    2 +-
+ drivers/staging/iio/accel/lis3l02dq_ring.c |    3 +++
+ drivers/staging/iio/adc/max1363_core.c     |    2 ++
+ drivers/staging/iio/industrialio-core.c    |    3 ++-
+ drivers/staging/iio/light/tsl2563.c        |    2 ++
+ drivers/staging/iio/ring_sw.c              |    2 +-
+ drivers/staging/rt2860/usb_main_dev.c      |    1 +
+ drivers/staging/rtl8192su/r8192U_core.c    |    3 +++
+ drivers/staging/usbip/usbip_event.c        |    3 +++
+ drivers/staging/vme/bridges/vme_tsi148.c   |    3 ++-
+ 14 files changed, 25 insertions(+), 9 deletions(-)
+
+---------------
+
+Andrew Morton (1):
+      Staging: iio: fix up the iio_get_new_idr_val comment
+
+Chris Largret (1):
+      Staging: rt2860: add Belkin F5D8055 Wireless-N USB Dongle device id
+
+Cyrill Gorcunov (1):
+      Staging: hv: Fix up memory leak on HvCleanup
+
+Dan Carpenter (1):
+      Staging: iio: test for failed allocation
+
+Eric Lescouet (1):
+      staging: usbip: Fix deadlock
+
+H Hartley Sweeten (1):
+      Staging: dt3155: fix 50Hz configuration
+
+Haiyang Zhang (1):
+      Staging: hv: Fix a bug affecting IPv6
+
+Jonathan Cameron (2):
+      staging: iio: lis3l02dq - incorrect ws used in container of call.
+      staging: iio: ring_sw: Fix incorrect test on successful read of last value, causes infinite loop
+
+Martyn Welch (1):
+      Staging: vme: Re-introduce necessary brackets
+
+Pavel Roskin (1):
+      Staging: rtl8192su: add USB ID for 0bda:8171
+
+Richard Airlie (1):
+      staging: rtl8192su: add Support for Belkin F5D8053 v6
+
+Rodrigo Linfati (1):
+      Staging: add Add Sitecom WL-349 to rtl8192su
+
+Sonic Zhang (1):
+      staging: iio: Function iio_get_new_idr_val() return negative value if fails.
+
+Stephen Hemminger (1):
+      Staging: hv: name network device ethX rather than sethX
+
+Wolfram Sang (2):
+      Staging: iio: light: fix dangling pointers
+      Staging: iio: adc: fix dangling pointers
+

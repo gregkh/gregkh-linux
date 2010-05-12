@@ -1,0 +1,50 @@
+From: Greg KH <gregkh@suse.de>
+To: torvalds@osdl.org, Andrew Morton <akpm@osdl.org>
+Cc: linux-pci@atrey.karlin.mff.cuni.cz, linux-kernel@vger.kernel.org
+Subject: State of the Linux PCI Subsystem for 2.6.18-rc6
+
+Here's a summary of the current state of the Linux PCI subsystem, as of
+2.6.18-rc6.
+
+If the information in here is incorrect, or anyone knows of any
+outstanding issues not listed here, please let me know.
+
+List of outstanding regressions from 2.6.17:
+	- none known.
+
+List of outstanding regressions from older kernel versions:
+	- none known.
+
+
+If interested, the list of all currently open PCI bugs can be seen at:
+    http://bugzilla.kernel.org/showdependencytree.cgi?id=5829&hide_resolved=1
+
+
+Future patches that are currently in my quilt tree (as found at
+	http://www.kernel.org/pub/linux/kernel/people/gregkh/gregkh-2.6/
+) for the PCI subsystem are as follows.  All of these will be submitted
+for inclusion into 2.6.19, except as noted:
+
+	- MSI rework currently being tested out in the -mm tree.
+	- PCI Express AER implementation.
+	- few minor PCI Hotplug driver fixes and cleanups.
+	- resource minor tweak.
+	- PCI sort device lists in breadth-first to fix the regression
+	  of PCI device order from the 2.4 kernel tree.  This can be
+	  disabled by a command line option if anyone is wed to the old
+	  2.6 buggy way.
+
+Note that there are some PCI API changes that happen in my driver tree.
+See that status report for details on those changes (nothing was done to
+break anything, only new stuff was added.)
+
+No other new PCI driver API changes are pending that I am aware of.  The
+PCI sort order change will affect some people's userspace ordering of
+network devices, restoring it to the proper 2.4 ordering.  It was never
+intended that this be broken, and since no one has noticed this for the
+past 3 years, it was not broken in a severe way.
+
+thanks,
+
+greg k-h
+

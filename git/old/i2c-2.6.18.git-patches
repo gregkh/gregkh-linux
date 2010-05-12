@@ -1,0 +1,159 @@
+From: Greg KH <gregkh@suse.de>
+To: Linus Torvalds <torvalds@osdl.org>, Andrew Morton <akpm@osdl.org>
+Cc: linux-kernel@vger.kernel.org, lm-sensors@lm-sensors.org, Jean Delvare <khali@linux-fr.org>
+Subject: [GIT PATCH] I2C patches for 2.6.18
+
+Here are some i2c patches for 2.6.18.  They include a new driver, a
+bunch of warning fixes, and some other odd changes detailed below.
+
+They all have been in the -mm tree for a while.
+
+Please pull from:
+	git://git.kernel.org/pub/scm/linux/kernel/git/gregkh/i2c-2.6.git/
+or from:
+	master.kernel.org:/pub/scm/linux/kernel/git/gregkh/i2c-2.6.git/
+if it isn't synced up yet.
+
+The full patch series will sent to the sensors mailing list, if anyone
+wants to see them.
+
+thanks,
+
+greg k-h
+
+ Documentation/feature-removal-schedule.txt |    9 
+ Documentation/i2c/busses/i2c-viapro        |    7 
+ Documentation/i2c/i2c-stub                 |   15 +
+ drivers/acorn/char/i2c.c                   |    1 
+ drivers/acpi/i2c_ec.c                      |    2 
+ drivers/hwmon/it87.c                       |    1 
+ drivers/hwmon/lm78.c                       |    1 
+ drivers/hwmon/pc87360.c                    |    1 
+ drivers/hwmon/sis5595.c                    |    1 
+ drivers/hwmon/smsc47b397.c                 |    1 
+ drivers/hwmon/smsc47m1.c                   |    1 
+ drivers/hwmon/via686a.c                    |    1 
+ drivers/hwmon/vt8231.c                     |    1 
+ drivers/hwmon/w83627ehf.c                  |    1 
+ drivers/hwmon/w83627hf.c                   |    1 
+ drivers/hwmon/w83781d.c                    |    1 
+ drivers/i2c/Kconfig                        |    2 
+ drivers/i2c/algos/Kconfig                  |    6 
+ drivers/i2c/algos/Makefile                 |    1 
+ drivers/i2c/algos/i2c-algo-bit.c           |   23 -
+ drivers/i2c/algos/i2c-algo-pca.c           |    2 
+ drivers/i2c/algos/i2c-algo-pcf.c           |    2 
+ drivers/i2c/algos/i2c-algo-sgi.c           |    2 
+ drivers/i2c/algos/i2c-algo-sibyte.c        |  215 ---------
+ drivers/i2c/busses/Kconfig                 |   34 +
+ drivers/i2c/busses/Makefile                |    1 
+ drivers/i2c/busses/i2c-ali1535.c           |    2 
+ drivers/i2c/busses/i2c-ali1563.c           |    2 
+ drivers/i2c/busses/i2c-ali15x3.c           |    2 
+ drivers/i2c/busses/i2c-amd756.c            |    2 
+ drivers/i2c/busses/i2c-amd8111.c           |    2 
+ drivers/i2c/busses/i2c-au1550.c            |   21 +
+ drivers/i2c/busses/i2c-elektor.c           |    1 
+ drivers/i2c/busses/i2c-hydra.c             |    1 
+ drivers/i2c/busses/i2c-i801.c              |    2 
+ drivers/i2c/busses/i2c-i810.c              |    2 
+ drivers/i2c/busses/i2c-ibm_iic.c           |    2 
+ drivers/i2c/busses/i2c-iop3xx.c            |    2 
+ drivers/i2c/busses/i2c-isa.c               |   42 +-
+ drivers/i2c/busses/i2c-ixp2000.c           |    1 
+ drivers/i2c/busses/i2c-ixp4xx.c            |    1 
+ drivers/i2c/busses/i2c-mpc.c               |    2 
+ drivers/i2c/busses/i2c-mv64xxx.c           |    2 
+ drivers/i2c/busses/i2c-nforce2.c           |    2 
+ drivers/i2c/busses/i2c-ocores.c            |    2 
+ drivers/i2c/busses/i2c-omap.c              |  676 ++++++++++++++++++++++++++++
+ drivers/i2c/busses/i2c-parport-light.c     |    1 
+ drivers/i2c/busses/i2c-parport.c           |    1 
+ drivers/i2c/busses/i2c-piix4.c             |    2 
+ drivers/i2c/busses/i2c-powermac.c          |    2 
+ drivers/i2c/busses/i2c-prosavage.c         |    1 
+ drivers/i2c/busses/i2c-pxa.c               |    2 
+ drivers/i2c/busses/i2c-s3c2410.c           |    2 
+ drivers/i2c/busses/i2c-savage4.c           |    1 
+ drivers/i2c/busses/i2c-sibyte.c            |  160 ++++++-
+ drivers/i2c/busses/i2c-sis5595.c           |    2 
+ drivers/i2c/busses/i2c-sis630.c            |    2 
+ drivers/i2c/busses/i2c-sis96x.c            |    2 
+ drivers/i2c/busses/i2c-stub.c              |   21 +
+ drivers/i2c/busses/i2c-via.c               |    1 
+ drivers/i2c/busses/i2c-viapro.c            |   10 
+ drivers/i2c/busses/i2c-voodoo3.c           |    2 
+ drivers/i2c/busses/scx200_acb.c            |    2 
+ drivers/i2c/busses/scx200_i2c.c            |   12 
+ drivers/i2c/chips/eeprom.c                 |    8 
+ drivers/i2c/chips/max6875.c                |   25 +
+ drivers/i2c/chips/pca9539.c                |   11 
+ drivers/i2c/chips/pcf8574.c                |   22 +
+ drivers/i2c/chips/pcf8591.c                |   58 ++
+ drivers/i2c/i2c-core.c                     |   72 ++-
+ drivers/i2c/i2c-dev.c                      |  109 ++---
+ drivers/ieee1394/pcilynx.c                 |    1 
+ drivers/media/video/bt8xx/bttv-i2c.c       |    1 
+ drivers/media/video/cx88/cx88-i2c.c        |    1 
+ drivers/media/video/cx88/cx88-vp3054-i2c.c |    1 
+ drivers/media/video/zoran_card.c           |    1 
+ drivers/video/i810/i810-i2c.c              |    1 
+ drivers/video/matrox/i2c-matroxfb.c        |   12 
+ drivers/video/savage/savagefb-i2c.c        |    1 
+ include/linux/i2c-algo-bit.h               |    1 
+ include/linux/i2c-algo-pcf.h               |    1 
+ include/linux/i2c-algo-sibyte.h            |   33 -
+ include/linux/i2c.h                        |   14 -
+ 83 files changed, 1219 insertions(+), 482 deletions(-)
+ delete mode 100644 drivers/i2c/algos/i2c-algo-sibyte.c
+ create mode 100644 drivers/i2c/busses/i2c-omap.c
+ delete mode 100644 include/linux/i2c-algo-sibyte.h
+
+---------------
+
+Adrian Bunk:
+      i2c-algo-pcf: Discard the mdelay data struct member
+
+Arthur Othieno:
+      i2c: Fix copy-n-paste in subsystem Kconfig
+
+David Brownell:
+      i2c: Let drivers constify i2c_algorithm data
+
+David Hubbard:
+      i2c-isa: Fail adding driver on attach_adapter error
+
+Domen Puncer:
+      i2c-au1550: Fix timeout problem
+      i2c-au1550: Add SMBus functionality flag
+      i2c-au1550: Add I2C support for Au1200
+
+Jean Delvare:
+      i2c-dev: Cleanups
+      i2c-dev: Use a list for data storage
+      i2c-dev: Drop the client template
+      i2c: __must_check fixes (core drivers)
+      i2c: __must_check fixes, i2c-dev
+      i2c-algo-sibyte: Cleanups
+      i2c-algo-sibyte: Merge into i2c-sibyte
+      i2c-sibyte: Kip Walker is gone
+      i2c-matroxfb: Struct init conversion
+      i2c-algo-bit: Discard the mdelay data struct member
+      i2c: Plan i2c-isa for removal
+      i2c-stub: Chip address as a module parameter
+      i2c-dev: attach/detach_adapter cleanups
+      i2c: __must_check fixes (chip drivers)
+      i2c-algo-bit: Cleanups
+      i2c-core: Drop useless bitmaskings
+      i2c: Warn on i2c client creation failure
+      i2c-isa: Restore driver owner
+      i2c: Constify i2c_algorithm declarations, part 1
+      i2c: Constify i2c_algorithm declarations, part 2
+      i2c: Drop unimplemented slave functions
+
+Komal Shah:
+      i2c: New bus driver for TI OMAP boards
+
+Rudolf Marek:
+      i2c-viapro: Add support for the VT8237A and VT8251
+

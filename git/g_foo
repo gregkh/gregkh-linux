@@ -1,0 +1,69 @@
+#!/bin/bash
+#
+# Make a log of changes in a GIT branch.
+#
+# This script was originally written by (c) Ross Vandegrift.
+# Adapted to his scripts set by (c) Petr Baudis, 2005.
+# Major optimizations by (c) Phillip Lougher.
+# Rendered trivial by Linus Torvalds.
+# Added -L|-R option by James Bottomley
+#
+# Takes an id resolving to a commit to start from (HEAD by default).
+#
+# Hacked into pieces by gregkh.
+#
+# use by running:
+#       cd my_git_tree
+#       ../g_foo ../clean_linus_tree
+# a bunch of log messages will go by, I think it's wrong.
+# a bunch of individual patches will be in /tmp/ starting with git-*
+# that's the patches that are in your tree and not the "clean" one.
+#
+
+tmpfile=/tmp/git_changes.$$
+
+diffsearch=-
+remote="$1"
+shift;
+
+if [ -z "$base" ]; then
+	base=$(cat .git/HEAD) || exit 1
+fi
+
+git-rev-tree $base | sort -rn  > ${tmpfile}.base
+if [ -n "$remote" ]; then
+	[ -d $remote/.git ] || exit 1
+	pushd $remote > /dev/null
+	git-rev-tree $(cat .git/HEAD) | sort -rn > ${tmpfile}.remote
+	diff -u ${tmpfile}.base ${tmpfile}.remote | grep "^${diffsearch}[^${diffsearch}]" | cut -c 1- > ${tmpfile}.diff
+	rm -f ${tmpfile}.base ${tmpfile}.remote
+	mv ${tmpfile}.diff ${tmpfile}.base
+	if [ $diffsearch = "-" ]; then
+		popd > /dev/null
+	fi
+fi
+
+[ -s "${tmpfile}.base" ] || exit 0
+
+# if you want to play with this, just use the commits in the ${tmpfile}.base file to
+# do something with now.
+
+### gregkh
+#echo "${tmpfile}.base"
+patch_num=999
+cat ${tmpfile}.base | while read time commit parents; do
+	git-rev-list --pretty ^${parents%:*} ${commit%:*}
+
+	file=/tmp/git-$patch_num.patch
+	# write the original author out as first line of the file:
+#	git-rev-list --pretty ${commit%:*} ${parents%:*} | grep "^Author" | cut -f 2 -d "<" | cut -f 1 -d ">" > $file
+	git-cat-file commit ${commit%:*} | grep "^author" | cut -f 2 -d "<" | cut -f 1 -d ">" > $file
+	# write out the subject of the file:
+#	git-rev-list --header ${commit%:*} ${parents%:*} | head -n 7 | tail -n 1 >> $file
+	git-cat-file commit ${commit%:*} | head -n 6 | tail -n 1 >> $file
+	# write out the whole patch
+#	git-diff-tree -p -v ${commit%:*} ${parents%:*} >> $file
+	cg-mkpatch -r ${commit%:*} >> $file
+	let patch_num--
+done
+rm -f ${tmpfile}.base

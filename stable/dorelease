@@ -1,0 +1,81 @@
+#!/bin/bash
+# build -stable release from current -stable series
+# Copyright (c) 2005 Chris Wright <chrisw@osdl.org>
+
+if [ $# -ne 1 ]; then
+	echo -e "Usage:\t $0 release_number\ne.g.\t $0 2.6.11.12"
+	exit 1
+fi
+
+#if [ -z "${GIT_GPG_KEY}" ]; then
+#	echo -e "Error:\tMust set GIT_GPG_KEY env variable"
+#	exit 1
+#fi
+#
+#git-tag -u "${GIT_GPG_KEY}" -m "this is a TEST" vTest
+#exit 0
+
+RELEASE=$1
+REL_ARRAY=(${RELEASE//./ })
+BASE=${REL_ARRAY[0]}.${REL_ARRAY[1]}.${REL_ARRAY[2]}
+REL=${REL_ARRAY[3]}
+LAST=$(($REL - 1))
+if [ $LAST -eq 0 ]; then
+	LAST_REL=${BASE}
+else
+	LAST_REL=${BASE}.${LAST}
+fi
+echo "creating stable release $RELEASE (base $BASE last version $LAST_REL)"
+echo "[ret] to continue ^C to quit"
+read
+
+RELDIR="../release-$RELEASE"
+mkdir $RELDIR
+
+# apply patches
+#quilt series | while read PATCH
+#do
+#	cat $PATCH >> $RELDIR/apply.mbox
+#done
+#git-applymbox $RELDIR/apply.mbox
+#rm $RELDIR/apply.mbox
+
+# update EXTRAVERSION
+#vim +/^EXTRAVERSION Makefile
+
+# check that the EXTRAVERSION change is all that's outstanding
+echo
+echo "**** About to commit ****"
+echo
+git-diff-files -p
+
+echo "[ret] to continue"
+read
+
+# commit EXTRAVERSION change
+#git-update-cache Makefile
+#RELEASE_COMMIT=$(echo "Linux $RELEASE" | git-commit-tree $(git-write-tree) -p HEAD)
+#echo $RELEASE_COMMIT > .git/HEAD
+
+# tag it
+#git-tag-script -u ${GIT_GPG_KEY} -m "This is the $RELEASE stable release" v$RELEASE
+
+BASE_COMMIT="$(git-cat-file tag $(cat .git/refs/tags/v${BASE}) | grep object | cut -d" " -f2)"
+LAST_COMMIT="$(git-cat-file tag $(cat .git/refs/tags/v${LAST_REL}) | grep object | cut -d" " -f2)"
+RELEASE_COMMIT="$(git-cat-file tag $(cat .git/refs/tags/v${RELEASE}) | grep object | cut -d" " -f2)"
+
+echo "BASE_COMMIT=$BASE_COMMIT"
+echo "LAST_COMMIT=$LAST_COMMIT"
+echo "RELEASE_COMMIT=$RELEASE_COMMIT"
+
+# build release materials, tarball, base patch, incr patch, changelog
+git-tar-tree HEAD linux-$RELEASE | gzip -9 > $RELDIR/linux-${RELEASE}.tar.gz
+git-diff-tree -p $BASE_COMMIT $RELEASE_COMMIT | gzip -9 > $RELDIR/patch-${RELEASE}.gz
+git-diff-tree -p $LAST_COMMIT $RELEASE_COMMIT | gzip -9 > $RELDIR/patch-${LAST_REL}-${REL}.gz
+zcat $RELDIR/patch-${LAST_REL}-${REL}.gz | diffstat -p1 > $RELDIR/diffstat-${LAST_REL}-${REL} 2>/dev/null
+git log ${LAST_COMMIT}..${RELEASE_COMMIT} > $RELDIR/ChangeLog-$RELEASE
+< $RELDIR/ChangeLog-$RELEASE git-shortlog > $RELDIR/shortlog-$RELEASE
+
+echo "ready to upload files"
+echo "scp $RELDIR/* master.kernel.org:$RELDIR/"
+echo "don't forget to update LATEST-IS"
