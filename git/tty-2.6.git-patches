@@ -3,7 +3,10 @@ To: Linus Torvalds <torvalds@linux-foundation.org>, Andrew Morton <akpm@linux-fo
 Cc: linux-kernel@vger.kernel.org
 Subject: [GIT PATCH] TTY fixes for 2.6.34-git
 
-Here are 2 bugfixes and one new device id for your 2.6.34-git tree.
+Here are 3 bugfixes for your 2.6.34-git tree.
+
+One is a regression from .33, and the other 2 fix reported problems and
+are being sent to the -stable trees as well.
 
 Please pull from:
 	master.kernel.org:/pub/scm/linux/kernel/git/gregkh/tty-2.6.git/
@@ -19,23 +22,19 @@ greg k-h
 
 ------------
 
- drivers/char/isicom.c       |    9 +++++++--
- drivers/char/istallion.c    |    2 ++
- drivers/char/mxser.c        |    3 ++-
- drivers/char/riscom8.c      |    1 +
- drivers/char/stallion.c     |    7 ++++---
- drivers/serial/8250_pnp.c   |    2 ++
- drivers/serial/pmac_zilog.c |    4 +++-
- 7 files changed, 21 insertions(+), 7 deletions(-)
+ drivers/char/tty_io.c         |    1 +
+ drivers/serial/imx.c          |   10 +++++++++-
+ drivers/serial/mpc52xx_uart.c |    2 +-
+ 3 files changed, 11 insertions(+), 2 deletions(-)
 
 ---------------
 
 Alan Cox (1):
-      tty: Fix regressions in the char driver conversion
+      tty: Fix unbalanced BKL handling in error path
 
-Julia Lawall (1):
-      serial: drivers/serial/pmac_zilog.c: add missing unlock
+Anatolij Gustschin (1):
+      serial: mpc52xx_uart: fix null pointer dereference
 
-Ping Cheng (1):
-      serial: 8250_pnp - add Fujitsu Wacom device
+Valentin Longchamp (1):
+      serial: imx.c: fix CTS trigger level lower to avoid lost chars
 
