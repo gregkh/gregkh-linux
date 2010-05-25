@@ -1,17 +1,17 @@
 From: Greg KH <gregkh@suse.de>
 To: Linus Torvalds <torvalds@linux-foundation.org>, Andrew Morton <akpm@linux-foundation.org>
 Cc: linux-kernel@vger.kernel.org
-Subject: [GIT PATCH] TTY fixes for 2.6.34-git
+Subject: [GIT PATCH] TTY patches for 2.6.35
 
-Here are 3 bugfixes for your 2.6.34-git tree.
+Here's the tty patches for the .35 merge window.
 
-One is a regression from .33, and the other 2 fix reported problems and
-are being sent to the -stable trees as well.
+Nothing big here, just some new drivers and assorted minor fixes and the
+like.  Details are below in the shortlog.
 
 Please pull from:
 	master.kernel.org:/pub/scm/linux/kernel/git/gregkh/tty-2.6.git/
 
-These patches have been in the linux-next tree for a while now.
+These patches have been in the linux-next tree and -mm for a while now.
 
 Patches will be sent to the linux-kernel mailing list, if anyone wants
 to see them.
@@ -22,19 +22,81 @@ greg k-h
 
 ------------
 
- drivers/char/tty_io.c         |    1 +
- drivers/serial/imx.c          |   10 +++++++++-
- drivers/serial/mpc52xx_uart.c |    2 +-
- 3 files changed, 11 insertions(+), 2 deletions(-)
+ drivers/char/Kconfig             |   10 +-
+ drivers/char/Makefile            |    1 +
+ drivers/char/isicom.c            |    8 +-
+ drivers/char/n_gsm.c             | 2763 ++++++++++++++++++++++++++++++++++++++
+ drivers/char/serial167.c         |  223 +---
+ drivers/char/tty_buffer.c        |    2 +-
+ drivers/serial/Kconfig           |   82 ++-
+ drivers/serial/Makefile          |    2 +
+ drivers/serial/altera_jtaguart.c |  504 +++++++
+ drivers/serial/altera_uart.c     |  570 ++++++++
+ drivers/serial/bfin_sport_uart.c |  209 ++-
+ drivers/serial/bfin_sport_uart.h |   27 +-
+ drivers/serial/timbuart.c        |   25 +-
+ drivers/serial/uartlite.c        |   32 +-
+ include/linux/altera_jtaguart.h  |   16 +
+ include/linux/altera_uart.h      |   14 +
+ include/linux/gsmmux.h           |   25 +
+ include/linux/serial_core.h      |    4 +
+ include/linux/tty.h              |    3 +-
+ 19 files changed, 4196 insertions(+), 324 deletions(-)
+ create mode 100644 drivers/char/n_gsm.c
+ create mode 100644 drivers/serial/altera_jtaguart.c
+ create mode 100644 drivers/serial/altera_uart.c
+ create mode 100644 include/linux/altera_jtaguart.h
+ create mode 100644 include/linux/altera_uart.h
+ create mode 100644 include/linux/gsmmux.h
 
 ---------------
 
 Alan Cox (1):
-      tty: Fix unbalanced BKL handling in error path
+      tty: n_gsm line discipline
 
-Anatolij Gustschin (1):
-      serial: mpc52xx_uart: fix null pointer dereference
+Christoph Egger (1):
+      serial: Tidy REMOTE_DEBUG
 
-Valentin Longchamp (1):
-      serial: imx.c: fix CTS trigger level lower to avoid lost chars
+Dan Carpenter (1):
+      serial: isicomm: handle running out of slots
+
+Johan Hovold (1):
+      tty: fix obsolete comment on tty_insert_flip_string_fixed_flag
+
+John Linn (1):
+      serial: uartlite: move from byte accesses to word accesses
+
+Mike Frysinger (4):
+      serial: bfin_sport_uart: drop useless status masks
+      serial: bfin_sport_uart: pull in bfin_sport.h for SPORT defines
+      serial: bfin_sport_uart: drop the experimental markings
+      serial: bfin_sport_uart: drop redundant cpu depends
+
+Pavan Savoy (1):
+      serial: TTY: new ldiscs for staging
+
+Randy Dunlap (1):
+      tty: n_gsm: depends on NET
+
+Richard Röjfors (1):
+      serial: timbuart: make sure last byte is sent when port is closed
+
+Roel Kluin (1):
+      serial: two branches the same in timbuart_set_mctrl()
+
+Sonic Zhang (9):
+      serial: bfin_sport_uart: work around anomaly 05000473 (make 32bit fifo read atomic)
+      serial: bfin_sport_uart: shorten the SPORT TX waiting loop
+      serial: bfin_sport_uart: remove unused peripheral pin lists
+      serial: bfin_sport_uart: add missing mapbase initialization
+      serial: bfin_sport_uart: rename early platform driver class string
+      serial: bfin_sport_uart: add support for CTS/RTS via GPIOs
+      serial: bfin_sport_uart: protect changes to uart_port
+      serial: bfin_sport_uart: zero sport_uart_port if allocated dynamically
+      serial: bfin_sport_uart: only enable SPORT TX if data is to be sent
+
+Tobias Klauser (3):
+      serial: Add driver for the Altera JTAG UART
+      serial: Add driver for the Altera UART
+      serial: bfin_sport_uart: Use resource size to fix off-by-one error
 

@@ -1,12 +1,16 @@
 From: Greg KH <gregkh@suse.de>
 To: Linus Torvalds <torvalds@linux-foundation.org>, Andrew Morton <akpm@linux-foundation.org>
 Cc: linux-kernel@vger.kernel.org
-Subject: [GIT PATCH] driver core fixes for 2.6.34-git
+Subject: [GIT PATCH] driver core patches for .35
 
-Here are 3 patches for your 2.6.34-git tree.
+Here's the big driver core merge for the .35 merge window.
 
-Two documentation updates, and one fix for the sysfs attribute warning
-that people have reported.
+It touches a lot of places outside of the driver core, due to some API
+changes, and due to the network namespace patches coming in through this
+tree due to the dependancy on the kobject namespace code.  David Miller
+has acked all of these patches and asked that they go in through here.
+
+Full details as to what is included is below in the shortlog.
 
 Please pull from:
 	master.kernel.org:/pub/scm/linux/kernel/git/gregkh/driver-core-2.6.git/
@@ -22,19 +26,178 @@ greg k-h
 
 ------------
 
- Documentation/HOWTO                   |    2 +-
- Documentation/stable_kernel_rules.txt |    9 ++++-----
- drivers/hwmon/asus_atk0110.c          |    4 ++++
- 3 files changed, 9 insertions(+), 6 deletions(-)
+ Documentation/filesystems/sysfs-tagging.txt      |   42 +++++
+ arch/alpha/kernel/pci-sysfs.c                    |    8 +-
+ arch/mips/txx9/generic/setup.c                   |    4 +-
+ arch/powerpc/sysdev/mv64x60_pci.c                |    4 +-
+ arch/s390/kernel/ipl.c                           |   14 +-
+ drivers/acpi/system.c                            |    2 +-
+ drivers/base/Kconfig                             |    7 +-
+ drivers/base/class.c                             |    9 +
+ drivers/base/core.c                              |  130 +++++++++++---
+ drivers/base/cpu.c                               |    2 +-
+ drivers/base/dd.c                                |    4 +-
+ drivers/base/devtmpfs.c                          |    5 +
+ drivers/base/firmware_class.c                    |  206 ++++++++++++----------
+ drivers/base/module.c                            |    4 +-
+ drivers/base/platform.c                          |    8 +-
+ drivers/block/loop.c                             |   10 +-
+ drivers/firmware/dcdbas.c                        |    4 +-
+ drivers/firmware/dell_rbu.c                      |   10 +-
+ drivers/firmware/efivars.c                       |    4 +-
+ drivers/gpio/gpiolib.c                           |    2 +-
+ drivers/gpu/drm/drm_sysfs.c                      |    5 +-
+ drivers/md/bitmap.c                              |    4 +-
+ drivers/md/md.c                                  |    6 +-
+ drivers/misc/c2port/core.c                       |    4 +-
+ drivers/misc/ds1682.c                            |    6 +-
+ drivers/misc/eeprom/at24.c                       |    6 +-
+ drivers/misc/eeprom/at25.c                       |    6 +-
+ drivers/misc/eeprom/eeprom.c                     |    3 +-
+ drivers/misc/eeprom/max6875.c                    |    2 +-
+ drivers/net/mlx4/mlx4.h                          |    1 +
+ drivers/net/netxen/netxen_nic_main.c             |   11 +-
+ drivers/net/qlcnic/qlcnic_main.c                 |   12 +-
+ drivers/pci/hotplug/acpiphp_ibm.c                |    5 +-
+ drivers/pci/pci-sysfs.c                          |   45 ++++--
+ drivers/pcmcia/cistpl.c                          |    4 +-
+ drivers/power/olpc_battery.c                     |    2 +-
+ drivers/rapidio/rio-sysfs.c                      |    6 +-
+ drivers/rtc/rtc-cmos.c                           |    6 +-
+ drivers/rtc/rtc-ds1305.c                         |    6 +-
+ drivers/rtc/rtc-ds1307.c                         |    6 +-
+ drivers/rtc/rtc-ds1511.c                         |   10 +-
+ drivers/rtc/rtc-ds1553.c                         |    4 +-
+ drivers/rtc/rtc-ds1742.c                         |    4 +-
+ drivers/rtc/rtc-m48t59.c                         |    4 +-
+ drivers/rtc/rtc-stk17ta8.c                       |    4 +-
+ drivers/rtc/rtc-tx4939.c                         |    4 +-
+ drivers/s390/cio/chp.c                           |    5 +-
+ drivers/scsi/3w-sas.c                            |    4 +-
+ drivers/scsi/arcmsr/arcmsr_attr.c                |    9 +-
+ drivers/scsi/ibmvscsi/ibmvfc.c                   |    3 +-
+ drivers/scsi/ipr.c                               |    9 +-
+ drivers/scsi/lpfc/lpfc_attr.c                    |   20 ++-
+ drivers/scsi/qla2xxx/qla_attr.c                  |   32 ++--
+ drivers/staging/comedi/drivers/quatech_daqp_cs.c |    1 +
+ drivers/staging/udlfb/udlfb.c                    |    3 +-
+ drivers/usb/core/sysfs.c                         |    3 +-
+ drivers/usb/core/usb.c                           |    2 +-
+ drivers/video/aty/radeon_base.c                  |    4 +-
+ drivers/w1/slaves/w1_ds2431.c                    |    4 +-
+ drivers/w1/slaves/w1_ds2433.c                    |    4 +-
+ drivers/w1/slaves/w1_ds2760.c                    |    2 +-
+ drivers/w1/w1.c                                  |    4 +-
+ drivers/zorro/zorro-sysfs.c                      |    2 +-
+ fs/ramfs/inode.c                                 |    2 +-
+ fs/sysfs/bin.c                                   |   26 ++--
+ fs/sysfs/dir.c                                   |  114 ++++++++++---
+ fs/sysfs/file.c                                  |   17 +-
+ fs/sysfs/group.c                                 |    6 +-
+ fs/sysfs/inode.c                                 |    6 +-
+ fs/sysfs/mount.c                                 |   95 ++++++++++-
+ fs/sysfs/symlink.c                               |   35 ++++-
+ fs/sysfs/sysfs.h                                 |   34 +++-
+ include/linux/device.h                           |   12 +-
+ include/linux/firmware.h                         |    1 +
+ include/linux/kobject.h                          |   38 ++++
+ include/linux/kref.h                             |    1 -
+ include/linux/lockdep.h                          |    8 +
+ include/linux/netlink.h                          |    4 +
+ include/linux/ramfs.h                            |    2 +
+ include/linux/sysfs.h                            |   26 +++-
+ kernel/ksysfs.c                                  |    3 +-
+ kernel/lockdep.c                                 |    5 +
+ kernel/module.c                                  |    2 +-
+ kernel/user_namespace.c                          |    4 +-
+ lib/kobject.c                                    |  115 ++++++++++++
+ lib/kobject_uevent.c                             |  109 ++++++++++--
+ lib/kref.c                                       |   15 +--
+ net/bridge/br_sysfs_br.c                         |    2 +-
+ net/core/dev.c                                   |   28 +---
+ net/core/net-sysfs.c                             |   63 +++++--
+ net/core/net-sysfs.h                             |    1 -
+ net/netlink/af_netlink.c                         |   21 ++-
+ scripts/checkpatch.pl                            |   11 ++
+ security/integrity/ima/ima_iint.c                |    4 +-
+ 94 files changed, 1165 insertions(+), 411 deletions(-)
+ create mode 100644 Documentation/filesystems/sysfs-tagging.txt
 
 ---------------
 
-Jiri Kosina (1):
-      sysfs: use sysfs_attr_init in ASUS atk0110 driver
+Alan Stern (1):
+      Driver core: don't initialize wakeup flags
 
-Randy Dunlap (1):
-      Documentation/HOWTO: update git home URL
+Chris Wright (2):
+      sysfs: add struct file* to bin_attr callbacks
+      pci: check caps from sysfs file open to read device dependent config space
 
-Stefan Richter (1):
-      Documentation: -stable rules: upstream commit ID requirement reworded
+Christoph Egger (1):
+      driver-core: fix Typo in drivers/base/core.c for CONFIG_MODULE
+
+David Woodhouse (1):
+      firmware_class: fix memory leak - free allocated pages
+
+David Zeuthen (1):
+      generate "change" uevent for loop device
+
+Dmitry Torokhov (3):
+      firmware loader: rely on driver core to create class attribute
+      firmware loader: split out builtin firmware handling
+      firmware loader: do not allocate firmare id separately
+
+Eric W. Biederman (16):
+      sysfs: Basic support for multiple super blocks
+      sysfs: Remove double free sysfs_get_sb
+      kobj: Add basic infrastructure for dealing with namespaces.
+      sysfs: Implement sysfs tagged directory support.
+      sysfs: Add support for tagged directories with untagged members.
+      sysfs: Implement sysfs_delete_link
+      driver core: Implement ns directory support for device classes.
+      sysfs: Don't use enums in inline function declaration.
+      sysfs: Remove usage of S_BIAS to avoid merge conflict with the vfs tree
+      kobject: Send hotplug events in all network namespaces
+      netns: Teach network device kobjects which namespace they are in.
+      net/sysfs: Fix the bitrot in network device kobject namespace support
+      netlink: Implment netlink_broadcast_filtered
+      kobj: Send hotplug events in the proper namespace.
+      hotplug: netns aware uevent_helper
+      net: Expose all network devices in a namespaces in sysfs
+
+Hugh Daschbach (1):
+      Driver core: Protect device shutdown from hot unplug events.
+
+Jan Beulich (1):
+      drivers/base/cpu.c: fix the output from /sys/devices/system/cpu/offline
+
+Johannes Berg (1):
+      firmware class: export nowait to userspace
+
+Julia Lawall (1):
+      driver core: module.c: Use kasprintf
+
+Kevin Hilman (1):
+      platform_bus: allow custom extensions to system PM methods
+
+NeilBrown (1):
+      kref: remove kref_set
+
+Peter Korsgaard (1):
+      devtmpfs: support !CONFIG_TMPFS
+
+Peter Zijlstra (1):
+      lockdep: Add novalidate class for dev->mutex conversion
+
+Rafael J. Wysocki (1):
+      Driver core: Reduce the level of request_firmware() messages
+
+Serge E. Hallyn (2):
+      sysfs: Comment sysfs directory tagging logic
+      sysfs-namespaces: add a high-level Documentation file
+
+Stefani Seibold (1):
+      driver-core: fix potential race condition in drivers/base/dd.c
+
+Thomas Gleixner (1):
+      drivers/base: Convert dev->sem to mutex
 
