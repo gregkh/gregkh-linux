@@ -103,7 +103,8 @@ reply()
 #		exit 1
 #	fi
 	echo "PATCH=$PATCH"
-	SUBJECT=`grep "Subject:" $PATCH`
+#	SUBJECT=`grep "Subject:" $PATCH`
+	SUBJECT=`grep "Subject:" $PATCH | sed s/Subject\:\ //`
 #	SUBJECT=$(head -n 2 $PATCH | tail -n 1)
 	MESSAGE_ID=`grep -i "^Message-ID:" $PATCH | cut -f 2 -d ' ' | cut -f 2 -d '<' | cut -f 1 -d '>'`
 	author AUTHOR $1 FIRST_AUTHOR

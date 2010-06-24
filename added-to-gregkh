@@ -103,7 +103,8 @@ reply()
 #		exit 1
 #	fi
 	echo "PATCH=$PATCH"
-	SUBJECT=`grep "Subject:" $PATCH`
+#	SUBJECT=`grep "Subject:" $PATCH`
+	SUBJECT=`grep "Subject:" $PATCH | sed s/Subject\:\ //`
 #	SUBJECT=$(head -n 2 $PATCH | tail -n 1)
 	MESSAGE_ID=`grep -i "^Message-ID:" $PATCH | cut -f 2 -d ' ' | cut -f 2 -d '<' | cut -f 1 -d '>'`
 	author AUTHOR $1 FIRST_AUTHOR
@@ -142,17 +143,30 @@ reply()
 
 	(
 		echo
-		echo -n "This is a note to let you know that I've just added "
-		echo "the patch titled"
+		echo "This is a note to let you know that I've just added the patch titled"
 		echo
 		echo "    $SUBJECT"
 		echo
-		echo "to my gregkh-2.6 tree.  Its filename is"
+		echo "to my gregkh-2.6 tree which can be found in directory form at:"
+		echo "    http://www.kernel.org/pub/linux/kernel/people/gregkh/gregkh-2.6/patches/"
+		echo " and in git form at:"
+		echo "    git://git.kernel.org/pub/scm/linux/kernel/git/gregkh/patches.git"
 		echo
+		echo "The filename of this patch is:"
 		echo "    $PATCH"
 		echo
-		echo "This tree can be found at "
-		echo "    http://www.kernel.org/pub/linux/kernel/people/gregkh/gregkh-2.6/patches/"
+		echo "The patch will show up in the next release of the linux-next tree"
+		echo "(usually sometime within the next 24 hours during the week.)"
+		echo
+		echo "If this patch meets the merge guidelines for a bugfix, it should be"
+		echo "merged into Linus's tree before the next major kernel release."
+		echo "If not, it will be merged into Linus's tree during the next merge window."
+		echo
+		echo "Either way, you will probably be copied on the patch when it gets sent"
+		echo "to Linus for merging so that others can see what is happening in kernel"
+		echo "development."
+		echo
+		echo "If you have any questions about this process, please let me know."
 		echo
 		echo
 		cat $PATCH
@@ -165,7 +179,7 @@ reply()
 #			sed -e 's/\/home\/gregkh\/linux\/patches\///'
 	) |
 	makemail -to "$AUTHOR" -from="$FROM" \
-		-subject="patch $PATCH added to gregkh-2.6 tree" \
+		-subject="patch \"$SUBJECT\" added to gregkh-2.6 tree" \
 		-date="$(date -R)" \
 		-reply_to="$MESSAGE_ID" \
 		-message_id="$ID" \
