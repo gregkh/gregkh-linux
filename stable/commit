@@ -1,0 +1,13 @@
+#!/bin/bash
+
+VERSION=$1
+if [ "$VERSION" == "" ] ; then
+	echo "you need a version!"
+	exit
+fi
+echo "VERSION=$VERSION"
+DIR="queue-2.6.$VERSION"
+
+
+echo "../do_copy $VERSION && git add $DIR && git commit $DIR -m \".$VERSION patches\""
+
