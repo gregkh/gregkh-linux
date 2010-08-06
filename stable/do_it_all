@@ -18,7 +18,7 @@ do
 	../added-to-stable-version $VERSION ../tmp/$file
 done
 
-#rm -rf ../tmp/
+rm -rf ../tmp/
 
 #echo "../do_copy $VERSION && git add $DIR && git commit $DIR -m \".$VERSION patches\""
 
