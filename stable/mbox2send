@@ -11,21 +11,16 @@
 # through the patch correctly :(
 #
 
-my $base_id = "";
 my $line;
-my $firstline = "true";
-my $git_id;
-my $header_complete = "false";
-my $tmpfile;
 
-$version = shift;
+my $version = shift;
 
 if ($version eq "") {
 	print "must provide kernel version number\n";
 	die;
 }
 
-$mbox = shift;
+my $mbox = shift;
 
 if ($mbox eq "") {
 	print "must provide the name of the mbox file\n";
@@ -39,7 +34,6 @@ open MBOX, "$mbox" || die "Failed to open $mbox";
 open FILE, ">$mboxnew" || die "Failed to create $mboxnew";
 
 my $header = "true";
-my $body = "false";
 my $eat = "false";
 
 while ($line = <MBOX>) {
