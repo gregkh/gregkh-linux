@@ -50,7 +50,7 @@ author()
         while read l
         do
 		# skip the Message-ID: line so we don't send email to the wrong place
-		echo "$l"
+##		echo "$l"
 		reply=$(echo "$l" | grep -i Message-ID:)
 		if [ x"$reply" != x ]
 		then
@@ -61,7 +61,7 @@ author()
 		diff=$(echo "$l" | grep "^---")
 		if [ x"$diff" != x ]
 		then
-			echo "diffstart!!!!!"
+##			echo "diffstart!!!!!"
 			break
 		fi
 
@@ -109,8 +109,8 @@ reply()
 #	SUBJECT=$(head -n 2 $PATCH | tail -n 1)
 	MESSAGE_ID=`grep -i "^Message-ID:" $PATCH | cut -f 2 -d ' ' | cut -f 2 -d '<' | cut -f 1 -d '>'`
 	author AUTHOR $1 FIRST_AUTHOR
-	echo "author said $AUTHOR"
-	echo "first_author said $FIRST_AUTHOR"
+##	echo "author said $AUTHOR"
+##	echo "first_author said $FIRST_AUTHOR"
 	if [ x"$AUTHOR" == "x" ]
 	then
 		echo "nobody to notify"
@@ -140,7 +140,7 @@ reply()
 
 	ID=`make_message_id`
 
-	echo "makemail -to $AUTHOR -from=$FROM -subject=\"$SUBJECT\" -date=\"$(date -R)\" -reply_to=$MESSAGE_ID --message=$ID $CHARCMD"
+##	echo "makemail -to $AUTHOR -from=$FROM -subject=\"$SUBJECT\" -date=\"$(date -R)\" -reply_to=$MESSAGE_ID --message=$ID $CHARCMD"
 #	echo "smtpsend -server=$SMTP_SERVER $to -from=$FROM"
 
 
@@ -190,6 +190,6 @@ for patch_file in $*
 do
 	reply $patch_file
 	echo "acknowledged $patch_file"
-	echo "-----------------------------------------------"
-	echo
+##	echo "-----------------------------------------------"
+##	echo
 done
