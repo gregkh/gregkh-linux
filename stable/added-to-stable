@@ -150,7 +150,7 @@ reply()
 		echo "    http://www.kernel.org/git/?p=linux/kernel/git/stable/stable-queue.git;a=summary"
 		echo
 		echo "The filename of the patch is:"
-		echo "    $PATCH"
+		echo "    " `basename "$PATCH"`
 		echo "and it can be found in the queue-$KERNEL subdirectory."
 		echo
 		echo "If you, or anyone else, feels it should not be added to the stable tree,"
