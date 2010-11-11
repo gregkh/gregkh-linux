@@ -13,8 +13,10 @@ BASENAME=`basename $PWD`
 NAME_LEN=${#BASENAME}
 NAME_GET=$((NAME_LEN - 4))
 NAME=${BASENAME:0:$NAME_GET}
+FOO=${BASENAME%-2.6}
 
 echo $NAME
+echo $FOO
 echo $BRANCH
 
 ROOT_BRANCH=`echo $BRANCH | cut -f 2 -d '-'`
