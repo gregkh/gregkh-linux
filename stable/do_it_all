@@ -10,7 +10,7 @@ DIR="queue-2.6.$VERSION"
 
 
 mkdir ../tmp
-git ls-files -o | grep $VERSION | xargs -i  cp {} -v ../tmp/
+git ls-files -o | grep queue-2\.6\.$VERSION | xargs -i  cp {} -v ../tmp/
 git add $DIR
 git commit $DIR -m ".$VERSION patches"
 for file in `ls ../tmp/`
