@@ -1,0 +1,22 @@
+#!/bin/bash
+
+VERSION=$1
+if [ "$VERSION" == "" ] ; then
+	echo "you need a version!"
+	exit
+fi
+echo "VERSION=$VERSION"
+DIR="queue-2.6.$VERSION"
+
+
+mkdir ../tmp
+git ls-files -o | grep queue-2\.6\.$VERSION | xargs -i  cp {} -v ../tmp/
+git add $DIR
+git commit $DIR -m ".$VERSION patches"
+for file in `ls ../tmp/`
+do
+	../added-to-longterm-version $VERSION ../tmp/$file
+done
+
+rm -rf ../tmp/
+

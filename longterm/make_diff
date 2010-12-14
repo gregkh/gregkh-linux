@@ -1,0 +1,8 @@
+#!/bin/bash
+
+VERSION=`ketchup -m`
+
+git diff --stat > diffstat
+git diff | gzip -9vq > patch-$VERSION.gz
+echo "$VERSION patch created"
+echo "scp patch-$VERSION.gz gregkh@master.kernel.org:"

@@ -1,0 +1,195 @@
+#!/bin/bash
+
+KERNEL_MINOR_VERSION=$1
+shift
+echo "VERSION=$KERNEL_MINOR_VERSION"
+
+#KERNEL_MINOR_VERSION='32'
+KERNEL="2.6.$KERNEL_MINOR_VERSION"
+
+EMAIL_ADDRESS='<gregkh@suse.de>'
+
+STABLE='<stable@kernel.org>'
+STABLE_COMMITS='<stable-commits@vger.kernel.org>'
+
+extract_addr()
+{
+	read l
+	read l
+	read l
+	read l
+	a=$(echo "$l" | sed -n -e 's/.*<\(.*@[^>]*\).*/\1/p')
+	echo $a
+}
+
+if [ x"$SMTP_SERVER" = x ]
+then
+	SMTP_SERVER=localhost:25
+fi
+
+if [ x"$EMAIL_ADDRESS" = x ]
+then
+	echo "You must set the EMAIL_ADDRESS environment variable to your email address"
+	exit 1
+fi
+FROM=$EMAIL_ADDRESS
+
+TO=""
+CC=""
+
+author()
+{
+        first_author=""
+        TXT=$2
+        if [ ! -f $TXT ]
+        then
+                echo "$TXT is missing"
+                exit 1
+        fi
+        author=""
+        while read l
+        do
+		# skip the Message-ID: line so we don't send email to the wrong place
+##		echo "$l"
+		reply=$(echo "$l" | grep -i Message-ID:)
+		if [ x"$reply" != x ]
+		then
+			continue
+		fi
+
+		# if this is the start of the diff, then it's time to stop looking
+		diff=$(echo "$l" | grep "^---")
+		if [ x"$diff" != x ]
+		then
+##			echo "diffstart!!!!!"
+			break
+		fi
+
+                for x in $l
+                do
+                        a=$(echo "$x" | sed -n -e 's/.*<\(.*@[^>]*\).*/\1/p')
+                        if [ x"$a" != x ]
+                        then
+                                if [ x"$author" == x ]
+                                then
+                                        author=$a
+                                        first_author=$a
+                                else
+                                        author="$author $a"
+                                fi
+                        fi
+                done
+        done < $TXT
+        author=$(echo "$author" | tr ' ' '\n' | grep -v "$first_author" |
+                sort | uniq)
+        author="$first_author $author"
+        eval $1=$(echo $author | sed -e 's/ /,/g')
+        if [ x"$3" != x ]
+        then
+                eval $3=$first_author
+        fi
+}
+
+
+
+reply()
+{
+	PATCH=$1
+#	patch_name=$(stripit $1)
+#	PATCH=$P/patches/$patch_name.patch
+#	TXT=$P/txt/$patch_name.txt
+#	if [ ! -f $TXT ]
+#	then
+#		echo $TXT is missing
+#		exit 1
+#	fi
+	echo "PATCH=$PATCH"
+#	SUBJECT=`grep "Subject:" $PATCH`
+	SUBJECT=`grep "Subject:" $PATCH | sed s/Subject\:\ //`
+#	SUBJECT=$(head -n 2 $PATCH | tail -n 1)
+	MESSAGE_ID=`grep -i "^Message-ID:" $PATCH | cut -f 2 -d ' ' | cut -f 2 -d '<' | cut -f 1 -d '>'`
+	author AUTHOR $1 FIRST_AUTHOR
+##	echo "author said $AUTHOR"
+##	echo "first_author said $FIRST_AUTHOR"
+	if [ x"$AUTHOR" == "x" ]
+	then
+		echo "nobody to notify"
+		exit 0
+	fi
+	to=""
+	for i in $(echo "$AUTHOR" | sed -e 's/,/ /g')
+	do
+		if ! echo "$TO" | grep "$i"
+		then
+			to=$to" -to $i"
+		fi
+	done
+	if [ x"$cc" != x ]
+	then
+		cc="-cc $cc"
+	fi
+
+#	SUBJECT="patch $PATCH added to $KERNEL-stable tree"
+
+	CHARSET=$(guess-charset "$PATCH")
+	if test "x$CHARSET" = "ANSI_X3.4-1968"; then
+		CHARSET=
+	else
+		CHARCMD="-charset=$CHARSET"
+	fi
+
+	ID=`make_message_id`
+
+##	echo "makemail -to $AUTHOR -from=$FROM -subject=\"$SUBJECT\" -date=\"$(date -R)\" -reply_to=$MESSAGE_ID --message=$ID $CHARCMD"
+#	echo "smtpsend -server=$SMTP_SERVER $to -from=$FROM"
+
+
+	(
+		echo
+		echo "This is a note to let you know that I've just added the patch titled"
+		echo
+		echo "    $SUBJECT"
+		echo
+		echo "to the $KERNEL-longterm tree which can be found at:"
+		echo "    http://www.kernel.org/git/?p=linux/kernel/git/longterm/longterm-queue-$KERNEL.git;a=summary"
+		echo
+		echo "The filename of the patch is:"
+		echo "    " `basename "$PATCH"`
+		echo "and it can be found in the queue-$KERNEL subdirectory."
+		echo
+		echo "If you, or anyone else, feels it should not be added to the $KERNEL longterm tree,"
+		echo "please let <stable@kernel.org> know about it."
+		echo
+		echo
+		cat $PATCH
+		echo
+		echo
+		echo -n "Patches currently in longterm-queue-$KERNEL which might be from "
+		echo "$FIRST_AUTHOR are"
+		echo
+		grep -lR $FIRST_AUTHOR /home/gregkh/linux/stable/longterm-queue-$KERNEL/queue-$KERNEL/ 2> /dev/null |
+			sed -e 's/\/home\/gregkh\/linux\/longterm\/longterm-queue-$KERNEL\///'
+	) |
+	makemail -to "$AUTHOR" \
+		-from="$FROM" \
+		-cc="$STABLE, $STABLE_COMMITS"  \
+		-subject="Patch \"$SUBJECT\" has been added to the $KERNEL-longterm tree" \
+		-date="$(date -R)" \
+		-reply_to="$MESSAGE_ID" \
+		-message_id="$ID" \
+		"$CHARCMD" \
+		| \
+	# talk to the suse network instead of localhost (due to the way suse.de now handles email...)
+	# smtpsend -server=$SMTP_SERVER $to -from=$FROM
+#	~/bin/msmtp-enqueue.sh -a suse "$to"
+	~/bin/msmtp-enqueue.sh -a coco "$to"
+	#msmtp $to
+}
+
+for patch_file in $*
+do
+	reply $patch_file
+	echo "acknowledged $patch_file"
+##	echo "-----------------------------------------------"
+##	echo
+done
