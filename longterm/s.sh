@@ -2,9 +2,9 @@
 
 USER=`whoami`
 
-DIR=/home/$USER/linux/stable
+DIR=/home/$USER/linux/longterm
 SCRIPT_DIR=/home/$USER/linux
-KERNEL_DIR=$DIR/linux-2.6.36.y
+KERNEL_DIR=$DIR/linux-2.6.32.y
 
 cd $DIR
 cat - > $DIR/foo.patch
