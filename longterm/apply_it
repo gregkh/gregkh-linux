@@ -1,0 +1,27 @@
+#!/bin/bash
+
+PATCH=$1
+if [ "$PATCH" == "" ] ; then
+	echo "you need a patch!"
+	exit
+fi
+
+echo "PATCH=$PATCH"
+
+
+apply_it ()
+{
+	VERSION=$1
+	DIR="linux-2.6.$VERSION.y"
+	echo "DIR=$DIR"
+
+	cd $DIR
+	quilt import ../$PATCH
+	quilt push
+	quilt ref
+	cd ..
+}
+
+apply_it 32
+apply_it 33
+

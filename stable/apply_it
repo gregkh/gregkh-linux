@@ -1,0 +1,46 @@
+#!/bin/bash
+
+# Text color variables
+txtund=$(tput sgr 0 1)    # Underline
+txtbld=$(tput bold)       # Bold
+txtred=$(tput setaf 1)    # Red
+txtgrn=$(tput setaf 2)    # Green
+txtylw=$(tput setaf 3)    # Yellow
+txtblu=$(tput setaf 4)    # Blue
+txtpur=$(tput setaf 5)    # Purple
+txtcyn=$(tput setaf 6)    # Cyan
+txtwht=$(tput setaf 7)    # White
+txtrst=$(tput sgr0)       # Text reset
+
+PATCH=$1
+if [ "$PATCH" == "" ] ; then
+	echo "you need a patch!"
+	exit
+fi
+
+#echo "PATCH=$PATCH"
+
+apply_it ()
+{
+	VERSION=$1
+	DIR="linux-2.6.$VERSION.y"
+	# echo "DIR=$DIR"
+
+	echo -n "${txtrst}Applying $PATCH to $DIR "
+
+	cd $DIR
+	quilt import ../$PATCH &> /dev/null
+	quilt push &> /dev/null
+	if [ $? -ne 0 ] ; then
+		echo "${txtred} FAILED${txtrst}"
+	else
+		quilt ref &> /dev/null
+		echo "${txtgrn} SUCCEEDED${txtrst}"
+	fi
+	cd ..
+}
+
+
+apply_it 36
+apply_it 37
+
