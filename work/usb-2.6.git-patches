@@ -1,0 +1,110 @@
+From: Greg KH <gregkh@suse.de>
+To: Linus Torvalds <torvalds@linux-foundation.org>, Andrew Morton <akpm@linux-foundation.org>
+Cc: linux-kernel@vger.kernel.org, linux-usb@vger.kernel.org
+Subject: [GIT PATCH] USB fixes for .38
+
+Here are some USB fixes for your .38 tree.
+
+Another round of tiny musb fixes, and other driver fixes and device ids.
+
+Please pull from:
+	master.kernel.org:/pub/scm/linux/kernel/git/gregkh/usb-2.6.git/ usb-linus
+
+All of these patches have been in the linux-next and mm trees for a
+while.
+
+The full patches will be sent to the linux-usb mailing list, if anyone
+wants to see them.
+
+thanks,
+
+greg k-h
+
+------------
+
+ drivers/usb/class/cdc-acm.c           |    1 +
+ drivers/usb/core/hcd.c                |    2 +-
+ drivers/usb/core/hub.c                |    5 ++
+ drivers/usb/gadget/Kconfig            |    2 +
+ drivers/usb/gadget/f_mass_storage.c   |    3 +-
+ drivers/usb/gadget/r8a66597-udc.c     |    2 +-
+ drivers/usb/host/Kconfig              |    2 +
+ drivers/usb/host/ehci-au1xxx.c        |    2 +-
+ drivers/usb/host/ehci-hub.c           |    7 +++
+ drivers/usb/host/ehci-omap.c          |    6 +-
+ drivers/usb/host/ehci-pci.c           |    2 +-
+ drivers/usb/host/sl811-hcd.c          |    1 +
+ drivers/usb/musb/blackfin.c           |    1 +
+ drivers/usb/musb/musb_core.c          |   10 +----
+ drivers/usb/musb/musb_core.h          |   12 ++++++
+ drivers/usb/musb/musb_dma.h           |    3 +
+ drivers/usb/musb/musb_gadget.c        |   71 ++++++++++++++++++++++----------
+ drivers/usb/musb/musb_gadget.h        |    8 +++-
+ drivers/usb/musb/musb_host.c          |   11 ++---
+ drivers/usb/musb/musbhsdma.h          |   19 ++++++--
+ drivers/usb/otg/Kconfig               |    2 +
+ drivers/usb/serial/ftdi_sio.c         |   27 ++++++++++++
+ drivers/usb/serial/ftdi_sio_ids.h     |   12 ++++++
+ drivers/usb/serial/io_edgeport.c      |    4 +-
+ drivers/usb/serial/ti_usb_3410_5052.c |    2 +-
+ drivers/usb/storage/unusual_devs.h    |   14 ++++++
+ include/linux/usb/msm_hsusb_hw.h      |    4 --
+ 27 files changed, 178 insertions(+), 57 deletions(-)
+
+---------------
+
+Alan Stern (3):
+      USB: prevent buggy hubs from crashing the USB stack
+      USB: fix race between root-hub resume and wakeup requests
+      USB: usb-storage: unusual_devs entry for Coby MP3 player
+
+Arvid Ephraim Picciani (1):
+      USB: cdc-acm: Adding second ACM channel support for Nokia N8
+
+Bjørn Mork (1):
+      USB: io_edgeport: fix the reported firmware major and minor
+
+Bob Liu (1):
+      usb: musb: hsdma: change back to use musb_read/writew
+
+Felipe Balbi (1):
+      usb: musb: disable double buffering when it's broken
+
+Ionut Nicu (1):
+      USB: ti_usb: fix module removal
+
+Jarkko Nikula (1):
+      usb: ehci-omap: Show fatal probing time errors to end user
+
+Jean-Christophe PLAGNIOL-VILLARD (1):
+      USB: ftdi_sio: add ST Micro Connect Lite uart support
+
+Jesper Juhl (2):
+      USB SL811HS HCD: Fix memory leak in sl811h_urb_enqueue()
+      USB, Mass Storage, composite, gadget: Fix build failure and memset of a struct
+
+Mian Yousaf Kaukab (2):
+      usb: musb: maintain three states for buffer mappings instead of two
+      usb: musb: introduce api for dma code to check compatibility with usb request
+
+Michael Williamson (1):
+      USB: ftdi_sio: Add VID=0x0647, PID=0x0100 for Acton Research spectrograph
+
+Ming Lei (1):
+      usb: musb: fix kernel panic during s2ram(v2)
+
+Nick Holloway (1):
+      USB: Storage: Add unusual_devs entry for VTech Kidizoom
+
+Pavankumar Kondeti (1):
+      USB: Fix trout build failure with ci13xxx_msm gadget
+
+Sergei Shtylyov (1):
+      usb: musb: core: fix IRQ check
+
+Yin Kangkai (1):
+      USB: EHCI: fix scheduling while atomic during suspend
+
+Yusuke Goda (1):
+      usb: r8a66597-udc: Fixed bufnum of Bulk
+

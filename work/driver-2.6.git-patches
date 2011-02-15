@@ -1,0 +1,47 @@
+From: Greg KH <gregkh@suse.de>
+To: Linus Torvalds <torvalds@linux-foundation.org>, Andrew Morton <akpm@linux-foundation.org>
+Cc: linux-kernel@vger.kernel.org
+Subject: [GIT PATCH] driver core patches for .38
+
+Here's the "big" driver core merge for the .38 tree.
+
+Yeah, really tiny, not much of anything went on in this area of the
+kernel for the past 3 months.
+
+Please pull from:
+	master.kernel.org:/pub/scm/linux/kernel/git/gregkh/driver-core-2.6.git/ driver-core-next
+
+All of these patches have been in the linux-next and mm trees for a
+while now.
+
+The patches will be sent as a follow-on to this message to lkml for
+people to see.
+
+thanks,
+
+greg k-h
+
+------------
+
+ drivers/base/base.h    |   62 +++++++++++++++++++----------------------------
+ drivers/base/bus.c     |   13 ++++-----
+ drivers/base/class.c   |   42 ++++++++++++++++----------------
+ drivers/base/core.c    |   24 ++++++++++--------
+ fs/sysfs/group.c       |   10 +------
+ include/linux/device.h |    7 ++---
+ 6 files changed, 70 insertions(+), 88 deletions(-)
+
+---------------
+
+Alan Stern (1):
+      sysfs: remove useless test from sysfs_merge_group
+
+Brandon Philips (1):
+      driver core: fix whitespace in class_attr_string
+
+Kay Sievers (1):
+      driver-core: merge private parts of class and bus
+
+Michael Ellerman (1):
+      driver core: Document that device_rename() is only for networking
+

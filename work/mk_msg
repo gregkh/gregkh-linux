@@ -1,0 +1,19 @@
+#!/bin/bash
+
+ROOT="master"
+#ROOT="origin"
+#ROOT="c8ddb2713c624f432fa5fe3c7ecffcdda46ea0d4"
+#ROOT="cf7d7e5a1980d1116ee152d25dac382b112b9c17"
+
+TMP_FILE=$1
+#
+echo > $TMP_FILE
+git diff -M --stat --summary $ROOT..HEAD >> $TMP_FILE
+echo >> $TMP_FILE
+echo "---------------" >> $TMP_FILE
+echo >> $TMP_FILE
+git log --no-merges $ROOT..HEAD | git shortlog  >> $TMP_FILE
+git format-patch -M -n $ROOT..HEAD
+
+echo "git send-email --to linux-pci@atrey.karlin.mff.cuni.cz --no-chain-reply-to *.patch"
+
