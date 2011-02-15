@@ -12,7 +12,11 @@ txtcyn=$(tput setaf 6)    # Cyan
 txtwht=$(tput setaf 7)    # White
 txtrst=$(tput sgr0)       # Text reset
 
-COMMIT_ID=`cat - | ~/bin/get_commit_id.sh`
+#COMMIT_ID=`cat - | ~/bin/get_commit_id.sh`
+COMMIT_ID=`cat - | grep -i "commit:" | head -n 1 | sed -s 's/ //g' | cut -f 2 -d ':'`
+#echo "$COMMIT_ID"
+#exit
+
 echo "${txtblu}c2p $COMMIT_ID${txtrst}"
 c2p $COMMIT_ID
 exit
