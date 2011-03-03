@@ -1,0 +1,26 @@
+#!/bin/bash
+
+
+TREES="driver-core-2.6 staging-2.6 tty-2.6 usb-2.6"
+
+
+push_tree()
+{
+	cd $TREE
+	root=`echo $TREE | cut -f 1 -d '-'`
+	while read branch
+	do
+	echo "branch=$branch"
+	done < `git branch | grep root`
+#	for branch in $branches
+#	do
+#		echo "git checkout $branch && git push"
+#	done
+	cd ..
+}
+
+
+for TREE in $TREES
+do
+	push_tree
+done
