@@ -167,7 +167,7 @@ reply()
 		echo -n "Patches currently in longterm-queue-$KERNEL which might be from "
 		echo "$FIRST_AUTHOR are"
 		echo
-		grep -lR $FIRST_AUTHOR /home/gregkh/linux/stable/longterm-queue-$KERNEL/queue-$KERNEL/ 2> /dev/null |
+		grep -lR $FIRST_AUTHOR /home/gregkh/linux/longterm/longterm-queue-$KERNEL/queue-$KERNEL/ 2> /dev/null |
 			sed -e 's/\/home\/gregkh\/linux\/longterm\/longterm-queue-$KERNEL\///'
 	) |
 	makemail -to "$AUTHOR" \
