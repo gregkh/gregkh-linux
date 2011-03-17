@@ -1,0 +1,79 @@
+#!/usr/bin/perl -W
+#
+# This takes a mbox of email, created with 'quilt mail --mbox'
+# and formats it in the proper way to send off a -longterm kernel review.
+#
+# This means:
+#  - strip off some quilt headers and the threading
+#  - add some text at the top of every message.
+#
+# Written in perl because the bash version is broken, it doesn't pass
+# through the patch correctly :(
+#
+
+my $line;
+
+my $version = shift;
+
+if ($version eq "") {
+	print "must provide kernel version number\n";
+	die;
+}
+
+my $mbox = shift;
+
+if ($mbox eq "") {
+	print "must provide the name of the mbox file\n";
+	die;
+}
+
+$mboxnew = "$mbox.new";
+chomp($mboxnew);
+
+open MBOX, "$mbox" || die "Failed to open $mbox";
+open FILE, ">$mboxnew" || die "Failed to create $mboxnew";
+
+my $header = "true";
+my $eat = "false";
+
+while ($line = <MBOX>) {
+	$eat = "false";
+
+	if ($header eq "false") {
+		if ($line =~ m/^From /) {
+			# start of a message, this is the header
+			$header = "true";
+		}
+	}
+
+	if ($header eq "true") {
+		# strip out References line
+		if ($line =~ m/^References:/) {
+			# eat the line
+			$eat = "true";
+		}
+		# strip out the Content-Disposition line
+		if ($line =~ m/Content-Disposition:/) {
+			# eat the line
+			$eat = "true";
+
+			# we are now out of the header
+			$header = "false";
+
+			# write out our custom header too
+			print FILE "\n";
+			print FILE "2.6.$version-longterm review patch.  If anyone has any objections, please let us know.\n";
+			print FILE "\n";
+			print FILE "------------------\n";
+		}
+	}
+
+	if ($eat eq "false") {
+		print FILE $line;
+	}
+}
+close MBOX;
+close FILE;
+
+print "new mailbox is in $mboxnew\n";
+
