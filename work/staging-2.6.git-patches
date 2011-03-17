@@ -1,17 +1,23 @@
 From: Greg KH <greg@kroah.com>
 To: Linus Torvalds <torvalds@osdl.org>, Andrew Morton <akpm@osdl.org>
 Cc: linux-kernel@vger.kernel.org, devel@linuxdriverproject.org
-Subject: [GIT PATCH] STAGING fixes for .38
+Subject: [GIT PATCH] STAGING patches for .39
 
-Here are a few bug fixes for the staging tree for .38
+Here is the big staging tree merge for .39
 
-Not much really, a broadcom driver fix, zram fix, and other small
-things.
+Lots of stuff here, 961 patches worth.  Some drivers have moved out of
+the staging tree to the main portion of the kernel, a few new drivers
+added, and lots of work on some of the existing drivers.  See the
+shortlog for full details.
+
+Overall we still added a few more lines than removed, but it's not bad
+considering we added some new drivers as well:
+ 835 files changed, 94766 insertions(+), 91366 deletions(-)
 
 Please pull from:
-	master.kernel.org:/pub/scm/linux/kernel/git/gregkh/staging-2.6.git/ staging-linus
+	master.kernel.org:/pub/scm/linux/kernel/git/gregkh/staging-2.6.git/ staging-next
 
-All of these patches have been in the -next trees for a while.
+All of these patches have been in the mm and -next trees for a while.
 
 These patches will be sent to the linux driver project list for all to
 see.
@@ -22,37 +28,2261 @@ greg k-h
 
 --------------
 
- drivers/staging/brcm80211/sys/wl_mac80211.c     |   12 ++++++++++--
- drivers/staging/brcm80211/sys/wlc_mac80211.c    |   13 +++++++++++++
- drivers/staging/brcm80211/sys/wlc_pub.h         |    2 ++
- drivers/staging/comedi/Kconfig                  |    5 ++++-
- drivers/staging/comedi/drivers/mite.c           |    2 --
- drivers/staging/comedi/drivers/ni_6527.c        |    4 ++++
- drivers/staging/comedi/drivers/ni_65xx.c        |    4 ++++
- drivers/staging/comedi/drivers/ni_660x.c        |    4 ++++
- drivers/staging/comedi/drivers/ni_670x.c        |    4 ++++
- drivers/staging/comedi/drivers/ni_pcidio.c      |    4 ++++
- drivers/staging/comedi/drivers/ni_pcimio.c      |    4 ++++
- drivers/staging/hv/netvsc_drv.c                 |    1 +
- drivers/staging/intel_sst/intelmid_v2_control.c |    5 ++++-
- drivers/staging/zram/zram_drv.c                 |    4 ++++
- 14 files changed, 62 insertions(+), 6 deletions(-)
+ MAINTAINERS                                        |    6 -
+ drivers/bluetooth/Kconfig                          |   10 +
+ drivers/bluetooth/Makefile                         |    1 +
+ drivers/bluetooth/btwilink.c                       |  395 +
+ drivers/connector/cn_queue.c                       |    7 +-
+ drivers/connector/connector.c                      |    2 +-
+ drivers/staging/Kconfig                            |   12 +-
+ drivers/staging/Makefile                           |   15 +-
+ drivers/staging/ath6kl/TODO                        |   31 +-
+ drivers/staging/ath6kl/bmi/include/bmi_internal.h  |   24 +-
+ drivers/staging/ath6kl/bmi/src/bmi.c               |  492 +-
+ .../staging/ath6kl/hif/common/hif_sdio_common.h    |    4 +-
+ .../hif/sdio/linux_sdio/include/hif_internal.h     |   48 +-
+ .../staging/ath6kl/hif/sdio/linux_sdio/src/hif.c   |  261 +-
+ .../ath6kl/hif/sdio/linux_sdio/src/hif_scatter.c   |   70 +-
+ drivers/staging/ath6kl/htc2/AR6000/ar6k.c          |  411 +-
+ drivers/staging/ath6kl/htc2/AR6000/ar6k.h          |  292 +-
+ drivers/staging/ath6kl/htc2/AR6000/ar6k_events.c   |  172 +-
+ drivers/staging/ath6kl/htc2/AR6000/ar6k_gmbox.c    |  174 +-
+ .../ath6kl/htc2/AR6000/ar6k_gmbox_hciuart.c        |  321 +-
+ drivers/staging/ath6kl/htc2/htc.c                  |  138 +-
+ drivers/staging/ath6kl/htc2/htc_internal.h         |  112 +-
+ drivers/staging/ath6kl/htc2/htc_recv.c             |  382 +-
+ drivers/staging/ath6kl/htc2/htc_send.c             |  180 +-
+ drivers/staging/ath6kl/htc2/htc_services.c         |   88 +-
+ drivers/staging/ath6kl/include/a_debug.h           |   30 +-
+ drivers/staging/ath6kl/include/a_drv_api.h         |    4 +-
+ drivers/staging/ath6kl/include/aggr_recv_api.h     |   10 +-
+ drivers/staging/ath6kl/include/ar3kconfig.h        |   28 +-
+ drivers/staging/ath6kl/include/ar6000_diag.h       |   26 +-
+ drivers/staging/ath6kl/include/ar6kap_common.h     |   10 +-
+ drivers/staging/ath6kl/include/athbtfilter.h       |    6 +-
+ drivers/staging/ath6kl/include/bmi.h               |  168 +-
+ .../ath6kl/include/common/AR6002/AR6002_regdump.h  |   34 +-
+ .../staging/ath6kl/include/common/AR6002/addrs.h   |    6 +-
+ drivers/staging/ath6kl/include/common/a_hci.h      |  386 +-
+ drivers/staging/ath6kl/include/common/athdefs.h    |   85 +-
+ drivers/staging/ath6kl/include/common/bmi_msg.h    |   92 +-
+ drivers/staging/ath6kl/include/common/btcoexGpio.h |    4 +-
+ drivers/staging/ath6kl/include/common/dbglog.h     |   26 +-
+ .../staging/ath6kl/include/common/dset_internal.h  |    6 +-
+ drivers/staging/ath6kl/include/common/dsetid.h     |   12 +-
+ .../staging/ath6kl/include/common/epping_test.h    |   46 +-
+ drivers/staging/ath6kl/include/common/gmboxif.h    |   16 +-
+ drivers/staging/ath6kl/include/common/htc.h        |   92 +-
+ drivers/staging/ath6kl/include/common/ini_dset.h   |    6 +-
+ drivers/staging/ath6kl/include/common/pkt_log.h    |    8 +-
+ drivers/staging/ath6kl/include/common/regdump.h    |    8 +-
+ .../include/common/regulatory/reg_dbschema.h       |   98 +-
+ drivers/staging/ath6kl/include/common/targaddrs.h  |   96 +-
+ drivers/staging/ath6kl/include/common/testcmd.h    |   62 +-
+ drivers/staging/ath6kl/include/common/wlan_dset.h  |    6 +-
+ drivers/staging/ath6kl/include/common/wmi.h        | 1402 ++--
+ drivers/staging/ath6kl/include/common/wmi_thin.h   |  158 +-
+ drivers/staging/ath6kl/include/common/wmix.h       |   88 +-
+ drivers/staging/ath6kl/include/common_drv.h        |   60 +-
+ drivers/staging/ath6kl/include/dl_list.h           |   26 +-
+ drivers/staging/ath6kl/include/dset_api.h          |   30 +-
+ drivers/staging/ath6kl/include/gpio_api.h          |   22 +-
+ drivers/staging/ath6kl/include/hci_transport_api.h |   58 +-
+ drivers/staging/ath6kl/include/hif.h               |  161 +-
+ drivers/staging/ath6kl/include/htc_api.h           |  170 +-
+ drivers/staging/ath6kl/include/htc_packet.h        |   66 +-
+ drivers/staging/ath6kl/include/target_reg_table.h  |   84 +-
+ drivers/staging/ath6kl/include/wlan_api.h          |   80 +-
+ drivers/staging/ath6kl/include/wmi_api.h           |  472 +-
+ drivers/staging/ath6kl/miscdrv/ar3kconfig.c        |  182 +-
+ .../staging/ath6kl/miscdrv/ar3kps/ar3kpsconfig.c   |  164 +-
+ .../staging/ath6kl/miscdrv/ar3kps/ar3kpsconfig.h   |    8 +-
+ .../staging/ath6kl/miscdrv/ar3kps/ar3kpsparser.c   |  142 +-
+ .../staging/ath6kl/miscdrv/ar3kps/ar3kpsparser.h   |   26 +-
+ drivers/staging/ath6kl/miscdrv/common_drv.c        |  309 +-
+ drivers/staging/ath6kl/miscdrv/credit_dist.c       |   46 +-
+ drivers/staging/ath6kl/miscdrv/miscdrv.h           |    2 +-
+ drivers/staging/ath6kl/os/linux/ar6000_android.c   |   49 +-
+ drivers/staging/ath6kl/os/linux/ar6000_drv.c       | 1611 ++--
+ drivers/staging/ath6kl/os/linux/ar6000_pm.c        |  206 +-
+ drivers/staging/ath6kl/os/linux/ar6000_raw_if.c    |   78 +-
+ drivers/staging/ath6kl/os/linux/ar6k_pal.c         |   78 +-
+ drivers/staging/ath6kl/os/linux/cfg80211.c         |  311 +-
+ drivers/staging/ath6kl/os/linux/eeprom.c           |   74 +-
+ .../staging/ath6kl/os/linux/export_hci_transport.c |   54 +-
+ drivers/staging/ath6kl/os/linux/hci_bridge.c       |  296 +-
+ .../staging/ath6kl/os/linux/include/ar6000_drv.h   |  312 +-
+ drivers/staging/ath6kl/os/linux/include/ar6k_pal.h |    4 +-
+ .../ath6kl/os/linux/include/ar6xapi_linux.h        |  159 +-
+ .../staging/ath6kl/os/linux/include/athdrv_linux.h |  248 +-
+ .../ath6kl/os/linux/include/athtypes_linux.h       |    2 -
+ drivers/staging/ath6kl/os/linux/include/cfg80211.h |   22 +-
+ .../ath6kl/os/linux/include/export_hci_transport.h |   26 +-
+ .../staging/ath6kl/os/linux/include/osapi_linux.h  |   36 +-
+ .../staging/ath6kl/os/linux/include/wlan_config.h  |    7 +
+ .../ath6kl/os/linux/include/wmi_filter_linux.h     |   13 +-
+ drivers/staging/ath6kl/os/linux/ioctl.c            | 1036 +-
+ drivers/staging/ath6kl/os/linux/netbuf.c           |   72 +-
+ drivers/staging/ath6kl/os/linux/wireless_ext.c     |  400 +-
+ drivers/staging/ath6kl/reorder/aggr_rx_internal.h  |   77 +-
+ drivers/staging/ath6kl/reorder/rcv_aggr.c          |  170 +-
+ drivers/staging/ath6kl/wlan/include/ieee80211.h    |   76 +-
+ .../staging/ath6kl/wlan/include/ieee80211_node.h   |   10 +-
+ drivers/staging/ath6kl/wlan/src/wlan_node.c        |   75 +-
+ drivers/staging/ath6kl/wlan/src/wlan_recv_beacon.c |   40 +-
+ drivers/staging/ath6kl/wlan/src/wlan_utils.c       |    6 +-
+ drivers/staging/ath6kl/wmi/wmi.c                   | 1716 ++--
+ drivers/staging/ath6kl/wmi/wmi_host.h              |   42 +-
+ drivers/staging/autofs/Kconfig                     |   22 -
+ drivers/staging/autofs/Makefile                    |    7 -
+ drivers/staging/autofs/TODO                        |    8 -
+ drivers/staging/autofs/autofs_i.h                  |  165 -
+ drivers/staging/autofs/dirhash.c                   |  260 -
+ drivers/staging/autofs/init.c                      |   52 -
+ drivers/staging/autofs/inode.c                     |  288 -
+ drivers/staging/autofs/root.c                      |  648 -
+ drivers/staging/autofs/symlink.c                   |   26 -
+ drivers/staging/autofs/waitq.c                     |  205 -
+ drivers/staging/bcm/Bcmchar.c                      |  167 +-
+ drivers/staging/bcm/Bcmnet.c                       |   31 +-
+ drivers/staging/bcm/CmHost.c                       |   13 +-
+ drivers/staging/bcm/Misc.c                         |    6 +-
+ drivers/staging/brcm80211/Kconfig                  |   18 +-
+ drivers/staging/brcm80211/Makefile                 |   63 +-
+ drivers/staging/brcm80211/brcmfmac/Kconfig         |   15 -
+ drivers/staging/brcm80211/brcmfmac/Makefile        |   34 +-
+ drivers/staging/brcm80211/brcmfmac/aiutils.c       |    1 +
+ .../brcm80211/{include => brcmfmac}/bcmcdc.h       |    4 +-
+ .../brcm80211/{include => brcmfmac}/bcmsdbus.h     |    6 +-
+ drivers/staging/brcm80211/brcmfmac/bcmsdh.c        |   17 +-
+ drivers/staging/brcm80211/brcmfmac/bcmsdh_linux.c  |   32 +-
+ drivers/staging/brcm80211/brcmfmac/bcmsdh_sdmmc.c  |   57 +-
+ .../brcm80211/{include => brcmfmac}/bcmsdh_sdmmc.h |   40 +-
+ .../brcm80211/brcmfmac/bcmsdh_sdmmc_linux.c        |    1 -
+ drivers/staging/brcm80211/brcmfmac/bcmutils.c      |    1 +
+ drivers/staging/brcm80211/brcmfmac/bcmwifi.c       |    1 +
+ drivers/staging/brcm80211/brcmfmac/dhd.h           |   81 +-
+ drivers/staging/brcm80211/brcmfmac/dhd_bus.h       |    2 +-
+ drivers/staging/brcm80211/brcmfmac/dhd_cdc.c       |   59 +-
+ drivers/staging/brcm80211/brcmfmac/dhd_common.c    |  250 +-
+ .../staging/brcm80211/brcmfmac/dhd_custom_gpio.c   |    6 +-
+ drivers/staging/brcm80211/brcmfmac/dhd_dbg.h       |   28 +-
+ drivers/staging/brcm80211/brcmfmac/dhd_linux.c     |  144 +-
+ drivers/staging/brcm80211/brcmfmac/dhd_proto.h     |    3 -
+ drivers/staging/brcm80211/brcmfmac/dhd_sdio.c      |  415 +-
+ .../brcm80211/{include => brcmfmac}/dhdioctl.h     |    7 -
+ drivers/staging/brcm80211/brcmfmac/hndpmu.c        |    1 +
+ .../{include => brcmfmac}/hndrte_armtrap.h         |    0
+ .../brcm80211/{include => brcmfmac}/hndrte_cons.h  |    5 +
+ .../brcm80211/{include => brcmfmac}/msgtrace.h     |   10 +-
+ drivers/staging/brcm80211/brcmfmac/sbutils.c       |    1 +
+ .../brcm80211/{include => brcmfmac}/sdioh.h        |    0
+ .../brcm80211/{include => brcmfmac}/sdiovar.h      |    6 -
+ drivers/staging/brcm80211/brcmfmac/siutils.c       |    1 +
+ drivers/staging/brcm80211/brcmfmac/wl_cfg80211.c   |  199 +-
+ drivers/staging/brcm80211/brcmfmac/wl_cfg80211.h   |   23 +-
+ drivers/staging/brcm80211/brcmfmac/wl_iw.c         |  469 +-
+ drivers/staging/brcm80211/brcmfmac/wl_iw.h         |    9 +-
+ drivers/staging/brcm80211/brcmsmac/Makefile        |   63 +
+ .../staging/brcm80211/{include => brcmsmac}/d11.h  |  158 +-
+ .../brcm80211/{ => brcmsmac}/phy/phy_version.h     |    0
+ .../brcm80211/{ => brcmsmac}/phy/wlc_phy_cmn.c     |  272 +-
+ .../brcm80211/{ => brcmsmac}/phy/wlc_phy_hal.h     |    1 -
+ .../brcm80211/{ => brcmsmac}/phy/wlc_phy_int.h     |    3 +-
+ .../brcm80211/{ => brcmsmac}/phy/wlc_phy_lcn.c     |   52 +-
+ .../brcm80211/{ => brcmsmac}/phy/wlc_phy_lcn.h     |    0
+ .../brcm80211/{ => brcmsmac}/phy/wlc_phy_n.c       |   71 +-
+ .../brcm80211/{ => brcmsmac}/phy/wlc_phy_radio.h   |    0
+ .../brcm80211/{ => brcmsmac}/phy/wlc_phyreg_n.h    |    0
+ .../brcm80211/{ => brcmsmac}/phy/wlc_phytbl_lcn.c  |    2 -
+ .../brcm80211/{ => brcmsmac}/phy/wlc_phytbl_lcn.h  |    0
+ .../brcm80211/{ => brcmsmac}/phy/wlc_phytbl_n.c    |    2 -
+ .../brcm80211/{ => brcmsmac}/phy/wlc_phytbl_n.h    |    0
+ .../staging/brcm80211/{sys => brcmsmac}/wl_dbg.h   |    0
+ .../brcm80211/{sys => brcmsmac}/wl_export.h        |   19 +-
+ .../brcm80211/{sys => brcmsmac}/wl_mac80211.c      |  588 +-
+ .../brcm80211/{sys => brcmsmac}/wl_mac80211.h      |   33 +-
+ .../staging/brcm80211/{sys => brcmsmac}/wl_ucode.h |   26 +-
+ .../staging/brcm80211/brcmsmac/wl_ucode_loader.c   |  111 +
+ .../brcm80211/{sys => brcmsmac}/wlc_alloc.c        |  215 +-
+ .../brcm80211/{sys => brcmsmac}/wlc_alloc.h        |   11 +-
+ .../brcm80211/{sys => brcmsmac}/wlc_ampdu.c        |  250 +-
+ .../brcm80211/{sys => brcmsmac}/wlc_ampdu.h        |    6 +-
+ .../brcm80211/{sys => brcmsmac}/wlc_antsel.c       |   52 +-
+ .../brcm80211/{sys => brcmsmac}/wlc_antsel.h       |    9 +-
+ .../staging/brcm80211/{sys => brcmsmac}/wlc_bmac.c | 1195 +--
+ .../staging/brcm80211/{sys => brcmsmac}/wlc_bmac.h |  107 +-
+ .../brcm80211/{sys => brcmsmac}/wlc_bsscfg.h       |   29 +-
+ .../staging/brcm80211/{sys => brcmsmac}/wlc_cfg.h  |    6 -
+ .../brcm80211/{sys => brcmsmac}/wlc_channel.c      |  267 +-
+ .../brcm80211/{sys => brcmsmac}/wlc_channel.h      |   41 +-
+ .../staging/brcm80211/{sys => brcmsmac}/wlc_key.h  |   12 +-
+ .../{sys/wlc_mac80211.c => brcmsmac/wlc_main.c}    | 1338 +-
+ .../{sys/wlc_mac80211.h => brcmsmac/wlc_main.h}    |  152 +-
+ .../brcm80211/{sys => brcmsmac}/wlc_phy_shim.c     |   41 +-
+ .../brcm80211/{sys => brcmsmac}/wlc_phy_shim.h     |    0
+ .../staging/brcm80211/{sys => brcmsmac}/wlc_pub.h  |   81 +-
+ .../staging/brcm80211/{sys => brcmsmac}/wlc_rate.c |   28 +-
+ .../staging/brcm80211/{sys => brcmsmac}/wlc_rate.h |    0
+ .../staging/brcm80211/{sys => brcmsmac}/wlc_scb.h  |    4 +-
+ .../staging/brcm80211/{sys => brcmsmac}/wlc_stf.c  |  118 +-
+ .../staging/brcm80211/{sys => brcmsmac}/wlc_stf.h  |    7 +-
+ .../brcm80211/{sys => brcmsmac}/wlc_types.h        |    0
+ drivers/staging/brcm80211/include/bcmdefs.h        |   15 +
+ drivers/staging/brcm80211/include/bcmendian.h      |  303 -
+ drivers/staging/brcm80211/include/bcmnvram.h       |    6 -
+ drivers/staging/brcm80211/include/bcmsdh.h         |   23 +-
+ drivers/staging/brcm80211/include/bcmsrom.h        |    6 +-
+ drivers/staging/brcm80211/include/bcmutils.h       |  195 +-
+ drivers/staging/brcm80211/include/bcmwifi.h        |   25 -
+ drivers/staging/brcm80211/include/hnddma.h         |   57 +-
+ drivers/staging/brcm80211/include/hndpmu.h         |   47 +-
+ drivers/staging/brcm80211/include/nicpci.h         |   10 +-
+ drivers/staging/brcm80211/include/osl.h            |  214 -
+ .../staging/brcm80211/include/packed_section_end.h |   32 -
+ .../brcm80211/include/packed_section_start.h       |   36 -
+ drivers/staging/brcm80211/include/pcicfg.h         |    8 +-
+ drivers/staging/brcm80211/include/proto/802.11.h   |  134 +-
+ drivers/staging/brcm80211/include/proto/802.1d.h   |   37 -
+ drivers/staging/brcm80211/include/proto/bcmeth.h   |    8 +-
+ drivers/staging/brcm80211/include/proto/bcmevent.h |   24 +-
+ drivers/staging/brcm80211/include/proto/ethernet.h |   72 -
+ drivers/staging/brcm80211/include/proto/wpa.h      |   33 -
+ drivers/staging/brcm80211/include/rpc_osl.h        |   33 -
+ drivers/staging/brcm80211/include/sbhnddma.h       |    4 +-
+ drivers/staging/brcm80211/include/sbhndpio.h       |   52 -
+ drivers/staging/brcm80211/include/sbsdio.h         |    2 +-
+ drivers/staging/brcm80211/include/siutils.h        |   26 +-
+ drivers/staging/brcm80211/include/spid.h           |  155 -
+ drivers/staging/brcm80211/include/wlioctl.h        |   39 +-
+ drivers/staging/brcm80211/sys/d11ucode_ext.h       |   35 -
+ drivers/staging/brcm80211/sys/wl_ucode_loader.c    |   89 -
+ drivers/staging/brcm80211/sys/wlc_event.c          |  232 -
+ drivers/staging/brcm80211/sys/wlc_event.h          |   52 -
+ drivers/staging/brcm80211/util/aiutils.c           |   66 +-
+ drivers/staging/brcm80211/util/bcmotp.c            |   52 +-
+ drivers/staging/brcm80211/util/bcmsrom.c           |  163 +-
+ .../brcm80211/{include => util}/bcmsrom_tbl.h      |    0
+ drivers/staging/brcm80211/util/bcmutils.c          |  136 +-
+ drivers/staging/brcm80211/util/bcmwifi.c           |   57 -
+ drivers/staging/brcm80211/util/hnddma.c            | 1584 +--
+ drivers/staging/brcm80211/util/hndpmu.c            |  658 +-
+ drivers/staging/brcm80211/util/linux_osl.c         |  231 -
+ drivers/staging/brcm80211/util/nicpci.c            |  145 +-
+ drivers/staging/brcm80211/util/nvram/nvram_ro.c    |   11 +-
+ .../staging/brcm80211/{include => util}/pci_core.h |    0
+ .../staging/brcm80211/{include => util}/sbpcmcia.h |    0
+ .../staging/brcm80211/{include => util}/sbsocram.h |    0
+ drivers/staging/brcm80211/util/sbutils.c           |  124 +-
+ drivers/staging/brcm80211/util/siutils.c           |  219 +-
+ drivers/staging/brcm80211/util/siutils_priv.h      |    2 -
+ drivers/staging/comedi/comedi_fops.c               |   23 +-
+ drivers/staging/comedi/drivers.c                   |    4 +-
+ drivers/staging/comedi/drivers/8255.c              |    9 +-
+ drivers/staging/comedi/drivers/cb_pcidas.c         |   62 +-
+ drivers/staging/comedi/drivers/das16.c             |    6 +-
+ drivers/staging/comedi/drivers/icp_multi.c         |   14 +-
+ drivers/staging/comedi/drivers/me4000.c            |    8 +-
+ drivers/staging/comedi/drivers/ni_at_a2150.c       |    3 +-
+ drivers/staging/comedi/drivers/ni_labpc.c          |    3 +-
+ drivers/staging/comedi/drivers/pcl816.c            |    2 +-
+ drivers/staging/comedi/drivers/pcl818.c            |    4 +-
+ drivers/staging/comedi/drivers/rtd520.c            |  321 +-
+ drivers/staging/comedi/drivers/serial2002.c        |    8 +-
+ drivers/staging/comedi/drivers/usbdux.c            |    8 +-
+ drivers/staging/crystalhd/crystalhd_hw.c           |    1 +
+ drivers/staging/crystalhd/crystalhd_lnx.c          |   26 +-
+ drivers/staging/cs5535_gpio/cs5535_gpio.c          |    3 +-
+ drivers/staging/cx25821/cx25821-audio-upstream.c   |    9 +-
+ .../staging/cx25821/cx25821-video-upstream-ch2.c   |    9 +-
+ drivers/staging/cx25821/cx25821-video-upstream.c   |    9 +-
+ drivers/staging/cxt1e1/hwprobe.c                   |    2 +-
+ drivers/staging/cxt1e1/linux.c                     |    2 +-
+ drivers/staging/cxt1e1/pmcc4.h                     |    2 +-
+ drivers/staging/cxt1e1/pmcc4_drv.c                 |    2 +-
+ drivers/staging/dabusb/dabusb.c                    |  338 +-
+ drivers/staging/dabusb/dabusb.h                    |   41 +-
+ drivers/staging/easycap/Kconfig                    |   43 +-
+ drivers/staging/easycap/Makefile                   |   18 +-
+ drivers/staging/easycap/easycap.h                  |  559 +-
+ drivers/staging/easycap/easycap_debug.h            |   29 -
+ drivers/staging/easycap/easycap_ioctl.c            | 4382 +++----
+ drivers/staging/easycap/easycap_ioctl.h            |   28 -
+ drivers/staging/easycap/easycap_low.c              | 1459 +--
+ drivers/staging/easycap/easycap_main.c             | 7512 ++++++------
+ drivers/staging/easycap/easycap_settings.c         | 1123 +-
+ drivers/staging/easycap/easycap_sound.c            | 1717 +--
+ drivers/staging/easycap/easycap_sound.h            |   28 -
+ drivers/staging/easycap/easycap_sound_oss.c        |  954 ++
+ drivers/staging/easycap/easycap_standard.h         |   27 -
+ drivers/staging/easycap/easycap_testcard.c         |  495 +-
+ drivers/staging/echo/echo.c                        |    2 +-
+ drivers/staging/et131x/et1310_eeprom.c             |    8 +-
+ drivers/staging/et131x/et1310_mac.c                |   74 +-
+ drivers/staging/et131x/et1310_phy.c                |   70 +-
+ drivers/staging/et131x/et1310_phy.h                |  649 +-
+ drivers/staging/et131x/et1310_pm.c                 |   34 +-
+ drivers/staging/et131x/et1310_rx.c                 |   65 +-
+ drivers/staging/et131x/et1310_tx.c                 |    4 +-
+ drivers/staging/et131x/et131x.h                    |    4 +-
+ drivers/staging/et131x/et131x_adapter.h            |   63 +-
+ drivers/staging/et131x/et131x_initpci.c            |   50 +-
+ drivers/staging/et131x/et131x_isr.c                |   18 +-
+ drivers/staging/et131x/et131x_netdev.c             |    2 +-
+ drivers/staging/ft1000/Kconfig                     |    2 +-
+ drivers/staging/ft1000/ft1000-pcmcia/ft1000_cs.c   |  266 +-
+ drivers/staging/ft1000/ft1000-pcmcia/ft1000_cs.h   |    1 -
+ drivers/staging/ft1000/ft1000-pcmcia/ft1000_dnld.c |    3 +-
+ drivers/staging/ft1000/ft1000-pcmcia/ft1000_hw.c   |   36 +-
+ drivers/staging/ft1000/ft1000-usb/ft1000_debug.c   |    6 +-
+ .../staging/ft1000/ft1000-usb/ft1000_download.c    | 1545 ++--
+ drivers/staging/ft1000/ft1000-usb/ft1000_hw.c      | 2215 ++--
+ drivers/staging/ft1000/ft1000-usb/ft1000_hw.h      |   10 -
+ drivers/staging/ft1000/ft1000-usb/ft1000_proc.c    |    2 +-
+ drivers/staging/ft1000/ft1000-usb/ft1000_usb.h     |   20 +-
+ drivers/staging/gma500/Kconfig                     |   12 +
+ drivers/staging/gma500/Makefile                    |   31 +
+ drivers/staging/gma500/TODO                        |   26 +
+ drivers/staging/gma500/psb_2d.c                    |  411 +
+ drivers/staging/gma500/psb_bl.c                    |  169 +
+ drivers/staging/gma500/psb_buffer.c                |  450 +
+ drivers/staging/gma500/psb_drm.h                   |  397 +
+ drivers/staging/gma500/psb_drv.c                   | 1647 +++
+ drivers/staging/gma500/psb_drv.h                   | 1151 ++
+ drivers/staging/gma500/psb_fb.c                    |  842 ++
+ drivers/staging/gma500/psb_fb.h                    |   59 +
+ drivers/staging/gma500/psb_fence.c                 |  122 +
+ drivers/staging/gma500/psb_gtt.c                   | 1034 ++
+ drivers/staging/gma500/psb_gtt.h                   |  105 +
+ drivers/staging/gma500/psb_intel_bios.c            |  301 +
+ drivers/staging/gma500/psb_intel_bios.h            |  430 +
+ drivers/staging/gma500/psb_intel_display.c         | 1489 +++
+ drivers/staging/gma500/psb_intel_display.h         |   25 +
+ drivers/staging/gma500/psb_intel_drv.h             |  247 +
+ drivers/staging/gma500/psb_intel_i2c.c             |  169 +
+ drivers/staging/gma500/psb_intel_lvds.c            |  889 ++
+ drivers/staging/gma500/psb_intel_modes.c           |   77 +
+ drivers/staging/gma500/psb_intel_opregion.c        |   78 +
+ drivers/staging/gma500/psb_intel_reg.h             | 1137 ++
+ drivers/staging/gma500/psb_intel_sdvo.c            | 1298 ++
+ drivers/staging/gma500/psb_intel_sdvo_regs.h       |  338 +
+ drivers/staging/gma500/psb_irq.c                   |  639 +
+ drivers/staging/gma500/psb_irq.h                   |   49 +
+ drivers/staging/gma500/psb_mmu.c                   |  919 ++
+ drivers/staging/gma500/psb_powermgmt.c             |  792 ++
+ drivers/staging/gma500/psb_powermgmt.h             |   96 +
+ drivers/staging/gma500/psb_pvr_glue.c              |   73 +
+ drivers/staging/gma500/psb_pvr_glue.h              |   25 +
+ drivers/staging/gma500/psb_reg.h                   |  588 +
+ drivers/staging/gma500/psb_reset.c                 |   90 +
+ drivers/staging/gma500/psb_sgx.c                   |  238 +
+ drivers/staging/gma500/psb_sgx.h                   |   32 +
+ drivers/staging/gma500/psb_ttm_fence.c             |  605 +
+ drivers/staging/gma500/psb_ttm_fence_api.h         |  272 +
+ drivers/staging/gma500/psb_ttm_fence_driver.h      |  302 +
+ drivers/staging/gma500/psb_ttm_fence_user.c        |  237 +
+ drivers/staging/gma500/psb_ttm_fence_user.h        |  140 +
+ drivers/staging/gma500/psb_ttm_glue.c              |  349 +
+ drivers/staging/gma500/psb_ttm_placement_user.c    |  628 +
+ drivers/staging/gma500/psb_ttm_placement_user.h    |  252 +
+ drivers/staging/gma500/psb_ttm_userobj_api.h       |   85 +
+ drivers/staging/go7007/Kconfig                     |    1 -
+ drivers/staging/go7007/go7007-usb.c                |    6 +-
+ drivers/staging/go7007/s2250-loader.c              |    3 -
+ drivers/staging/hv/Kconfig                         |    8 +
+ drivers/staging/hv/Makefile                        |    4 +-
+ drivers/staging/hv/blkvsc.c                        |   24 +-
+ drivers/staging/hv/blkvsc_drv.c                    |  133 +-
+ drivers/staging/hv/channel.c                       |  223 +-
+ drivers/staging/hv/channel.h                       |    4 +-
+ drivers/staging/hv/channel_mgmt.c                  |  168 +-
+ drivers/staging/hv/channel_mgmt.h                  |   41 +-
+ drivers/staging/hv/connection.c                    |  212 +-
+ drivers/staging/hv/hv.c                            |   16 +-
+ drivers/staging/hv/hv_api.h                        |    5 +
+ drivers/staging/hv/hv_kvp.c                        |  346 +
+ drivers/staging/hv/hv_kvp.h                        |  184 +
+ drivers/staging/hv/hv_mouse.c                      | 1046 ++
+ drivers/staging/hv/{hv_utils.c => hv_util.c}       |   22 +-
+ drivers/staging/hv/logging.h                       |    3 +
+ drivers/staging/hv/netvsc.c                        |  283 +-
+ drivers/staging/hv/netvsc.h                        |   29 +-
+ drivers/staging/hv/netvsc_drv.c                    |  123 +-
+ drivers/staging/hv/osd.c                           |  194 -
+ drivers/staging/hv/osd.h                           |   66 -
+ drivers/staging/hv/ring_buffer.c                   |    1 -
+ drivers/staging/hv/ring_buffer.h                   |    2 +-
+ drivers/staging/hv/rndis_filter.c                  |  107 +-
+ drivers/staging/hv/storvsc.c                       |  152 +-
+ drivers/staging/hv/storvsc_drv.c                   |  115 +-
+ drivers/staging/hv/tools/hv_kvp_daemon.c           |  470 +
+ drivers/staging/hv/utils.h                         |   15 +-
+ drivers/staging/hv/vmbus.h                         |   38 +-
+ drivers/staging/hv/vmbus_api.h                     |   91 +-
+ drivers/staging/hv/vmbus_channel_interface.h       |   28 +-
+ drivers/staging/hv/vmbus_drv.c                     |  517 +-
+ drivers/staging/hv/vmbus_packet_format.h           |  138 +-
+ drivers/staging/hv/vmbus_private.h                 |   61 +-
+ drivers/staging/hv/vstorage.h                      |    6 +-
+ drivers/staging/iio/Documentation/dac/max517       |   41 +
+ drivers/staging/iio/Documentation/generic_buffer.c |   66 +-
+ drivers/staging/iio/Documentation/iio_utils.h      |   63 +-
+ drivers/staging/iio/Documentation/sysfs-bus-iio    |   81 +
+ .../iio/Documentation/sysfs-bus-iio-trigger-sysfs  |   11 +
+ drivers/staging/iio/Kconfig                        |    9 +
+ drivers/staging/iio/Makefile                       |    1 +
+ drivers/staging/iio/accel/Kconfig                  |   23 +-
+ drivers/staging/iio/accel/lis3l02dq.h              |   10 +
+ drivers/staging/iio/accel/lis3l02dq_ring.c         |    9 +-
+ drivers/staging/iio/adc/Kconfig                    |   35 +-
+ drivers/staging/iio/adc/Makefile                   |   11 +-
+ drivers/staging/iio/adc/ad7298.c                   |  501 -
+ drivers/staging/iio/adc/ad7298.h                   |   80 +
+ drivers/staging/iio/adc/ad7298_core.c              |  287 +
+ drivers/staging/iio/adc/ad7298_ring.c              |  258 +
+ drivers/staging/iio/adc/ad7476.h                   |    1 +
+ drivers/staging/iio/adc/ad7476_core.c              |    2 +-
+ drivers/staging/iio/adc/ad7476_ring.c              |   37 +-
+ drivers/staging/iio/adc/ad7606.h                   |  117 +
+ drivers/staging/iio/adc/ad7606_core.c              |  556 +
+ drivers/staging/iio/adc/ad7606_par.c               |  188 +
+ drivers/staging/iio/adc/ad7606_ring.c              |  280 +
+ drivers/staging/iio/adc/ad7606_spi.c               |  126 +
+ drivers/staging/iio/adc/ad7887.h                   |    1 +
+ drivers/staging/iio/adc/ad7887_ring.c              |   36 +-
+ drivers/staging/iio/adc/ad799x.h                   |    1 +
+ drivers/staging/iio/adc/ad799x_core.c              |   12 +
+ drivers/staging/iio/adc/ad799x_ring.c              |   43 +-
+ drivers/staging/iio/dac/Kconfig                    |   15 +-
+ drivers/staging/iio/dac/Makefile                   |    1 +
+ drivers/staging/iio/dac/ad5446.c                   |  193 +-
+ drivers/staging/iio/dac/ad5446.h                   |   24 +-
+ drivers/staging/iio/dac/ad5624r.h                  |   89 +-
+ drivers/staging/iio/dac/ad5624r_spi.c              |  247 +-
+ drivers/staging/iio/dac/max517.c                   |  298 +
+ drivers/staging/iio/dac/max517.h                   |   19 +
+ drivers/staging/iio/dds/Kconfig                    |    5 +-
+ drivers/staging/iio/dds/ad9832.c                   |  488 +-
+ drivers/staging/iio/dds/ad9832.h                   |  128 +
+ drivers/staging/iio/gyro/Kconfig                   |   14 +-
+ drivers/staging/iio/gyro/adis16060.h               |  101 -
+ drivers/staging/iio/gyro/adis16060_core.c          |  178 +-
+ drivers/staging/iio/gyro/adis16080.h               |  102 -
+ drivers/staging/iio/gyro/adis16080_core.c          |  163 +-
+ drivers/staging/iio/gyro/adis16130.h               |  108 -
+ drivers/staging/iio/gyro/adis16130_core.c          |  207 +-
+ drivers/staging/iio/gyro/adis16251.h               |  185 -
+ drivers/staging/iio/gyro/adis16251_core.c          |  777 --
+ drivers/staging/iio/gyro/adis16260_core.c          |   49 +-
+ drivers/staging/iio/industrialio-ring.c            |   25 +-
+ drivers/staging/iio/kfifo_buf.c                    |  196 +
+ drivers/staging/iio/kfifo_buf.h                    |   56 +
+ drivers/staging/iio/meter/ade7753.c                |  208 +-
+ drivers/staging/iio/meter/ade7753.h                |   64 -
+ drivers/staging/iio/meter/ade7754.c                |  165 +-
+ drivers/staging/iio/meter/ade7754.h                |   67 -
+ drivers/staging/iio/meter/ade7759.c                |  165 +-
+ drivers/staging/iio/meter/ade7759.h                |   65 -
+ drivers/staging/iio/meter/ade7854-spi.c            |  120 +-
+ drivers/staging/iio/meter/ade7854.c                |   78 +-
+ drivers/staging/iio/meter/ade7854.h                |   69 -
+ drivers/staging/iio/ring_generic.h                 |    2 +-
+ drivers/staging/iio/ring_sw.c                      |   27 +-
+ drivers/staging/iio/ring_sw.h                      |    4 +-
+ drivers/staging/iio/trigger/Kconfig                |   20 +
+ drivers/staging/iio/trigger/Makefile               |    2 +
+ drivers/staging/iio/trigger/iio-trig-bfin-timer.c  |  252 +
+ drivers/staging/iio/trigger/iio-trig-sysfs.c       |  108 +
+ .../staging/intel_sst/intel_sst_stream_encoded.c   |    8 +-
+ drivers/staging/intel_sst/intelmid.h               |    4 +-
+ drivers/staging/intel_sst/intelmid_v0_control.c    |    2 +-
+ drivers/staging/intel_sst/intelmid_v1_control.c    |    4 +-
+ drivers/staging/intel_sst/intelmid_v2_control.c    |    4 +-
+ drivers/staging/keucr/Kconfig                      |    5 +-
+ drivers/staging/keucr/Makefile                     |    1 -
+ drivers/staging/keucr/TODO                         |    4 +-
+ drivers/staging/keucr/common.h                     |   13 -
+ drivers/staging/keucr/init.c                       |  122 +-
+ drivers/staging/keucr/init.h                       |  773 --
+ drivers/staging/keucr/ms.c                         |   50 +-
+ drivers/staging/keucr/sdscsi.c                     |  210 -
+ drivers/staging/keucr/smcommon.h                   |    2 -
+ drivers/staging/keucr/smilecc.c                    |   16 +-
+ drivers/staging/keucr/smilsub.c                    |  106 +-
+ drivers/staging/keucr/transport.c                  |    3 +-
+ drivers/staging/keucr/transport.h                  |    3 -
+ drivers/staging/keucr/usb.c                        |   21 +-
+ drivers/staging/line6/pcm.c                        |    3 +-
+ drivers/staging/lirc/lirc_parallel.c               |   74 +-
+ drivers/staging/msm/lcdc.c                         |    4 +-
+ drivers/staging/msm/mddi_toshiba.h                 |   30 +-
+ drivers/staging/msm/mddihost.h                     |   30 +-
+ drivers/staging/msm/mddihosti.h                    |   30 +-
+ drivers/staging/msm/mdp.h                          |   30 +-
+ drivers/staging/msm/mdp4.h                         |   30 +-
+ drivers/staging/msm/mdp_ppp_dq.h                   |   31 +-
+ drivers/staging/msm/msm_fb.h                       |   30 +-
+ drivers/staging/msm/msm_fb_def.h                   |   30 +-
+ drivers/staging/msm/msm_fb_panel.h                 |   30 +-
+ drivers/staging/msm/tvenc.h                        |   30 +-
+ drivers/staging/octeon/cvmx-cmd-queue.h            |   16 +-
+ drivers/staging/octeon/cvmx-pko.c                  |    2 +-
+ drivers/staging/olpc_dcon/Kconfig                  |   22 +-
+ drivers/staging/olpc_dcon/Makefile                 |    7 +-
+ drivers/staging/olpc_dcon/olpc_dcon.c              |  599 +-
+ drivers/staging/olpc_dcon/olpc_dcon.h              |   63 +-
+ drivers/staging/olpc_dcon/olpc_dcon_xo_1.c         |   12 +-
+ drivers/staging/olpc_dcon/olpc_dcon_xo_1_5.c       |  109 +-
+ drivers/staging/pohmelfs/config.c                  |    8 +-
+ drivers/staging/pohmelfs/dir.c                     |    1 -
+ drivers/staging/pohmelfs/inode.c                   |   10 +-
+ drivers/staging/pohmelfs/netfs.h                   |    2 +-
+ drivers/staging/quatech_usb2/quatech_usb2.c        |    2 +-
+ drivers/staging/quickstart/quickstart.c            |    5 +-
+ drivers/staging/rt2860/common/ba_action.c          |    2 +-
+ drivers/staging/rt2860/common/cmm_data.c           |    2 +-
+ drivers/staging/rt2860/common/cmm_mac_pci.c        |    2 +-
+ drivers/staging/rt2860/common/spectrum.c           |    6 +-
+ drivers/staging/rt2860/rt_linux.c                  |    9 +-
+ drivers/staging/rt2860/rt_linux.h                  |   12 +-
+ drivers/staging/rt2860/rtmp.h                      |    2 +-
+ drivers/staging/rt2860/wpa.h                       |   12 +-
+ .../rtl8187se/ieee80211/ieee80211_softmac.c        |    8 +-
+ drivers/staging/rtl8187se/ieee80211/ieee80211_wx.c |    1 -
+ drivers/staging/rtl8192e/dot11d.h                  |    9 +-
+ drivers/staging/rtl8192e/ieee80211.h               | 2683 ----
+ drivers/staging/rtl8192e/ieee80211/dot11d.c        |    3 -
+ drivers/staging/rtl8192e/ieee80211/ieee80211.h     |  513 +-
+ .../rtl8192e/ieee80211/ieee80211_crypt_ccmp.c      |    6 -
+ .../rtl8192e/ieee80211/ieee80211_crypt_tkip.c      |   25 -
+ .../rtl8192e/ieee80211/ieee80211_crypt_wep.c       |    1 -
+ .../staging/rtl8192e/ieee80211/ieee80211_module.c  |    9 +-
+ drivers/staging/rtl8192e/ieee80211/ieee80211_rx.c  |  235 +-
+ .../staging/rtl8192e/ieee80211/ieee80211_softmac.c |  417 +-
+ .../rtl8192e/ieee80211/ieee80211_softmac_wx.c      |   63 +-
+ drivers/staging/rtl8192e/ieee80211/ieee80211_tx.c  |   50 +-
+ drivers/staging/rtl8192e/ieee80211/ieee80211_wx.c  |   28 +-
+ .../staging/rtl8192e/ieee80211/rtl819x_BAProc.c    |  209 +-
+ .../staging/rtl8192e/ieee80211/rtl819x_HTProc.c    |   65 +-
+ .../staging/rtl8192e/ieee80211/rtl819x_TSProc.c    |    1 -
+ drivers/staging/rtl8192e/ieee80211_crypt.h         |   86 -
+ drivers/staging/rtl8192e/r8180_93cx6.c             |   61 +-
+ drivers/staging/rtl8192e/r8180_93cx6.h             |    2 +-
+ drivers/staging/rtl8192e/r8190_rtl8256.c           |  884 +--
+ drivers/staging/rtl8192e/r8190_rtl8256.h           |   20 +-
+ drivers/staging/rtl8192e/r8192E.h                  |  681 +-
+ drivers/staging/rtl8192e/r8192E_core.c             | 2967 ++----
+ drivers/staging/rtl8192e/r8192E_dm.c               | 1860 +---
+ drivers/staging/rtl8192e/r8192E_dm.h               |  106 +-
+ drivers/staging/rtl8192e/r8192E_hw.h               |  340 +-
+ drivers/staging/rtl8192e/r8192E_wx.c               |  170 +-
+ drivers/staging/rtl8192e/r8192E_wx.h               |    3 -
+ drivers/staging/rtl8192e/r8192_pm.c                |   65 +-
+ drivers/staging/rtl8192e/r819xE_cmdpkt.c           |  230 +-
+ drivers/staging/rtl8192e/r819xE_cmdpkt.h           |    2 +-
+ drivers/staging/rtl8192e/r819xE_firmware.c         |   36 +-
+ drivers/staging/rtl8192e/r819xE_phy.c              | 1612 +--
+ drivers/staging/rtl8192e/r819xE_phy.h              |   58 +-
+ drivers/staging/rtl8192u/ieee80211/cipher.c        |    3 +-
+ .../staging/rtl8192u/ieee80211/ieee80211_module.c  |    7 +-
+ drivers/staging/rtl8192u/ieee80211/ieee80211_rx.c  |    7 +-
+ .../staging/rtl8192u/ieee80211/ieee80211_softmac.c |    7 +-
+ drivers/staging/rtl8192u/ieee80211/ieee80211_wx.c  |    1 -
+ drivers/staging/rtl8192u/r8192U.h                  |    6 -
+ drivers/staging/rtl8192u/r8192U_core.c             |   39 +-
+ drivers/staging/rtl8192u/r819xU_firmware.c         |   76 +-
+ drivers/staging/rtl8192u/r819xU_firmware_img.c     | 2900 -----
+ drivers/staging/rtl8192u/r819xU_firmware_img.h     |    7 -
+ drivers/staging/rtl8712/Kconfig                    |    1 +
+ drivers/staging/rtl8712/TODO                       |    2 -
+ drivers/staging/rtl8712/farray.h                   |10197 ---------------
+ drivers/staging/rtl8712/hal_init.c                 |   23 +-
+ drivers/staging/rtl8712/rtl871x_ioctl_linux.c      |   32 +-
+ drivers/staging/rtl8712/rtl871x_mp_ioctl.c         |    2 -
+ drivers/staging/rtl8712/rtl871x_mp_ioctl.h         |    2 +-
+ drivers/staging/rtl8712/rtl871x_pwrctrl.c          |    2 +-
+ drivers/staging/rts_pstor/Kconfig                  |   16 +
+ drivers/staging/rts_pstor/Makefile                 |   16 +
+ drivers/staging/rts_pstor/TODO                     |    5 +
+ drivers/staging/rts_pstor/debug.h                  |   43 +
+ drivers/staging/rts_pstor/general.c                |   35 +
+ drivers/staging/rts_pstor/general.h                |   31 +
+ drivers/staging/rts_pstor/ms.c                     | 4248 +++++++
+ drivers/staging/rts_pstor/ms.h                     |  225 +
+ drivers/staging/rts_pstor/rtsx.c                   | 1124 ++
+ drivers/staging/rts_pstor/rtsx.h                   |  183 +
+ drivers/staging/rts_pstor/rtsx_card.c              | 1257 ++
+ drivers/staging/rts_pstor/rtsx_card.h              | 1093 ++
+ drivers/staging/rts_pstor/rtsx_chip.c              | 2337 ++++
+ drivers/staging/rts_pstor/rtsx_chip.h              |  989 ++
+ drivers/staging/rts_pstor/rtsx_scsi.c              | 3203 +++++
+ drivers/staging/rts_pstor/rtsx_scsi.h              |  142 +
+ drivers/staging/rts_pstor/rtsx_sys.h               |   50 +
+ drivers/staging/rts_pstor/rtsx_transport.c         |  778 ++
+ drivers/staging/rts_pstor/rtsx_transport.h         |   66 +
+ drivers/staging/rts_pstor/sd.c                     | 4776 +++++++
+ drivers/staging/rts_pstor/sd.h                     |  295 +
+ drivers/staging/rts_pstor/spi.c                    |  812 ++
+ drivers/staging/rts_pstor/spi.h                    |   65 +
+ drivers/staging/rts_pstor/trace.h                  |  117 +
+ drivers/staging/rts_pstor/xd.c                     | 2051 +++
+ drivers/staging/rts_pstor/xd.h                     |  188 +
+ drivers/staging/samsung-laptop/samsung-laptop.c    |  628 +-
+ drivers/staging/sep/TODO                           |    3 +-
+ drivers/staging/sep/sep_dev.h                      |   25 -
+ drivers/staging/sep/sep_driver.c                   |  724 +-
+ drivers/staging/sep/sep_driver_api.h               |   86 +-
+ drivers/staging/sep/sep_driver_config.h            |    4 +
+ drivers/staging/serqt_usb2/serqt_usb2.c            |    3 +-
+ drivers/staging/smbfs/Kconfig                      |   56 -
+ drivers/staging/smbfs/Makefile                     |   18 -
+ drivers/staging/smbfs/TODO                         |    8 -
+ drivers/staging/smbfs/cache.c                      |  208 -
+ drivers/staging/smbfs/dir.c                        |  699 --
+ drivers/staging/smbfs/file.c                       |  456 -
+ drivers/staging/smbfs/getopt.c                     |   64 -
+ drivers/staging/smbfs/getopt.h                     |   14 -
+ drivers/staging/smbfs/inode.c                      |  854 --
+ drivers/staging/smbfs/ioctl.c                      |   68 -
+ drivers/staging/smbfs/proc.c                       | 3502 ------
+ drivers/staging/smbfs/proto.h                      |   89 -
+ drivers/staging/smbfs/request.c                    |  817 --
+ drivers/staging/smbfs/request.h                    |   70 -
+ drivers/staging/smbfs/smb.h                        |  118 -
+ drivers/staging/smbfs/smb_debug.h                  |   34 -
+ drivers/staging/smbfs/smb_fs.h                     |  153 -
+ drivers/staging/smbfs/smb_fs_i.h                   |   37 -
+ drivers/staging/smbfs/smb_fs_sb.h                  |  100 -
+ drivers/staging/smbfs/smb_mount.h                  |   65 -
+ drivers/staging/smbfs/smbfs.txt                    |    8 -
+ drivers/staging/smbfs/smbiod.c                     |  343 -
+ drivers/staging/smbfs/smbno.h                      |  363 -
+ drivers/staging/smbfs/sock.c                       |  385 -
+ drivers/staging/smbfs/symlink.c                    |   67 -
+ drivers/staging/solo6x10/Makefile                  |    5 +-
+ .../staging/solo6x10/{solo6010-core.c => core.c}   |  105 +-
+ .../staging/solo6x10/{solo6010-disp.c => disp.c}   |   21 +-
+ drivers/staging/solo6x10/{solo6010-enc.c => enc.c} |   56 +-
+ .../staging/solo6x10/{solo6010-g723.c => g723.c}   |   48 +-
+ .../staging/solo6x10/{solo6010-gpio.c => gpio.c}   |   15 +-
+ drivers/staging/solo6x10/{solo6010-i2c.c => i2c.c} |   34 +-
+ .../staging/solo6x10/{solo6010-jpeg.h => jpeg.h}   |    6 +-
+ .../solo6x10/{solo6010-offsets.h => offsets.h}     |   22 +-
+ .../solo6x10/{solo6010-osd-font.h => osd-font.h}   |    6 +-
+ drivers/staging/solo6x10/{solo6010-p2m.c => p2m.c} |   51 +-
+ .../solo6x10/{solo6010-registers.h => registers.h} |   90 +-
+ .../staging/solo6x10/{solo6010.h => solo6x10.h}    |  105 +-
+ .../staging/solo6x10/{solo6010-tw28.c => tw28.c}   |   38 +-
+ .../staging/solo6x10/{solo6010-tw28.h => tw28.h}   |   26 +-
+ .../solo6x10/{solo6010-v4l2-enc.c => v4l2-enc.c}   |  389 +-
+ .../staging/solo6x10/{solo6010-v4l2.c => v4l2.c}   |   72 +-
+ drivers/staging/speakup/keyhelp.c                  |    4 +-
+ drivers/staging/speakup/main.c                     |  133 +-
+ drivers/staging/speakup/spk_priv_keyinfo.h         |   44 +-
+ drivers/staging/speakup/spk_types.h                |   18 +-
+ drivers/staging/spectra/flash.c                    |   28 +-
+ drivers/staging/spectra/lld_nand.c                 |    2 +-
+ drivers/staging/ste_rmi4/synaptics_i2c_rmi4.c      |   14 +-
+ drivers/staging/ste_rmi4/synaptics_i2c_rmi4.h      |    1 -
+ drivers/staging/ti-st/Kconfig                      |   14 -
+ drivers/staging/ti-st/Makefile                     |    5 -
+ drivers/staging/ti-st/TODO                         |    8 -
+ drivers/staging/ti-st/bt_drv.c                     |  509 -
+ drivers/staging/ti-st/bt_drv.h                     |   61 -
+ drivers/staging/ti-st/sysfs-uim                    |   28 -
+ drivers/staging/tidspbridge/Makefile               |    2 +-
+ drivers/staging/tidspbridge/TODO                   |    1 -
+ drivers/staging/tidspbridge/core/_deh.h            |    2 +-
+ drivers/staging/tidspbridge/core/_msg_sm.h         |   16 +-
+ drivers/staging/tidspbridge/core/_tiomap.h         |   30 +-
+ drivers/staging/tidspbridge/core/chnl_sm.c         |  677 +-
+ drivers/staging/tidspbridge/core/dsp-clock.c       |   52 +-
+ drivers/staging/tidspbridge/core/io_sm.c           |  672 +-
+ drivers/staging/tidspbridge/core/msg_sm.c          |  619 +-
+ drivers/staging/tidspbridge/core/tiomap3430.c      |  199 +-
+ drivers/staging/tidspbridge/core/tiomap3430_pwr.c  |  112 +-
+ drivers/staging/tidspbridge/core/tiomap_io.c       |   96 +-
+ drivers/staging/tidspbridge/core/ue_deh.c          |   28 +-
+ drivers/staging/tidspbridge/dynload/cload.c        |  102 +-
+ .../staging/tidspbridge/dynload/dload_internal.h   |    6 +-
+ drivers/staging/tidspbridge/gen/gb.c               |  166 -
+ drivers/staging/tidspbridge/gen/gh.c               |   38 +-
+ drivers/staging/tidspbridge/gen/gs.c               |   88 -
+ drivers/staging/tidspbridge/gen/uuidutil.c         |   22 +-
+ .../tidspbridge/include/dspbridge/_chnl_sm.h       |   26 +-
+ .../tidspbridge/include/dspbridge/brddefs.h        |    2 -
+ .../tidspbridge/include/dspbridge/cfgdefs.h        |   50 +-
+ .../staging/tidspbridge/include/dspbridge/chnl.h   |   21 -
+ .../tidspbridge/include/dspbridge/chnldefs.h       |    9 +-
+ .../tidspbridge/include/dspbridge/chnlpriv.h       |   21 +-
+ .../staging/tidspbridge/include/dspbridge/cmm.h    |    2 +-
+ .../tidspbridge/include/dspbridge/cmmdefs.h        |   39 +-
+ .../staging/tidspbridge/include/dspbridge/cod.h    |   13 +-
+ .../tidspbridge/include/dspbridge/dbdcddef.h       |   14 +-
+ .../staging/tidspbridge/include/dspbridge/dbdefs.h |   98 +-
+ .../tidspbridge/include/dspbridge/dbldefs.h        |  141 -
+ .../staging/tidspbridge/include/dspbridge/dbll.h   |    6 -
+ .../tidspbridge/include/dspbridge/dblldefs.h       |   65 -
+ .../tidspbridge/include/dspbridge/dehdefs.h        |   32 -
+ .../staging/tidspbridge/include/dspbridge/dev.h    |   65 +-
+ .../staging/tidspbridge/include/dspbridge/disp.h   |   15 +-
+ .../tidspbridge/include/dspbridge/dispdefs.h       |   35 -
+ .../staging/tidspbridge/include/dspbridge/drv.h    |   42 +-
+ .../tidspbridge/include/dspbridge/drvdefs.h        |   25 -
+ .../tidspbridge/include/dspbridge/dspapi-ioctl.h   |  216 +-
+ .../tidspbridge/include/dspbridge/dspdefs.h        |   88 +-
+ .../staging/tidspbridge/include/dspbridge/dspdrv.h |    2 -
+ .../staging/tidspbridge/include/dspbridge/dspio.h  |    4 +-
+ .../tidspbridge/include/dspbridge/dspioctl.h       |   13 +-
+ .../tidspbridge/include/dspbridge/dynamic_loader.h |    2 -
+ drivers/staging/tidspbridge/include/dspbridge/gb.h |   79 -
+ drivers/staging/tidspbridge/include/dspbridge/gs.h |   59 -
+ .../tidspbridge/include/dspbridge/host_os.h        |    9 -
+ drivers/staging/tidspbridge/include/dspbridge/io.h |   29 +-
+ .../staging/tidspbridge/include/dspbridge/io_sm.h  |  143 +-
+ .../staging/tidspbridge/include/dspbridge/iodefs.h |   36 -
+ .../staging/tidspbridge/include/dspbridge/ldr.h    |   29 -
+ .../staging/tidspbridge/include/dspbridge/list.h   |  225 -
+ .../staging/tidspbridge/include/dspbridge/mbx_sh.h |   40 -
+ .../tidspbridge/include/dspbridge/mgrpriv.h        |    4 +-
+ .../tidspbridge/include/dspbridge/nldrdefs.h       |   24 +-
+ .../staging/tidspbridge/include/dspbridge/node.h   |   22 +-
+ .../tidspbridge/include/dspbridge/nodepriv.h       |   10 +-
+ .../staging/tidspbridge/include/dspbridge/pwr.h    |    8 +-
+ .../staging/tidspbridge/include/dspbridge/pwr_sh.h |   33 -
+ .../include/dspbridge/resourcecleanup.h            |   11 -
+ .../staging/tidspbridge/include/dspbridge/rms_sh.h |    9 -
+ .../staging/tidspbridge/include/dspbridge/strm.h   |   62 -
+ .../tidspbridge/include/dspbridge/strmdefs.h       |    6 +-
+ .../staging/tidspbridge/include/dspbridge/sync.h   |   14 +-
+ .../tidspbridge/include/dspbridge/utildefs.h       |   39 -
+ drivers/staging/tidspbridge/pmgr/chnl.c            |    4 +-
+ drivers/staging/tidspbridge/pmgr/cmm.c             |  675 +-
+ drivers/staging/tidspbridge/pmgr/cod.c             |   20 +-
+ drivers/staging/tidspbridge/pmgr/dbll.c            |   56 +-
+ drivers/staging/tidspbridge/pmgr/dev.c             |  355 +-
+ drivers/staging/tidspbridge/pmgr/dspapi.c          |  272 +-
+ drivers/staging/tidspbridge/pmgr/io.c              |    9 +-
+ drivers/staging/tidspbridge/pmgr/ioobj.h           |    4 +-
+ drivers/staging/tidspbridge/pmgr/msg.c             |    4 +-
+ drivers/staging/tidspbridge/rmgr/dbdcd.c           |   66 +-
+ drivers/staging/tidspbridge/rmgr/disp.c            |  124 +-
+ drivers/staging/tidspbridge/rmgr/drv.c             |  202 +-
+ drivers/staging/tidspbridge/rmgr/drv_interface.c   |    1 -
+ drivers/staging/tidspbridge/rmgr/mgr.c             |   66 +-
+ drivers/staging/tidspbridge/rmgr/nldr.c            |  117 +-
+ drivers/staging/tidspbridge/rmgr/node.c            | 1092 +-
+ drivers/staging/tidspbridge/rmgr/proc.c            |  189 +-
+ drivers/staging/tidspbridge/rmgr/pwr.c             |    8 +-
+ drivers/staging/tidspbridge/rmgr/rmm.c             |   93 +-
+ drivers/staging/tidspbridge/rmgr/strm.c            |   86 +-
+ drivers/staging/tm6000/tm6000-input.c              |    4 +-
+ drivers/staging/usbip/Kconfig                      |    2 +-
+ drivers/staging/usbip/stub.h                       |    4 +-
+ drivers/staging/usbip/stub_dev.c                   |   12 +-
+ drivers/staging/usbip/stub_main.c                  |    6 +-
+ drivers/staging/usbip/stub_rx.c                    |   13 +-
+ drivers/staging/usbip/stub_tx.c                    |   17 +-
+ drivers/staging/usbip/usbip_common.c               |  105 -
+ drivers/staging/usbip/usbip_common.h               |   20 +-
+ drivers/staging/usbip/usbip_event.c                |   38 +-
+ drivers/staging/usbip/vhci.h                       |    4 +-
+ drivers/staging/usbip/vhci_hcd.c                   |   10 +-
+ drivers/staging/usbip/vhci_rx.c                    |   16 +-
+ drivers/staging/usbip/vhci_sysfs.c                 |    9 +-
+ drivers/staging/usbip/vhci_tx.c                    |   17 +-
+ drivers/staging/usbvideo/usbvideo.c                |  170 +-
+ drivers/staging/usbvideo/vicam.c                   |  164 +-
+ drivers/staging/vme/bridges/vme_ca91cx42.c         |    6 +-
+ drivers/staging/vme/bridges/vme_tsi148.c           |    5 +-
+ drivers/staging/vme/vme.c                          |    7 +-
+ drivers/staging/vt6655/device_main.c               |   23 +-
+ drivers/staging/vt6655/hostap.c                    |    3 +-
+ drivers/staging/vt6655/wpactl.c                    |    3 +-
+ drivers/staging/vt6656/Kconfig                     |    1 +
+ drivers/staging/vt6656/device.h                    |    3 +
+ drivers/staging/vt6656/firmware.c                  |  804 +--
+ drivers/staging/vt6656/hostap.c                    |    3 +-
+ drivers/staging/vt6656/main_usb.c                  |   17 +-
+ drivers/staging/vt6656/power.c                     |  419 +-
+ drivers/staging/vt6656/wpactl.c                    |    3 +-
+ .../staging/westbridge/astoria/api/src/cyasdma.c   |    2 +-
+ .../staging/westbridge/astoria/api/src/cyasmisc.c  |   20 +-
+ .../staging/westbridge/astoria/api/src/cyasmtp.c   |    8 +
+ .../westbridge/astoria/api/src/cyasstorage.c       |   33 +-
+ .../staging/westbridge/astoria/api/src/cyasusb.c   |   37 +-
+ .../arch/arm/mach-omap2/cyashalomap_kernel.c       |    7 +-
+ .../westbridge/astoria/device/cyandevice_export.h  |  132 -
+ .../staging/westbridge/astoria/device/cyasdevice.c |    7 +-
+ .../astoria/include/linux/westbridge/cyasdma.h     |    2 +-
+ .../astoria/include/linux/westbridge/cyasmisc.h    |    2 +-
+ .../astoria/include/linux/westbridge/cyasusb.h     |    2 +-
+ drivers/staging/winbond/core.h                     |    1 +
+ drivers/staging/winbond/wb35reg.c                  |    3 +-
+ drivers/staging/wlan-ng/hfa384x.h                  |  156 +-
+ drivers/staging/wlan-ng/hfa384x_usb.c              |    6 +-
+ drivers/staging/wlan-ng/p80211conv.c               |    4 +-
+ drivers/staging/wlan-ng/p80211conv.h               |    6 +-
+ drivers/staging/wlan-ng/p80211hdr.h                |    6 +-
+ drivers/staging/wlan-ng/p80211ioctl.h              |    2 +-
+ drivers/staging/wlan-ng/p80211metastruct.h         |   30 +-
+ drivers/staging/wlan-ng/p80211mgmt.h               |   18 +-
+ drivers/staging/wlan-ng/p80211msg.h                |    2 +-
+ drivers/staging/wlan-ng/p80211types.h              |   34 +-
+ drivers/staging/wlan-ng/prism2fw.c                 |    3 +-
+ drivers/staging/xgifb/Makefile                     |    2 +-
+ drivers/staging/xgifb/XGI_accel.c                  |  289 -
+ drivers/staging/xgifb/XGI_accel.h                  |  500 -
+ drivers/staging/xgifb/XGI_main.h                   |  126 -
+ drivers/staging/xgifb/XGI_main_26.c                | 1014 +--
+ drivers/staging/xgifb/XGIfb.h                      |   96 +-
+ drivers/staging/xgifb/vb_ext.c                     |  782 +-
+ drivers/staging/xgifb/vb_ext.h                     |    6 -
+ drivers/staging/xgifb/vb_init.c                    | 2649 ++---
+ drivers/staging/xgifb/vb_setmode.c                 |13006 ++++++++++----------
+ drivers/staging/xgifb/vb_setmode.h                 |    4 -
+ drivers/staging/xgifb/vb_table.h                   |   23 -
+ drivers/staging/xgifb/vb_util.c                    |  124 +-
+ drivers/staging/xgifb/vb_util.h                    |   16 +-
+ drivers/staging/xgifb/vgatypes.h                   |   45 -
+ drivers/staging/zcache/Kconfig                     |   13 +
+ drivers/staging/zcache/Makefile                    |    3 +
+ drivers/staging/zcache/tmem.c                      |  710 ++
+ drivers/staging/zcache/tmem.h                      |  195 +
+ drivers/staging/zcache/zcache.c                    | 1658 +++
+ drivers/staging/zram/Kconfig                       |   15 +-
+ drivers/staging/zram/Makefile                      |    3 +-
+ drivers/staging/zram/xvmalloc.c                    |   89 +-
+ drivers/staging/zram/xvmalloc_int.h                |   23 +-
+ drivers/staging/zram/zram_drv.c                    |   50 +-
+ drivers/staging/zram/zram_drv.h                    |    1 +
+ drivers/staging/zram/zram_sysfs.c                  |    7 +-
+ drivers/usb/storage/Kconfig                        |   15 +
+ drivers/usb/storage/Makefile                       |    2 +
+ drivers/usb/storage/ene_ub6250.c                   |  803 ++
+ drivers/usb/storage/unusual_ene_ub6250.h           |   26 +
+ drivers/usb/storage/usual-tables.c                 |    1 +
+ include/linux/connector.h                          |   12 +-
+ 835 files changed, 94766 insertions(+), 91366 deletions(-)
+ create mode 100644 drivers/bluetooth/btwilink.c
+ delete mode 100644 drivers/staging/autofs/Kconfig
+ delete mode 100644 drivers/staging/autofs/Makefile
+ delete mode 100644 drivers/staging/autofs/TODO
+ delete mode 100644 drivers/staging/autofs/autofs_i.h
+ delete mode 100644 drivers/staging/autofs/dirhash.c
+ delete mode 100644 drivers/staging/autofs/init.c
+ delete mode 100644 drivers/staging/autofs/inode.c
+ delete mode 100644 drivers/staging/autofs/root.c
+ delete mode 100644 drivers/staging/autofs/symlink.c
+ delete mode 100644 drivers/staging/autofs/waitq.c
+ delete mode 100644 drivers/staging/brcm80211/brcmfmac/Kconfig
+ create mode 100644 drivers/staging/brcm80211/brcmfmac/aiutils.c
+ rename drivers/staging/brcm80211/{include => brcmfmac}/bcmcdc.h (97%)
+ rename drivers/staging/brcm80211/{include => brcmfmac}/bcmsdbus.h (95%)
+ rename drivers/staging/brcm80211/{include => brcmfmac}/bcmsdh_sdmmc.h (81%)
+ create mode 100644 drivers/staging/brcm80211/brcmfmac/bcmutils.c
+ create mode 100644 drivers/staging/brcm80211/brcmfmac/bcmwifi.c
+ rename drivers/staging/brcm80211/{include => brcmfmac}/dhdioctl.h (95%)
+ create mode 100644 drivers/staging/brcm80211/brcmfmac/hndpmu.c
+ rename drivers/staging/brcm80211/{include => brcmfmac}/hndrte_armtrap.h (100%)
+ rename drivers/staging/brcm80211/{include => brcmfmac}/hndrte_cons.h (96%)
+ rename drivers/staging/brcm80211/{include => brcmfmac}/msgtrace.h (88%)
+ create mode 100644 drivers/staging/brcm80211/brcmfmac/sbutils.c
+ rename drivers/staging/brcm80211/{include => brcmfmac}/sdioh.h (100%)
+ rename drivers/staging/brcm80211/{include => brcmfmac}/sdiovar.h (90%)
+ create mode 100644 drivers/staging/brcm80211/brcmfmac/siutils.c
+ create mode 100644 drivers/staging/brcm80211/brcmsmac/Makefile
+ rename drivers/staging/brcm80211/{include => brcmsmac}/d11.h (94%)
+ rename drivers/staging/brcm80211/{ => brcmsmac}/phy/phy_version.h (100%)
+ rename drivers/staging/brcm80211/{ => brcmsmac}/phy/wlc_phy_cmn.c (91%)
+ rename drivers/staging/brcm80211/{ => brcmsmac}/phy/wlc_phy_hal.h (99%)
+ rename drivers/staging/brcm80211/{ => brcmsmac}/phy/wlc_phy_int.h (99%)
+ rename drivers/staging/brcm80211/{ => brcmsmac}/phy/wlc_phy_lcn.c (98%)
+ rename drivers/staging/brcm80211/{ => brcmsmac}/phy/wlc_phy_lcn.h (100%)
+ rename drivers/staging/brcm80211/{ => brcmsmac}/phy/wlc_phy_n.c (99%)
+ rename drivers/staging/brcm80211/{ => brcmsmac}/phy/wlc_phy_radio.h (100%)
+ rename drivers/staging/brcm80211/{ => brcmsmac}/phy/wlc_phyreg_n.h (100%)
+ rename drivers/staging/brcm80211/{ => brcmsmac}/phy/wlc_phytbl_lcn.c (99%)
+ rename drivers/staging/brcm80211/{ => brcmsmac}/phy/wlc_phytbl_lcn.h (100%)
+ rename drivers/staging/brcm80211/{ => brcmsmac}/phy/wlc_phytbl_n.c (99%)
+ rename drivers/staging/brcm80211/{ => brcmsmac}/phy/wlc_phytbl_n.h (100%)
+ rename drivers/staging/brcm80211/{sys => brcmsmac}/wl_dbg.h (100%)
+ rename drivers/staging/brcm80211/{sys => brcmsmac}/wl_export.h (66%)
+ rename drivers/staging/brcm80211/{sys => brcmsmac}/wl_mac80211.c (78%)
+ rename drivers/staging/brcm80211/{sys => brcmsmac}/wl_mac80211.h (79%)
+ rename drivers/staging/brcm80211/{sys => brcmsmac}/wl_ucode.h (76%)
+ create mode 100644 drivers/staging/brcm80211/brcmsmac/wl_ucode_loader.c
+ rename drivers/staging/brcm80211/{sys => brcmsmac}/wlc_alloc.c (51%)
+ rename drivers/staging/brcm80211/{sys => brcmsmac}/wlc_alloc.h (64%)
+ rename drivers/staging/brcm80211/{sys => brcmsmac}/wlc_ampdu.c (87%)
+ rename drivers/staging/brcm80211/{sys => brcmsmac}/wlc_ampdu.h (84%)
+ rename drivers/staging/brcm80211/{sys => brcmsmac}/wlc_antsel.c (93%)
+ rename drivers/staging/brcm80211/{sys => brcmsmac}/wlc_antsel.h (90%)
+ rename drivers/staging/brcm80211/{sys => brcmsmac}/wlc_bmac.c (75%)
+ rename drivers/staging/brcm80211/{sys => brcmsmac}/wlc_bmac.h (66%)
+ rename drivers/staging/brcm80211/{sys => brcmsmac}/wlc_bsscfg.h (85%)
+ rename drivers/staging/brcm80211/{sys => brcmsmac}/wlc_cfg.h (99%)
+ rename drivers/staging/brcm80211/{sys => brcmsmac}/wlc_channel.c (89%)
+ rename drivers/staging/brcm80211/{sys => brcmsmac}/wlc_channel.h (69%)
+ rename drivers/staging/brcm80211/{sys => brcmsmac}/wlc_key.h (92%)
+ rename drivers/staging/brcm80211/{sys/wlc_mac80211.c => brcmsmac/wlc_main.c} (88%)
+ rename drivers/staging/brcm80211/{sys/wlc_mac80211.h => brcmsmac/wlc_main.h} (91%)
+ rename drivers/staging/brcm80211/{sys => brcmsmac}/wlc_phy_shim.c (93%)
+ rename drivers/staging/brcm80211/{sys => brcmsmac}/wlc_phy_shim.h (100%)
+ rename drivers/staging/brcm80211/{sys => brcmsmac}/wlc_pub.h (91%)
+ rename drivers/staging/brcm80211/{sys => brcmsmac}/wlc_rate.c (98%)
+ rename drivers/staging/brcm80211/{sys => brcmsmac}/wlc_rate.h (100%)
+ rename drivers/staging/brcm80211/{sys => brcmsmac}/wlc_scb.h (97%)
+ rename drivers/staging/brcm80211/{sys => brcmsmac}/wlc_stf.c (85%)
+ rename drivers/staging/brcm80211/{sys => brcmsmac}/wlc_stf.h (88%)
+ rename drivers/staging/brcm80211/{sys => brcmsmac}/wlc_types.h (100%)
+ delete mode 100644 drivers/staging/brcm80211/include/bcmendian.h
+ delete mode 100644 drivers/staging/brcm80211/include/osl.h
+ delete mode 100644 drivers/staging/brcm80211/include/packed_section_end.h
+ delete mode 100644 drivers/staging/brcm80211/include/packed_section_start.h
+ delete mode 100644 drivers/staging/brcm80211/include/proto/802.1d.h
+ delete mode 100644 drivers/staging/brcm80211/include/proto/ethernet.h
+ delete mode 100644 drivers/staging/brcm80211/include/proto/wpa.h
+ delete mode 100644 drivers/staging/brcm80211/include/rpc_osl.h
+ delete mode 100644 drivers/staging/brcm80211/include/sbhndpio.h
+ delete mode 100644 drivers/staging/brcm80211/include/spid.h
+ delete mode 100644 drivers/staging/brcm80211/sys/d11ucode_ext.h
+ delete mode 100644 drivers/staging/brcm80211/sys/wl_ucode_loader.c
+ delete mode 100644 drivers/staging/brcm80211/sys/wlc_event.c
+ delete mode 100644 drivers/staging/brcm80211/sys/wlc_event.h
+ rename drivers/staging/brcm80211/{include => util}/bcmsrom_tbl.h (100%)
+ delete mode 100644 drivers/staging/brcm80211/util/linux_osl.c
+ rename drivers/staging/brcm80211/{include => util}/pci_core.h (100%)
+ rename drivers/staging/brcm80211/{include => util}/sbpcmcia.h (100%)
+ rename drivers/staging/brcm80211/{include => util}/sbsocram.h (100%)
+ delete mode 100644 drivers/staging/easycap/easycap_debug.h
+ delete mode 100644 drivers/staging/easycap/easycap_ioctl.h
+ delete mode 100644 drivers/staging/easycap/easycap_sound.h
+ create mode 100644 drivers/staging/easycap/easycap_sound_oss.c
+ delete mode 100644 drivers/staging/easycap/easycap_standard.h
+ delete mode 100644 drivers/staging/ft1000/ft1000-pcmcia/ft1000_cs.h
+ delete mode 100644 drivers/staging/ft1000/ft1000-usb/ft1000_hw.h
+ create mode 100644 drivers/staging/gma500/Kconfig
+ create mode 100644 drivers/staging/gma500/Makefile
+ create mode 100644 drivers/staging/gma500/TODO
+ create mode 100644 drivers/staging/gma500/psb_2d.c
+ create mode 100644 drivers/staging/gma500/psb_bl.c
+ create mode 100644 drivers/staging/gma500/psb_buffer.c
+ create mode 100644 drivers/staging/gma500/psb_drm.h
+ create mode 100644 drivers/staging/gma500/psb_drv.c
+ create mode 100644 drivers/staging/gma500/psb_drv.h
+ create mode 100644 drivers/staging/gma500/psb_fb.c
+ create mode 100644 drivers/staging/gma500/psb_fb.h
+ create mode 100644 drivers/staging/gma500/psb_fence.c
+ create mode 100644 drivers/staging/gma500/psb_gtt.c
+ create mode 100644 drivers/staging/gma500/psb_gtt.h
+ create mode 100644 drivers/staging/gma500/psb_intel_bios.c
+ create mode 100644 drivers/staging/gma500/psb_intel_bios.h
+ create mode 100644 drivers/staging/gma500/psb_intel_display.c
+ create mode 100644 drivers/staging/gma500/psb_intel_display.h
+ create mode 100644 drivers/staging/gma500/psb_intel_drv.h
+ create mode 100644 drivers/staging/gma500/psb_intel_i2c.c
+ create mode 100644 drivers/staging/gma500/psb_intel_lvds.c
+ create mode 100644 drivers/staging/gma500/psb_intel_modes.c
+ create mode 100644 drivers/staging/gma500/psb_intel_opregion.c
+ create mode 100644 drivers/staging/gma500/psb_intel_reg.h
+ create mode 100644 drivers/staging/gma500/psb_intel_sdvo.c
+ create mode 100644 drivers/staging/gma500/psb_intel_sdvo_regs.h
+ create mode 100644 drivers/staging/gma500/psb_irq.c
+ create mode 100644 drivers/staging/gma500/psb_irq.h
+ create mode 100644 drivers/staging/gma500/psb_mmu.c
+ create mode 100644 drivers/staging/gma500/psb_powermgmt.c
+ create mode 100644 drivers/staging/gma500/psb_powermgmt.h
+ create mode 100644 drivers/staging/gma500/psb_pvr_glue.c
+ create mode 100644 drivers/staging/gma500/psb_pvr_glue.h
+ create mode 100644 drivers/staging/gma500/psb_reg.h
+ create mode 100644 drivers/staging/gma500/psb_reset.c
+ create mode 100644 drivers/staging/gma500/psb_sgx.c
+ create mode 100644 drivers/staging/gma500/psb_sgx.h
+ create mode 100644 drivers/staging/gma500/psb_ttm_fence.c
+ create mode 100644 drivers/staging/gma500/psb_ttm_fence_api.h
+ create mode 100644 drivers/staging/gma500/psb_ttm_fence_driver.h
+ create mode 100644 drivers/staging/gma500/psb_ttm_fence_user.c
+ create mode 100644 drivers/staging/gma500/psb_ttm_fence_user.h
+ create mode 100644 drivers/staging/gma500/psb_ttm_glue.c
+ create mode 100644 drivers/staging/gma500/psb_ttm_placement_user.c
+ create mode 100644 drivers/staging/gma500/psb_ttm_placement_user.h
+ create mode 100644 drivers/staging/gma500/psb_ttm_userobj_api.h
+ create mode 100644 drivers/staging/hv/hv_kvp.c
+ create mode 100644 drivers/staging/hv/hv_kvp.h
+ create mode 100644 drivers/staging/hv/hv_mouse.c
+ rename drivers/staging/hv/{hv_utils.c => hv_util.c} (95%)
+ delete mode 100644 drivers/staging/hv/osd.c
+ delete mode 100644 drivers/staging/hv/osd.h
+ create mode 100644 drivers/staging/hv/tools/hv_kvp_daemon.c
+ create mode 100644 drivers/staging/iio/Documentation/dac/max517
+ create mode 100644 drivers/staging/iio/Documentation/sysfs-bus-iio-trigger-sysfs
+ delete mode 100644 drivers/staging/iio/adc/ad7298.c
+ create mode 100644 drivers/staging/iio/adc/ad7298.h
+ create mode 100644 drivers/staging/iio/adc/ad7298_core.c
+ create mode 100644 drivers/staging/iio/adc/ad7298_ring.c
+ create mode 100644 drivers/staging/iio/adc/ad7606.h
+ create mode 100644 drivers/staging/iio/adc/ad7606_core.c
+ create mode 100644 drivers/staging/iio/adc/ad7606_par.c
+ create mode 100644 drivers/staging/iio/adc/ad7606_ring.c
+ create mode 100644 drivers/staging/iio/adc/ad7606_spi.c
+ create mode 100644 drivers/staging/iio/dac/max517.c
+ create mode 100644 drivers/staging/iio/dac/max517.h
+ create mode 100644 drivers/staging/iio/dds/ad9832.h
+ delete mode 100644 drivers/staging/iio/gyro/adis16060.h
+ delete mode 100644 drivers/staging/iio/gyro/adis16080.h
+ delete mode 100644 drivers/staging/iio/gyro/adis16130.h
+ delete mode 100644 drivers/staging/iio/gyro/adis16251.h
+ delete mode 100644 drivers/staging/iio/gyro/adis16251_core.c
+ create mode 100644 drivers/staging/iio/kfifo_buf.c
+ create mode 100644 drivers/staging/iio/kfifo_buf.h
+ create mode 100644 drivers/staging/iio/trigger/iio-trig-bfin-timer.c
+ create mode 100644 drivers/staging/iio/trigger/iio-trig-sysfs.c
+ delete mode 100644 drivers/staging/keucr/sdscsi.c
+ delete mode 100644 drivers/staging/rtl8192e/ieee80211.h
+ delete mode 100644 drivers/staging/rtl8192e/ieee80211_crypt.h
+ delete mode 100644 drivers/staging/rtl8712/farray.h
+ create mode 100644 drivers/staging/rts_pstor/Kconfig
+ create mode 100644 drivers/staging/rts_pstor/Makefile
+ create mode 100644 drivers/staging/rts_pstor/TODO
+ create mode 100644 drivers/staging/rts_pstor/debug.h
+ create mode 100644 drivers/staging/rts_pstor/general.c
+ create mode 100644 drivers/staging/rts_pstor/general.h
+ create mode 100644 drivers/staging/rts_pstor/ms.c
+ create mode 100644 drivers/staging/rts_pstor/ms.h
+ create mode 100644 drivers/staging/rts_pstor/rtsx.c
+ create mode 100644 drivers/staging/rts_pstor/rtsx.h
+ create mode 100644 drivers/staging/rts_pstor/rtsx_card.c
+ create mode 100644 drivers/staging/rts_pstor/rtsx_card.h
+ create mode 100644 drivers/staging/rts_pstor/rtsx_chip.c
+ create mode 100644 drivers/staging/rts_pstor/rtsx_chip.h
+ create mode 100644 drivers/staging/rts_pstor/rtsx_scsi.c
+ create mode 100644 drivers/staging/rts_pstor/rtsx_scsi.h
+ create mode 100644 drivers/staging/rts_pstor/rtsx_sys.h
+ create mode 100644 drivers/staging/rts_pstor/rtsx_transport.c
+ create mode 100644 drivers/staging/rts_pstor/rtsx_transport.h
+ create mode 100644 drivers/staging/rts_pstor/sd.c
+ create mode 100644 drivers/staging/rts_pstor/sd.h
+ create mode 100644 drivers/staging/rts_pstor/spi.c
+ create mode 100644 drivers/staging/rts_pstor/spi.h
+ create mode 100644 drivers/staging/rts_pstor/trace.h
+ create mode 100644 drivers/staging/rts_pstor/xd.c
+ create mode 100644 drivers/staging/rts_pstor/xd.h
+ delete mode 100644 drivers/staging/smbfs/Kconfig
+ delete mode 100644 drivers/staging/smbfs/Makefile
+ delete mode 100644 drivers/staging/smbfs/TODO
+ delete mode 100644 drivers/staging/smbfs/cache.c
+ delete mode 100644 drivers/staging/smbfs/dir.c
+ delete mode 100644 drivers/staging/smbfs/file.c
+ delete mode 100644 drivers/staging/smbfs/getopt.c
+ delete mode 100644 drivers/staging/smbfs/getopt.h
+ delete mode 100644 drivers/staging/smbfs/inode.c
+ delete mode 100644 drivers/staging/smbfs/ioctl.c
+ delete mode 100644 drivers/staging/smbfs/proc.c
+ delete mode 100644 drivers/staging/smbfs/proto.h
+ delete mode 100644 drivers/staging/smbfs/request.c
+ delete mode 100644 drivers/staging/smbfs/request.h
+ delete mode 100644 drivers/staging/smbfs/smb.h
+ delete mode 100644 drivers/staging/smbfs/smb_debug.h
+ delete mode 100644 drivers/staging/smbfs/smb_fs.h
+ delete mode 100644 drivers/staging/smbfs/smb_fs_i.h
+ delete mode 100644 drivers/staging/smbfs/smb_fs_sb.h
+ delete mode 100644 drivers/staging/smbfs/smb_mount.h
+ delete mode 100644 drivers/staging/smbfs/smbfs.txt
+ delete mode 100644 drivers/staging/smbfs/smbiod.c
+ delete mode 100644 drivers/staging/smbfs/smbno.h
+ delete mode 100644 drivers/staging/smbfs/sock.c
+ delete mode 100644 drivers/staging/smbfs/symlink.c
+ rename drivers/staging/solo6x10/{solo6010-core.c => core.c} (69%)
+ rename drivers/staging/solo6x10/{solo6010-disp.c => disp.c} (93%)
+ rename drivers/staging/solo6x10/{solo6010-enc.c => enc.c} (82%)
+ rename drivers/staging/solo6x10/{solo6010-g723.c => g723.c} (90%)
+ rename drivers/staging/solo6x10/{solo6010-gpio.c => gpio.c} (85%)
+ rename drivers/staging/solo6x10/{solo6010-i2c.c => i2c.c} (88%)
+ rename drivers/staging/solo6x10/{solo6010-jpeg.h => jpeg.h} (98%)
+ rename drivers/staging/solo6x10/{solo6010-offsets.h => offsets.h} (81%)
+ rename drivers/staging/solo6x10/{solo6010-osd-font.h => osd-font.h} (98%)
+ rename drivers/staging/solo6x10/{solo6010-p2m.c => p2m.c} (83%)
+ rename drivers/staging/solo6x10/{solo6010-registers.h => registers.h} (92%)
+ rename drivers/staging/solo6x10/{solo6010.h => solo6x10.h} (72%)
+ rename drivers/staging/solo6x10/{solo6010-tw28.c => tw28.c} (95%)
+ rename drivers/staging/solo6x10/{solo6010-tw28.h => tw28.h} (72%)
+ rename drivers/staging/solo6x10/{solo6010-v4l2-enc.c => v4l2-enc.c} (79%)
+ rename drivers/staging/solo6x10/{solo6010-v4l2.c => v4l2.c} (92%)
+ delete mode 100644 drivers/staging/ti-st/Kconfig
+ delete mode 100644 drivers/staging/ti-st/Makefile
+ delete mode 100644 drivers/staging/ti-st/TODO
+ delete mode 100644 drivers/staging/ti-st/bt_drv.c
+ delete mode 100644 drivers/staging/ti-st/bt_drv.h
+ delete mode 100644 drivers/staging/ti-st/sysfs-uim
+ delete mode 100644 drivers/staging/tidspbridge/gen/gb.c
+ delete mode 100644 drivers/staging/tidspbridge/gen/gs.c
+ delete mode 100644 drivers/staging/tidspbridge/include/dspbridge/dbldefs.h
+ delete mode 100644 drivers/staging/tidspbridge/include/dspbridge/dehdefs.h
+ delete mode 100644 drivers/staging/tidspbridge/include/dspbridge/dispdefs.h
+ delete mode 100644 drivers/staging/tidspbridge/include/dspbridge/drvdefs.h
+ delete mode 100644 drivers/staging/tidspbridge/include/dspbridge/gb.h
+ delete mode 100644 drivers/staging/tidspbridge/include/dspbridge/gs.h
+ delete mode 100644 drivers/staging/tidspbridge/include/dspbridge/iodefs.h
+ delete mode 100644 drivers/staging/tidspbridge/include/dspbridge/ldr.h
+ delete mode 100644 drivers/staging/tidspbridge/include/dspbridge/list.h
+ delete mode 100644 drivers/staging/tidspbridge/include/dspbridge/pwr_sh.h
+ delete mode 100644 drivers/staging/tidspbridge/include/dspbridge/utildefs.h
+ delete mode 100644 drivers/staging/westbridge/astoria/device/cyandevice_export.h
+ delete mode 100644 drivers/staging/xgifb/XGI_accel.c
+ delete mode 100644 drivers/staging/xgifb/XGI_accel.h
+ create mode 100644 drivers/staging/zcache/Kconfig
+ create mode 100644 drivers/staging/zcache/Makefile
+ create mode 100644 drivers/staging/zcache/tmem.c
+ create mode 100644 drivers/staging/zcache/tmem.h
+ create mode 100644 drivers/staging/zcache/zcache.c
+ create mode 100644 drivers/usb/storage/ene_ub6250.c
+ create mode 100644 drivers/usb/storage/unusual_ene_ub6250.h
 
 ---------------
 
-Haiyang Zhang (1):
-      staging: hv: Enable sending GARP packet after live migration
+Aaro Koskinen (54):
+      staging: xgifb: xgifb_probe() error paths missing framebuffer_release()
+      staging: xgifb: fix some memory leaks
+      staging: xgifb: copy PCI ROM properly
+      staging: xgifb: replace XGINew_LCD_Wait_Time() with mdelay()
+      staging: xgifb: release and unmap I/O memory
+      staging: xgifb: clean up xgifb_remove()
+      staging: xgifb: eliminate a global variable
+      staging: xgifb: delete dead code for skipping the video memory sizing
+      staging: xgifb: delete redundant XGIhw_ext fields
+      staging: xgifb: eliminate fbcon_XGI_copyarea()
+      staging: xgifb: eliminate fbcon_XGI_fillrect()
+      staging: xgifb: eliminate "accel" field from video_info
+      staging: xgifb: delete XGI_accel.[ch]
+      staging: xgifb: delete unused module parameter "noaccel"
+      staging: xgifb: remove private ioctls
+      staging: xgifb: delete HW cursor memory allocation
+      staging: xgifb: delete command queue selection/init
+      staging: xgifb: delete offscreen memory management
+      staging: xgifb: delete unused fields from xgi_hw_device_info
+      staging: xgifb: delete bSkipSense
+      staging: xgifb: delete bIntegratedMMEnabled
+      staging: xgifb: delete nomax module parameter
+      staging: xgifb: vb_setmode: make internal functions static
+      staging: xgifb: vb_setmode: include the .h file
+      staging: xgifb: vb_ext: delete redundant declarations
+      staging: xgifb: vb_ext: delete unused functions
+      staging: xgifb: vb_ext: make internal functions static
+      staging: xgifb: vb_init: delete redundant declarations
+      staging: xgifb: vb_init: delete unused functions
+      staging: xgifb: vb_init: make internal functions static
+      staging: xgifb: vb_ext: move functions to avoid forward declarations
+      staging: xgifb: vb_init: move functions to avoid forward declarations
+      staging: xgifb: vb_setmode: move functions to avoid forward declarations
+      staging: xgifb: delete unsupported chip types
+      staging: xgifb: delete dead code for chip types < XG40
+      staging: xgifb: eliminate redudant chip type >= XG40 checks
+      staging: xgifb: delete unused LINUXBIOS code
+      staging: xgifb: delete redundant extended register access enable
+      staging: xgifb: delete incorrect I/O mapping
+      staging: xgifb: use mdelay() for millisecond delays
+      staging: xgifb: replace DelayUS() with udelay()
+      staging: xgifb: vb_util: include the .h file
+      staging: xgifb: vb_util: delete commented-out code
+      staging: xgifb: replace XGINew_GetReg2() with inb()
+      staging: xgifb: replace XGINew_GetReg3() with inl()
+      staging: xgifb: replace XGINew_SetReg3() with outb()
+      staging: xgifb: replace XGINew_SetReg4() with outl()
+      staging: xgifb: rename XGINew_SetReg1() to xgifb_reg_set()
+      staging: xgifb: rename XGINew_GetReg1() to xgifb_reg_get()
+      staging: xgifb: rename XGINew_SetRegOR() to xgifb_reg_or()
+      staging: xgifb: rename XGINew_SetRegANDOR() to xgifb_reg_and_or()
+      staging: xgifb: rename XGINew_SetRegAND() to xgifb_reg_and()
+      staging: xgifb: clean up register access types
+      staging: xgifb: clean up register function variable names
 
-Harsha Priya (1):
-      staging: sst: Fix for dmic capture on v2 pmic
+Adam Thompson (1):
+      Staging: wlan-ng: fix 2 space coding style issues
 
-Ian Abbott (2):
-      Staging: comedi: Add MODULE_LICENSE and similar to NI modules
-      Staging: Comedi: Fix a few NI module dependencies
+Alan Cox (10):
+      staging: usbvideo: vicam: Fix build in -next
+      staging: sep: Further tidying
+      staging: et131x: Turn a few more LongCapitalisedThings into Linuxish names
+      staging: et131x: Kill of the eFLOW_CONTROL enum
+      staging: et131x: Clean up the phy coma stuff
+      staging: et131x: Clean up the RFD struct/types
+      staging: et131x: Begin cleaning up the MI registers
+      staging: gma500: Intel GMA500 staging driver
+      staging: gma500: Add 2D acceleration
+      staging: gma500: Resync the patch queue with GregKH's space cleanup.
 
-Nitin Gupta (1):
-      staging: zram: fix data corruption issue
+Alberto Mardegan (1):
+      staging: samsung-laptop: Samsung R410P backlight driver
 
-Roland Vossen (1):
-      staging: brcm80211: bugfix for softmac crash on multi cpu configurations
+Alexander Beregalov (9):
+      staging: bcm: optimize kmalloc to kzalloc
+      staging: brcm80211: optimize kmalloc to kzalloc
+      staging: rts_pstor: optimize kmalloc to kzalloc
+      staging: ft1000: optimize kmalloc to kzalloc
+      staging: spectra: optimize kmalloc to kzalloc
+      staging: brcm80211: fix memory leaks
+      staging: ste_rmi4: fix memory leaks
+      staging: crystalhd: fix memory leaks
+      staging: hv: fix memory leaks
+
+Alexey Khoroshilov (1):
+      Staging: pohmelfs/dir.c: Remove unneeded mutex_unlock() from pohmelfs_rename()
+
+Andres Salomon (14):
+      staging: olpc_dcon: revert strtoul change
+      staging: olpc_dcon: get rid of global i2c_client, create a dcon_priv struct
+      staging: olpc_dcon: change sysfs 'output' toggle to be clearer...
+      staging: olpc_dcon: move more variables into dcon_priv
+      staging: olpc_dcon: actually return the value of i2c_add_driver
+      staging: olpc_dcon: don't specify single bits for bool fields
+      staging: olpc_dcon: move fb event notifier block into dcon_priv struct
+      staging: olpc_dcon: move fb stuff info dcon_priv, and clean up fb handling
+      staging: olpc_dcon: drop XO-1.5 prototype support
+      staging: olpc_dcon: add config options for XO_1 and XO_1_5, drop hardcoded XO-1 stuff
+      staging: olpc_dcon: move more variables into dcon_priv
+      staging: olpc_dcon: move more global variables into dcon_priv
+      staging: olpc_dcon: clean up backlight handling
+      staging: olpc_dcon: drop CONFIG_BROKEN dependency
+
+Arend van Spriel (77):
+      staging: brcm80211: remove usage of ETHER_MAX_LEN definition
+      staging: brcm80211: move definition of ETHER_TYPE_BRCM to source file
+      staging: brcm80211: remove usage of struct ether_header
+      staging: brcm80211: cleanup proto/ethernet.h include
+      staging: brcm80211: removed usage of proto/wpa.h file
+      staging: brcm80211: remove usage of packet section macros
+      staging: brcm80211: last nail into proto/ethernet.h
+      staging: brcm80211: moved code around for cleanup
+      staging: brcm80211: cleanup on the brcm80211 include directory
+      staging: brcm80211: removed sys directory layer from brcmsmac driver
+      staging: brcm80211: use KBUILD_MODNAME as driver name in registration
+      staging: brcm80211: remove unused function from bcmwifi.c
+      staging: brcm80211: remove unused function from dhd_cdc.c
+      staging: brcm80211: remove unused function from dhd_common.c
+      staging: brcm80211: remove unused inline funtion from siutils.h
+      staging: brcm80211: remove unused functions from sbutils.c
+      staging: brcm80211: remove unused function from wlc_bmac.c
+      staging: brcm80211: remove unused function from wlc_channel.c
+      staging: brcm80211: remove unused function from wlc_event.c
+      staging: brcm80211: removed unused inline function from wlc_ampdu.c
+      staging: brcm80211: remove unused function from wlc_stf.c
+      staging: brcm80211: remove unused type definitions from driver
+      staging: brcm80211: assure common sources are truly common
+      staging: brcm80211: implementation of RFKILL functionality
+      staging: brcm80211: fix compiler warning in fullmac driver
+      staging: brcm80211: allow both driver are created in single build
+      staging: brcm80211: align common dirver code
+      staging: brcm80211: remove driver message upon initialization
+      staging: brcm80211: implement mac80211 callback set_rts_threshold
+      staging: brcm80211: use consistent naming for mac80211 callbacks
+      staging: brcm80211: decrease level of non-error messages
+      staging: brcm80211: return error code to mac80211 for 40MHz channels
+      staging: brcm80211: remove usage of printf (macro) from driver
+      staging: brcm80211: fix potential null pointer access handling ucode buffer
+      staging: brcm80211: enable driver counter functionality
+      staging: brcm80211: cleanup mac80211 callback bss_info_changed
+      staging: brcm80211: handle change in association state from mac80211
+      staging: brcm80211: store HT operation mode settings from mac80211
+      staging: brcm80211: set beacon interval as provided by mac80211
+      staging: brcm80211: store BSSID in driver config information
+      staging: brcm80211: remove unnecessary cast in wlc_d11hdrs_mac80211
+      staging: brcm80211: remove warning introduced by rfkill implementation
+      staging: brcm80211: remove #ifdef BCMDBG from regular functions
+      staging: brcm80211: remove declaration of unused string array
+      staging: brcm80211: allow changing channel by mac80211 when associated
+      staging: brcm80211: remove some bsscfg attribute that are redundant
+      staging: brcm80211: remove unused module from softmac driver
+      staging: brcm80211: cleanup function prototypes in header files
+      staging: brcm80211: remove nested include statements
+      staging: brcm80211: remove typedefs that were flagged by checkpatch
+      staging: brcm80211: remove typedef for struct wl_timer
+      staging: brcm80211: remove include file proto/802.1d.h
+      staging: brcm80211: remove include file sbhndpio.h
+      staging: brcm80211: remove include file d11ucode_ext.h
+      staging: brcm80211: remove checks for ANTSEL related compiler definitions
+      staging: brcm80211: remove osl handle from pkttotlen function
+      staging: brcm80211: remove struct osl_info parameter from wlc_alloc
+      staging: brcm80211: remove NULL pointer checks before calling kfree
+      staging: brcm80211: remove usage of struct osl_info to access device
+      staging: brcm80211: remove usage of struct osl_info for register access
+      staging: brcm80211: remove usage of struct osl_info from util sources
+      staging: brcm80211: change prototype for wlc_antsel_attach
+      staging: brcm80211: changed module wlc_mac80211 to wlc_main
+      staging: brcm80211: replace simple_strtoul with strict_strtoul
+      staging: brcm80211: remove struct osl_info usage from wlc_bmac
+      staging: brcm80211: remove struct osl_info usage from phy sources
+      staging: brcm80211: remove osl_info usage in wlc_main and wl_mac80211
+      staging: brcm80211: move frameid initialization in wlc_d11hdrs_mac80211
+      staging: brcm80211: remove function prototypes from wl_export.h
+      staging: brcm80211: removed struct osl_info usage from fullmac driver
+      staging: brcm80211: remove unused attributes from struct osl_info
+      staging: brcm80211: cleanup declaration in osl.h
+      staging: brcm80211: remove of type definition osldma_t
+      staging: brcm80211: remove counting of allocated sk_buff packets
+      staging: brcm80211: remove struct osl_info from function prototypes
+      staging: brcm80211: remove struct osl_info from driver sources
+      staging: brcm80211: remove osl source files from driver
+
+Armando Uribe (6):
+      staging: tidspbridge: Eliminate direct manipulation of OMAP_SYSC_BASE
+      staging: tidspbridge: Remove unused defined constants
+      staging: tidspbridge: Remove unused functions
+      staging: tidspbridge: Remove unused structs
+      staging: tidspbridge: Remove unused typedefs
+      staging: tidspbridge: Remove trivial header files
+
+Arnd Bergmann (5):
+      staging/go7007: remove the BKL
+      staging: Remove autofs3
+      staging: remove smbfs
+      appletalk: move to staging
+      staging/usbip: convert to kthread
+
+Bas van den Berg (1):
+      Staging: wlan-ng: fixed packed checkpatch warnings
+
+Ben Hutchings (2):
+      vt6656: Use request_firmware() to load firmware
+      rtl8192u_usb: Remove built-in firmware images
+
+Brett Rudley (3):
+      staging: brcm80211: Remove abstractions for pci_(un)map_single
+      staging: brcm80211: Remove abstraction of pci_(alloc/free)_consistent
+      staging: brcm80211: relocate skb_get/free routines
+
+Brice Dubost (1):
+      staging: comedi : Analog input trigerring modes for cb_pcidas
+
+Christopher Brannon (2):
+      staging: speakup: more fixes for init-failure handling.
+      Staging: speakup: fix an out-of-bounds error.
+
+Coly Li (1):
+      Staging: wl_cfg80211.c: use BUG_ON correctly
+
+Dan Carpenter (10):
+      Staging: tm6000: silence Sparse warning "dubious: !x | !y"
+      Staging: tm6000: check usb_alloc_urb() return
+      Staging: rtl8712: fix math errors in snprintf()
+      Staging: rts_pstor: fix read past end of buffer
+      staging: ath6kl: cleanup in SEND_FRAME ioctl
+      staging: ath6kl: buffer overflow in SEND_FRAME ioctl
+      staging: gma500: fix some swapped gotos
+      USB: ene_ub6250: fix memory leak in ene_load_bincode()
+      Staging: crystalhd: change GFP_ATOMIC to GFP_KERNEL
+      Staging: crystalhd: don't waste the last char of buffer
+
+Dan Magenheimer (3):
+      staging: zcache: in-kernel tmem code
+      staging: zcache: host services and PAM services
+      staging: zcache: misc build/config
+
+David Brown (1):
+      staging: msm: Use explicit GPLv2 licenses
+
+Dowan Kim (1):
+      staging: brcm80211: FIX for bug that prevents system from entering suspend state
+
+Felipe Contreras (2):
+      staging: tidspbridge: fix mgr_enum_node_info
+      staging: tidspbridge: protect dmm_map properly
+
+Grant Grundler (2):
+      STAGING: brcm80211 fix TX Queue overflow
+      STAGING: brcm80211 remove dhd_doflow
+
+Greg Kroah-Hartman (54):
+      Revert "staging: brcm80211: assure common sources are truly common"
+      Revert "appletalk: move to staging"
+      Staging: samsung-laptop: fix up space/tab coding style issues
+      Staging: samsung-laptop: fix up brace coding style issues
+      Staging: samsung-laptop: change sabi_configs to be in C99 format
+      Staging: samsung-laptop: fix up a few more minor coding style issues
+      Staging: samsung-laptop: fix up some variable nameing
+      Staging: samsung-laptop: Added support for Samsung NC10 laptop
+      Staging: samsung-laptop: add support for NP-Q45
+      Staging: samsung-laptop: add a bunch more laptop DMI signatures
+      Staging: gma500: remove psb_gfx.mod.c
+      Staging: gma500: fix up trailing whitespace errors
+      Revert "staging: iio: ak8975: add platform data."
+      staging: samsung-laptop: add support for r70 laptops
+      staging: samsung-laptop: add support for R519 laptops
+      Staging: samsung-laptop: fix header address for N128
+      staging: samsung-laptop: address review comments
+      Staging: hv: add mouse driver
+      Staging: hv: enable mouse driver to build
+      Staging: hv: hv_mouse_drv.c: minor coding style cleanups
+      Staging: hv: mouse_vsc.c: fix brace coding style issues
+      Staging: hv: mouse_vsc: fix space coding style issues
+      Staging: hv: mouse_vsc: fix comment coding style
+      Staging: hv: hv_mouse: delete mouse_vsc.c
+      Staging: hv: hv_mouse: rename hv_mouse_drv.c
+      Staging: hv: hv_mouse: fix up copyright and license header
+      Staging: hv: delete vmbus_hid_protocol.h
+      Staging: hv: delete mousevsc_api.h
+      Staging: hv: hv_mouse: remove typedefs
+      Staging: hv: hv_mouse: unwind the initialization process a bit
+      Staging: hv: hv_mouse.c: remove struct mousevsc_drv_obj function callbacks
+      Staging: hv: hv_mouse: remove inline function markings
+      Staging: hv: hv_mouse: reorder functions to remove forward declarations
+      Staging: hv: hv_mouse: fix up input device info structure
+      Staging: hv: hv_mouse: use proper input define for bus type
+      Staging: hv: hv_mouse.c: clean up struct synthhid_msg_hdr
+      Staging: hv: hv_mouse: fix camelcase use of struct synthhid_msg_hdr
+      Staging: hv: hv_mouse: fix build warning
+      Staging: hv: hv_mouse: change camelcase for struct synthhid_msg
+      Staging: hv: hv_mouse: clean up version structure usage
+      Staging: hv: hv_mouse: clean up camelcase in struct synthhid_protocol_response
+      Staging: hv: hv_mouse: clean up camelcase when using struct hv_input_dev_info
+      Staging: hv: hv_mouse: use a real struct hid_descriptor
+      Staging: hv: hv_mouse: fix camelcase in struct synthhid_device_info_ack
+      Staging: hv: hv_mouse: clean up camelcase in struct synthhid_input_report
+      Staging: hv: hv_mouse: use an anonymous union for struct mousevsc_prt_msg
+      Staging: hv: hv_mouse: fix up camelcase use for enum pipe_prot_msg_type in structures
+      Staging: hv: hv_mouse: fix up pipe size field name
+      Staging: hv: hv_mouse: fix up camelcase usage in struct pipe_prt_msg
+      Staging: hv: hv_mouse: fix up camelcase fields in struct mousevsc_prt_msg
+      Staging: hv: hv_mouse: get rid of hungarian notation for name of the module
+      Staging: hv: hv_mouse: fix up guid variable name
+      Staging: hv: hv_mouse: remove unneeded function forward declaration
+      Staging: samsung-laptop: add support for N230 model
+
+Guzman Lugo, Fernando (1):
+      staging: tidspbridge: make sync_wait_on_event interruptible
+
+Haiyang Zhang (12):
+      staging: hv: Convert camel cased variables in connection.c to lower cases
+      staging: hv: Convert camel cased functions in connection.c to lower cases
+      staging: hv: Convert camel cased variables in vmbus_drv.c to lower cases
+      staging: hv: Convert camel cased functions in vmbus_drv.c to lower cases
+      staging: hv: Convert camel cased struct fields in vmbus_api.h to lower cases
+      staging: hv: Convert camel cased struct fields in vmbus_channel_interface.h to lower cases
+      staging: hv: Convert camel cased struct fields in vmbus_packet_format.h to lower cases
+      staging: hv: Convert camel cased struct fields in vmbus_private.h to lower cases
+      staging: hv: Remove dead code from netvsc.c
+      staging: hv: Remove dead code from rndis_filter.c
+      staging: hv: Remove unnecessary ASSERTs in netvsc_initialize()
+      staging: hv: Fix the WARN_ON condition in free_net_device()
+
+Hank Janssen (1):
+      Staging: hv: Fixed FIXME comments by using list_for_each_entry
+
+Hauke Mehrtens (1):
+      staging: brcm80211: fix build with BCMDBG unset.
+
+Ian Abbott (1):
+      staging: comedi: Make INSN_BITS behavior consistent across drivers
+
+Ilia Mirkin (24):
+      staging: ath6kl: Remove NULL check before kfree
+      staging: bcm: Remove NULL check before kfree
+      staging: brcm80211: Remove NULL check before kfree
+      staging: comedi: Remove NULL check before kfree
+      staging: cx25821: Remove NULL check before kfree
+      staging: go7007: Remove NULL check before kfree
+      staging: keucr: Remove NULL check before kfree
+      staging: line6: Remove NULL check before kfree
+      staging: pohmelfs: Remove NULL check before kfree
+      staging: rt2860: Remove NULL check before kfree
+      staging: rtl8187se: Remove NULL check before kfree
+      staging: rtl8192e: Remove NULL check before kfree
+      staging: rtl8192u: Remove NULL check before kfree
+      staging: rtl8712: Remove NULL check before kfree
+      staging: serqt_usb2: Remove NULL check before kfree
+      staging: speakup: Remove NULL check before kfree
+      staging: tidspbridge: Remove NULL check before kfree
+      staging: usbip: Remove NULL check before kfree
+      staging: vme: Remove NULL check before kfree
+      staging: vt6655: Remove NULL check before kfree
+      staging: vt6656: Remove NULL check before kfree
+      staging: winbond: Remove NULL check before kfree
+      staging: wlan-ng: Remove NULL check before kfree
+      staging: hv: Remove NULL check before kfree
+
+Ingmar Steen (2):
+      staging: samsung-laptop: Extend samsung-laptop platform driver to support another flavor of its platform BIOS.
+      staging: samsung-laptop: Added Samsung X125 DMI info.
+
+Ionut Nicu (13):
+      staging: tidspbridge: mgr_enum_node_info cleanup
+      staging: tidspbridge: fix kernel oops in bridge_io_get_proc_load
+      staging: tidspbridge: remove gs memory allocator
+      staging: tidspbridge: remove utildefs
+      staging: tidspbridge: switch to linux bitmap API
+      staging: tidspbridge: remove gb bitmap implementation
+      staging: tidspbridge: convert core to list_head
+      staging: tidspbridge: convert pmgr to list_head
+      staging: tidspbridge: convert rmgr to list_head
+      staging: tidspbridge: remove custom linked list
+      staging: tidspbridge: core code cleanup
+      staging: tidspbridge: pmgr code cleanup
+      staging: tidspbridge: rmgr/node.c code cleanup
+
+Javier Martinez Canillas (17):
+      staging: keucr: Use memcmp() instead custom StringCmp() and some style cleanups
+      staging: keucr: Use memcpy() instead custom StringCopy() and some style cleanups
+      staging: keucr: Delete StringCmp() and StringCopy custom functions
+      staging: keucr: Delete use kernel strcmp() & strcpy() from TODO file
+      Staging: bcm: Check correct user provided length and fix error code returned
+      Staging: bcm: Bcmchar: Fix style issues on bcm_char_open()
+      Staging: bcm: Bcmchar: Fix style issues on bcm_char_release()
+      Staging: bcm: Bcmchar: Fix style issues on bcm_char_read()
+      Staging: bcm: Bcmchar: Fix some checkpatch errors
+      Staging: xgifb: Removes dead code
+      Staging: xgifb: Remove unused functions
+      Staging: xgifb: Remove unused spinlock conditional compilation logic
+      Staging: xgifb: Remove all the references to XGIfb_accel
+      Staging: xgifb: Remove unused spinlock in struct video_info
+      Staging: xgifb: Remove unused function fbcon_XGI_sync
+      staging: brcm80211: Add buf_size parameter to ampdu_action handler function
+      staging: ath6kl: Cast variable to size_t to avoid compile warning
+
+Jeff Mahoney (1):
+      staging: winbond: needs <linux/delay.h> for msleep and friends
+
+Jerome Marchand (4):
+      Staging: zram: make ZRAM depends on SYSFS
+      Staging: zram: round up the disk size provided by user
+      Staging: zram: make zram_read return a bio error if the device is not initialized
+      Staging: zram: initialize device on first read
+
+Jesper Juhl (1):
+      Staging: FT1000: remove duplicate inc of linux/slab.h
+
+Joe Perches (29):
+      staging: brcm80211: Remove unnecessary memset(,0,)
+      staging: ath6kl: Update cfg80211 to recent calling convention changes
+      staging: ath6kl: Convert enum A_STATUS to int
+      staging: ath6kl: Remove A_SUCCESS macro
+      staging: ath6kl: Remove A_FAILED macro
+      staging: ath6kl: wmi.h: Convert packed structures with A_BOOL to u32
+      staging: ath6kl: Convert bypasswmi to bool
+      staging: ath6kl: Convert type of streamExists to A_UINT8
+      staging: ath6kl: Convert BDADDR_Present uses to TRUE/FALSE bugfix
+      staging: ath6kl: Convert A_BOOL compressed sets from 0 to FALSE
+      staging: ath6kl: Convert 0 to FALSE
+      staging: ath6kl: cfg80211: Convert forceFgScan to A_UINT32
+      staging: ath6kl: Convert A_UINT8 is_amsdu and is_acl_data_frame to A_BOOL
+      staging: ath6kl: Convert A_NETBUF_QUEUE_EMPTY to return TRUE or FALSE
+      staging: ath6kl: Convert sets of scanSpecificSsid to TRUE/FALSE.
+      staging: ath6kl: Convert tspecCompliance from A_BOOL to int
+      staging: ath6kl: Remove A_BOOL and TRUE/FALSE
+      staging: ath6kl: Convert A_CHAR to char
+      staging: ath6kl: Convert A_UINT8 to u8
+      staging: ath6kl: Convert A_UINT16 to u16
+      staging: ath6kl: Convert A_UINT32 to u32
+      staging: ath6kl: Convert A_UINT64 to u64
+      staging: ath6kl: Convert A_INT8 to s8
+      staging: ath6kl: Convert A_INT16 to s16
+      staging: ath6kl: Convert A_INT32 to s32
+      staging: ath6kl: Convert (status != A_OK) to (status)
+      staging: ath6kl: Remove #define A_OK
+      connector: Convert char *name to const char *name
+      Staging: samsung-laptop: Constify samsung-laptop.c
+
+Jonathan Cameron (17):
+      staging:iio:buffering move the copy to user on rip down into implementations
+      staging:iio:kfifo buffer implementation
+      staging:iio:lis3l02dq allow buffer implementation selection
+      staging:iio: update example to handle case with no ring events
+      staging:iio: buffer example - add lots more runtime parameters
+      staging:iio:meter remove stubs from ade7753.
+      staging:iio:meter remove stubs from ade7754.
+      staging:iio:meter remove stubs from ade7759.
+      staging:iio:meter remove stubs from ade7854.
+      staging:iio:gyro:adis16060 cleanup and dead code removal
+      staging:iio:gyro:adis16080 unused stub removal and cleanup
+      staging:iio:gyro:adis16130 stub removal and cleanup
+      staging:iio:gyro: adis16080 cleanup, move to abi and bug fixes.
+      staging:iio:gyro: add adis16251 support to adis16260 driver
+      staging:iio:gyro remove adis16251 driver as now supported by adis16260 driver
+      staging:iio:gyro: adis16130 cleanup, move to abi and bug fixes.
+      staging:iio:gyro: adis16060 cleanup, move to abi and bug fixes.
+
+Jonathan Neuschäfer (3):
+      staging: echo: fix a typo ("overflow")
+      staging: keucr: remove unused typedef VOID
+      staging: keucr: use kernel byteorder functions
+
+Julia Lawall (1):
+      staging: msm/lcdc.c: Convert IS_ERR result to PTR_ERR
+
+Justin P. Mattock (17):
+      staging: brcm80211 dhd.h Remove CONFIG_HAS_WAKELOCK
+      staging: ath6kl Remove CONFIG_HAS_WAKELOCK
+      staging: brcm80211 Remove WAKE_LOCK
+      staging:zram:xvmalloc.c Fix a typo.
+      staging: pohmelfs: Fix some typos, and comments.
+      staging: rt2860: cmm_mac_pci.c change a typo comamnd to command
+      staging: octeon: change a typo comamnd to command
+      staging: brcm80211: sbsdio.h: change a typo comamnd to command
+      staging: vt6656: main_usb.c remove one to many l's in the word.
+      staging: comedi: pcl816.c remove one to many l's in the word.
+      staging: comedi: pcl818.c remove one to many l's in the word.
+      staging: rtl8712: rtl871x_pwrctrl.c remove one to many l's in the word.
+      staging: vt6655: device_main.c remove one to many l's in the word.
+      drivers:staging:westbridge:astoria Remove one to many n's in a word.
+      drivers:staging:bcm:CmHost.c Remove one to many n's in a word.
+      drivers:staging:dspbridge:node.h Remove one to many n's in a word.
+      drivers:staging:rt2860 Remove one to many n's in a word.
+
+K. Y. Srinivasan (29):
+      Staging: hv: Use native page allocation/free functions
+      Staging: hv: Use native wait primitives
+      Staging: hv: Remove osd layer
+      Staging: hv: Cleanup vmalloc calls
+      Staging: hv: Use generic device_driver probe function
+      Staging: hv: Use generic device_driver remove function
+      Staging: hv: Use generic device_driver shutdown function
+      Staging: hv: Remove unnecessary function pointers in driver_context
+      Staging: hv: Change the signature for vmbus_child_driver_register
+      Staging: hv: Change the signature for vmbus_child_driver_unregister
+      Staging: hv: Eliminate driver_context structure
+      Staging: hv: Eliminate blkvsc_driver_context structure
+      Staging: hv: Eliminate mousevsc_driver_context
+      Staging: hv: Eliminate netvsc_driver_context
+      Staging: hv: Eliminate storvsc_driver_context structure
+      Staging: hv: Move probe_failed_work_item from vm_device
+      Staging: hv: Remove probe_error from vm_device
+      Staging: hv: Get rid of class_id from vm_device
+      Staging: hv: Eliminate device_id from vm_device
+      Staging: hv: Remove the vm_device structure
+      Staging: hv: Simplify root device management
+      Staging: hv: Change the signature for vmbus_cleanup()
+      Staging: hv: Get rid of the function vmbus_msg_dpc()
+      Staging: hv: Eliminate vmbus_event_dpc()
+      Staging: hv: Change the signature for vmbus_on_isr()
+      Staging: hv: Get rid of vmbus_dev_rm() function
+      Staging: hv: Get rid of vmbus_cleanup() function
+      Staging: hv: Change the signature for vmbus_child_device_register()
+      Staging: hv: Get rid of vmbus_child_dev_add()
+
+Krzysztof Hałasa (7):
+      staging: Solo6x10: accept WxH >= screen dimentions.
+      staging: Solo6x10: Build MPEG4 headers on the fly.
+      staging: Solo6x10: Align MPEG video on 8-byte boundary instead of 32-byte.
+      staging: Solo6x10: Add support for SOLO6110 chip.
+      staging: Solo6x10: remove unneeded __solo parameter from SOLO_*_EXT_ADDR macros.
+      staging: Solo6x10: Stripped "solo6010-" from file names.
+      staging: Solo6x10: Changed solo6010* -> solo*, solo6x10* etc.
+
+Ky Srinivasan (4):
+      Connector: Add an index to support key/value pair (KVP) functionality
+      Staging: hv: Rename hv_utils.c to hv_util.c
+      Staging: hv: Implement key/value pair (KVP)
+      Staging: hv: Add a user-space daemon to support key/value pair (KVP)
+
+L. Alberto Giménez (3):
+      Staging: rt2860: wpa.h: Fix space after unary '*' operator.
+      Staging: rt2860: rt_linux.h: Fix space after unary '*' operator.
+      Staging: rt2860: rt_linux.c: Fix space after unary '*' operator.
+
+Larry Finger (3):
+      staging: r8712u: Fix sparse message
+      staging: r8712u: Switch driver to use external firmware from linux-firmware
+      staging: r8712u: Firmware changes for driver
+
+Laurent Pinchart (1):
+      staging: tidspbridge: Fix atoi to support hexadecimal numbers correctly
+
+Luis R. Rodriguez (58):
+      staging: ath6kl: update TODO file / maintainers
+      staging: ath6kl: s|A_MEMCPY|memcpy|g
+      staging: ath6kl: s|A_MEMCMP|memcmp|g
+      staging: ath6kl: remove-typedef: A_UCHAR
+      staging: ath6kl: remove-typedef AGGR_INFO
+      staging: ath6kl: remove-typedef AR3K_CONFIG_INFO
+      staging: ath6kl: remove-typedef AR6000_USER_SETKEYS_INFO
+      staging: ath6kl: remove-typedef AR6K_ASYNC_REG_IO_BUFFER
+      staging: ath6kl: remove-typedef AR6K_DEVICE
+      staging: ath6kl: remove-typedef AR6K_GMBOX_CTRL_REGISTERS
+      staging: ath6kl: remove-typedef AR6K_GMBOX_INFO
+      staging: ath6kl: remove-typedef AR6K_HCI_BRIDGE_INFO
+      staging: ath6kl: remove-typedef AR6K_IRQ_ENABLE_REGISTERS
+      staging: ath6kl: remove-typedef AR6K_IRQ_PROC_REGISTERS
+      staging: ath6kl: remove-typedef AR_VIRTUAL_INTERFACE_T
+      staging: ath6kl: remove-typedef ATHBT_FILTER_INSTANCE
+      staging: ath6kl: remove-typedef ATH_DEBUG_MASK_DESCRIPTION
+      staging: ath6kl: remove-typedef BUFFER_PROC_LIST
+      staging: ath6kl: remove-typedef COMMON_CREDIT_STATE_INFO
+      staging: ath6kl: remove-typedef DEV_SCATTER_DMA_VIRTUAL_INFO
+      ath6kl: remove-tyepdef DL_LIST and PDL_LIST pointer
+      ath6kl: remove-typedef GMBOX_PROTO_HCI_UART
+      ath6kl: remove-typedef HCI_TRANSPORT_CALLBACKS
+      ath6kl: remove-typedef HCI_TRANSPORT_CONFIG_INFO
+      ath6kl: remove-typedef HCI_TRANSPORT_MISC_HANDLES
+      ath6kl: remove-typedef HCI_TRANSPORT_PROPERTIES
+      ath6kl: remove-typedef HIF_DEVICE_IRQ_YIELD_PARAMS
+      ath6kl: remove-typedef HIF_DEVICE_MBOX_INFO
+      ath6kl: remove-typedef HIF_DEVICE_OS_DEVICE_INFO
+      ath6kl: remove-typedef HIF_DEVICE_SCATTER_SUPPORT_INFO
+      ath6kl: remove-typedef HIF_MBOX_PROPERTIES
+      ath6kl: remove-typedef HIF_PENDING_EVENTS_INFO
+      ath6kl: remove-typedef HIF_SCATTER_ITEM
+      ath6kl: remove-typedef HIF_SCATTER_REQ_PRIV
+      ath6kl: remove-typedef HIF_SCATTER_REQ
+      ath6kl: remove-typedef HTC_CONTROL_BUFFER
+      ath6kl: remove-typedef HTC_ENDPOINT
+      ath6kl: remove-typedef HTC_ENDPOINT_CREDIT_DIST
+      ath6kl: remove-typedef HTC_ENDPOINT_STATS
+      ath6kl: remove-typedef HTC_EP_CALLBACKS
+      ath6kl: remove-typedef HTC_FRAME_HDR
+      ath6kl: remove-typedef HTC_INIT_INFO
+      ath6kl: remove-typedef HTC_PACKET
+      ath6kl: remove-typedef HTC_PACKET_QUEUE
+      ath6kl: remove-typedef HTC_RX_PACKET_INFO
+      ath6kl: remove-typedef HTC_SERVICE_CONNECT_REQ
+      ath6kl: remove-typedef HTC_SERVICE_CONNECT_RESP
+      ath6kl: remove-typedef HTC_TARGET
+      ath6kl: remove-typedef HTC_TX_PACKET_INFO
+      ath6kl: remove-typedef OSBUF_HOLD_Q
+      ath6kl: remove-typedef PSCmdPacket
+      ath6kl: remove-typedef RXTID
+      ath6kl: remove-typedef RXTID_STATS
+      ath6kl: remove-typedef ST_PS_DATA_FORMAT
+      ath6kl: remove-typedef ST_READ_STATUS
+      ath6kl: remove-typedef WINDOW_SNAPSHOT
+      ath6kl: remove-typedef AR_SOFTC_T
+      ath6kl: remove-typedef HIF_DEVICE
+
+Manohar Vanga (4):
+      staging: vme: remove unreachable code
+      staging: vme: fix loop condition
+      staging: vme: remove unreachable code
+      staging: vme: remove unreachable code
+
+Marcin Slusarz (1):
+      staging/et131x: fix et131x_rx_dma_disable halt_status usage
+
+Marek Belisko (52):
+      staging: ft1000-pcmcia: Fix compilation errors.
+      staging: ft1000: Remove dead code.
+      staging: ft1000: Fix coding style in check_usb_db() function.
+      staging: ft1000: Fix coding style in put_handshake() function.
+      staging: ft1000: Fix coding style in get_handshake_usb() function.
+      staging: ft1000: Fix coding style in put_handshake_usb() function.
+      staging: ft1000: Fix coding style in get_request_type() function.
+      staging: ft1000: Fix coding style in get_request_type_usb() function.
+      staging: ft1000: Fix coding style in get_request_value() function.
+      staging: ft1000: Fix coding style in put_request_value() function.
+      staging: ft1000: Fix coding style in hdr_checksum() function.
+      staging: ft1000: Fix coding style in get_handshake() function.
+      staging: ft1000: Fix coding style in write_blk_fifo() function.
+      staging: ft1000: Fix indentation in scram_dnldr() function.
+      staging: ft1000: Remove unused variables.
+      staging: ft1000: Create common function for buffers check.
+      staging: ft1000: Remove unnecessary assignment.
+      staging: oplc_dcon: Fix compilation warning.
+      staging: olpc_dcon: checkpatch.pl fixes for olpc_dcon.c file.
+      staging: ft1000: Fix coding style in ft1000_control function.
+      staging: ft1000: Remove unused header ft1000_hw.h
+      staging: ft1000: Fix return values type.
+      staging: ft1000: Fix coding style in ft1000_write/read_register functions.
+      staging: ft1000: Fix coding style in ft1000_read/write_dpram32 functions.
+      staging: ft1000: Fix coding style in ft1000_read/write_dpram16 functions.
+      staging: ft1000: Fix coding style in fix_ft1000_read_dpram32 function.
+      staging: ft1000: Fix coding style in fix_ft1000_write_dpram32 fucntion.
+      staging: ft1000: Fix coding style in card_reset_dsp function.
+      staging: ft1000: Remove unnecessary check in write_blk_fifo().
+      staging: olpc_dcon: Remove _strtoul() function.
+      staging: gma500: fix build errors
+      staging: ft1000: Replace camelcase CardSendCommand function name.
+      staging: ft1000: Fix coding style in card_send_command function.
+      staging: ft1000: Fix coding style in dsp_reload function.
+      staging: ft1000: Fix coding style in ft1000_reset_asic function.
+      staging: ft1000: Fix coding style in ft1000_reset_card function.
+      staging: ft1000: Fix identation in ftnet_ops struct.
+      staging: ft1000: Fix coding style in init_ft1000_netdev function.
+      staging: ft1000: Change return value for init_ft1000_netdev function.
+      staging: ft1000: Fix coding style in reg_ft1000_netdev function.
+      staging: ft1000: Fix coding style in ft1000_reset function.
+      staging: ft1000: Fix coding style in ft1000_usb_transmit_complete function.
+      staging: ft1000: Fix coding style in ft1000_copy_down_pkt function.
+      staging: ft1000: Fix coding style in ft1000_start_xmit function.
+      staging: ft1000: Fix coding style in ft1000_submit_rx_urb function.
+      staging: ft1000: Fix coding style in ft1000_copy_up_pkt function.
+      staging: ft1000: Fix coding style in ft1000_open function.
+      staging: ft1000: Fix coding style in ft1000_close function.
+      staging: ft1000: Fix coding style in ft1000_chkcard function.
+      staging: ft1000: Fix coding style in ft1000_receive_cmd function.
+      staging: ft1000: Fix coding style in ft1000_dsp_prov function.
+      staging: ft1000: Fix coding style in ft1000_proc_drvmsg function.
+
+Mariusz Kozlowski (1):
+      staging/hv: add missing include causing build error
+
+Mark Allyn (4):
+      staging: sep: Add comment to TODO to clean up un-needed debug prints
+      staging: sep: Remove un-needed debug prints
+      staging: sep: update driver to SEP version 3.4.5
+      staging: sep: remove unused ioctls
+
+Micha Hergarden (1):
+      staging: comedi: fix coding style issue in drivers.c
+
+Michael Hennerich (21):
+      Staging: IIO: TRIGGER: New sysfs based trigger
+      Staging: IIO: DDS: AD9832 / AD9835 driver
+      staging: IIO: ADC: New driver for AD7606/AD7606-6/AD7606-4
+      staging: IIO: DAC: Add support for the AD5543/AD5553
+      staging: IIO: trigger: New Blackfin specific trigger driver iio-trig-bfin-timer
+      IIO: ADC: New driver for the AD7298 8-channel SPI ADC
+      IIO: Documentation: generic_buffer example: Avoid NULL pointer dereference
+      IIO: Documentation: iio_utils: Avoid double free()
+      IIO: Documentation: iio_utils: style consistency fix
+      IIO: Documentation: iio_utils: Prevent buffer overflow
+      IIO: Documentation: iio_utils: fix mask generation
+      IIO: ADC: AD7476: Update timestamp handling
+      IIO: ADC: AD7887: Update timestamp handling
+      IIO: ADC: AD7606: Update timestamp handling
+      IIO: ADC: AD799x: Update timestamp handling
+      Staging: IIO: DAC: AD5624R: Update to IIO ABI
+      Staging: IIO: Documentation: iio_utils: fix channel array generation.
+      staging: IIO: DAC: AD5446: Add missing ID table entries
+      staging: IIO: DAC: AD5446: Add power down support
+      staging: IIO: DAC: AD5446: Add support for AD5601/AD5611/AD5621
+      Staging: IIO: DAC: AD5624R: Consistency cleanup - no functional changes
+
+Mike McCormack (138):
+      Staging: rtl8192e: Remove empty function rtl8192_try_wake_queue
+      Staging: rtl8192e: Clean up rtl8192_interrupt formatting
+      Staging: rtl8192e: Unlock spinlock in once place only
+      Staging: rtl8192e: Dump step we fail in init_firmware()
+      Staging: rtl8192e: Use compare_ether_addr instead of eqMacAddr
+      Staging: rtl8192e: Convert cpMacAddr macro to inline function
+      Staging: rtl8192e: Remove assert macro
+      Staging: rtl8192e: Remove unused RT_DEBUG_DATA macro
+      Staging: rtl8192e: Remove commented debugging code
+      Staging: rtl8192e: Remove cast in request_irq
+      Staging: rtl8192e: Remove commented out printks
+      Staging: rtl8192e: Make arrays const
+      Staging: rtl8192e: Fix typo in enum name
+      Staging: rtl8192e: Remove pointless returns
+      staging: rtl8192e: Remove unused DMESGE/W macros
+      staging: rtl8192e: Delete commented out code
+      staging: rtl8192e: Convert txbbgain_table to a table
+      staging: rtl8192e: Convert cck_txbbgain_table to a table
+      staging: rtl8192e: Convert cck_txbbgain_ch14_table to a table
+      staging: rtl8192e: Tidy up function header comments
+      staging: rtl8192e: Delete dead code in ieee80211 lib
+      staging: rtl8192e: Remove unused struct members
+      staging: rtl8192e: Remove unused code to detect struct tx rings
+      staging: rtl8192e: Remove unused members from r8192_priv
+      staging: rtl8192e: Remove dead code
+      staging: rtl8192e: Remove more unused struct members
+      staging: rtl8192e: Remove member that's always false
+      staging: rtl8192e: Delete dead code from header
+      staging: rtl8192e: Delete dead code
+      staging: rtl8192e: Delete unused and write-only struct members
+      staging: rtl8192e: Remove unused types and defines
+      staging: rtl8192e: Remove unused members from struct Stats
+      Staging: rtl8192e: Remove variable that is never written
+      Staging: rtl8192e: Remove unused statistics
+      Staging: rtl8192e: Delete dead code
+      Staging: rtl8192e: Remove unused struct members
+      Staging: rtl8192e: Remove support for legacy wireless extentions
+      Staging: rtl8192e: Don't mess with carrier before registering device
+      Staging: rtl8192e: Remove PF_SYNCTHREADifdefs
+      Staging: rtl8192e: Move static variable to device struct
+      Staging: rtl8192e: Move static variable to device struct
+      Staging: rtl8192e: Move static variable to device struct
+      Staging: rtl8192e: Move static variable to device struct
+      Staging: rtl8192e: Remove #if 1 blocks
+      Staging: rtl8192e: Remove unused endian_swap function
+      Staging: rtl8192e: Remove unused card type
+      staging: rtl8192e: Remove duplicate header
+      staging: rtl8192e: Remove redundant externs
+      staging: rtl8192e: Use private structure in IO functions
+      staging: rtl8192e: Remove dead code
+      staging: rtl8192e: Remove dead code
+      staging: rtl8192e: Remove RTL8192P and RTL8192U ifdefs
+      staging: rtl8192e: Remove unused debug code
+      staging: rtl8192e: Simplify r8192_set_multicast
+      staging: rtl8192e: Simplify flow of control in rtl8192_rx
+      staging: rtl8192e: Don't call ieee80211_ps_tx_ack in interrupt context
+      staging: rtl8192e: Avoid casting function pointers
+      staging: rtl8192e: Delete dead code
+      staging: rtl8192e: Use spin_lock, just one exit path
+      staging: rtl8192e: Remove dead code from SetRFPowerState8190
+      staging: rtl8192e: Remove rf_chip variable, hardcode to RF_8256
+      staging: rtl8192e: Remove dead code from MgntActSet_RF_State
+      staging: rtl8192e: Clean up MlmeDisassociateRequest
+      staging: rtl8192e: Remove dead code
+      staging: rtl8192e: Factor out common code
+      staging: rtl8192e: Remove unused tx_lock spin lock
+      staging: rtl8192e: Remove irq_enabled flag
+      staging: rtl8192e: Delete unused function rtl819x_ifsilentreset
+      staging: rtl8192e: Enable the NIC only once
+      staging: rtl8192e: Make rtl8192_tx static
+      staging: rtl8192e: Remove useless TxCheckStuck function
+      staging: rtl8192e: rf_ps_lock doesn't need to be IRQ safe
+      staging: rtl8192e: Refactor rtl8192_ioctl into two functions
+      staging: rtl8192e: Don't disable interrupts in mgmt_tx_lock
+      staging: rtl8192e: Remove unused CONFIG_RTL8180_IO_MAP
+      staging: rtl8192e: Remove useless usermode callback
+      staging: rtl8192e: Remove USB related code
+      staging: rtl8192e: Remove externs, redundant comments
+      staging: rtl8192e: Delete dead code
+      staging: rtl8192e: Make functions static
+      staging: rtl8192e: Make RT_TRACE use consistent
+      staging: rtl8192e: Remove struct member irq_mask
+      staging: rtl8192e: Add a spinlock around SetRFPowerState8190
+      staging: rtl8192e: Remove SetRFPowerStateInProgress
+      staging: rtl8192e: Remove SetRFPowerState
+      staging: rtl8192e: Use single spinlock in MgntActSet_RF_State
+      staging: rtl8192e: Remove unnecessary ps_lock
+      staging: rtl8192e: Remove pointless hw_sleep_wq
+      staging: rtl8192e: Move eRFPowerState to r8192e_priv struct
+      staging: rtl8192e: Move RfOffReason to r8192e_priv struct
+      staging: rtl8192e: Move definition of RT_RF_CHANGE_SOURCE
+      staging: rtl8192e: Move variables to ieee80211 struct
+      staging: rtl8192e: Move PowerSaveControl to r8192e_priv
+      staging: rtl8192e: Pass r8192_priv to eprom_read
+      staging: rtl8192e: Pass r8192e_priv to phy functions
+      staging: rtl8192e: Convert more functions to use r8192_priv
+      staging: rtl8192e: Pass r8192_priv around instead of net_device
+      staging: rtl8192e: Remove redundant function declarations
+      staging: rtl8192e: Pass r8192_priv around instead of net_device
+      staging: rtl8192e: Pass r8192_priv to MgntActSet_RF_State
+      staging: rtl8192e: Delete unused dm_change_dynamic_initgain_thresh
+      staging: rtl8192e: Delete non-existing function declarations
+      staging: rtl8192e: Delete unused members from struct r8192_priv
+      staging: rtl8192e: Move card specific structures out of ieee80211 library header
+      staging: rtl8192e: unused Remove dot11PowerSaveMode and RT_PS_MODE
+      staging: rtl8192e: Pass priv to rtl819xE_tx_cmd
+      staging: rtl8192e: Pass priv to TranslateRxSignalStuff819xpci
+      staging: rtl8192e: Pass priv to UpdateReceivedRateHistogramStatistics8190
+      staging: rtl8192e: Pass priv to IPSLeave
+      staging: rtl8192e: Pass priv to IPSEnter
+      staging: rtl8192e: Pass priv to EnableHWSecurityConfig8192
+      staging: rtl8192e: Pass priv to SetKey
+      staging: rtl8192e: Pass priv to UpdateRxPktTimeStamp8190
+      staging: rtl8192e: Pass priv to rtl8192_hw_sleep_down
+      staging: rtl8192e: Pass priv to rtl8192_tx_resume
+      staging: rtl8192e: Pass priv to MgntActSet_802_11_PowerSaveMode
+      staging: rtl8192e: Pass priv to rtl8192_init
+      staging: rtl8192e: Pass priv to rtl8192_rx
+      staging: rtl8192e: Pass priv to watch_dog_timer_callback
+      staging: rtl8192e: Remove unused header
+      staging: rtl8192e: Delete commented code
+      staging: rtl8192e: Store mem_start in priv struct
+      staging: rtl8192e: Delete unused struct members
+      staging: rtl8192e: Use better loop counter name
+      staging: rtl8192e: Delete dead code
+      staging: rtl8192e: Pass priv pointer to proc
+      staging: rtl8192e: Remove ifdefs and dead code
+      staging: rtl8192e: Simplify rtl819x_ifcheck_resetornot
+      staging: rtl8192e: Pass ieee80211_device to callbacks
+      staging: rtl8192e: Pass ieee80211_device to callbacks
+      staging: rtl8192e: Pass ieee80211_device to callbacks
+      staging: rtl8192e: Pass ieee80211_device to callbacks
+      staging: rtl8192e: Pass ieee80211_device to callbacks
+      staging: rtl8192e: Pass rtl8192_priv to dm functions
+      staging: rtl8192e: Pass priv to rtl8192_interrupt
+      staging: rtl8192e: Pass priv to firmware download functions
+      staging: rtl8192e: Pass priv to cmdpkt functions
+      staging: rtl8192e: Don't copy dev pointer to skb
+
+Mike Thomas (2):
+      Staging: easycap: Make easycap_debug non-static
+      staging: easycap: add ALSA support
+
+Naveen Kumar Gaddipati (1):
+      staging: synaptics: Update with the kernel object name of touch device
+
+Nick Robinson (1):
+      Staging: comedi: Fix checpatch.pl issues in file rtd520.c
+
+Nils Faerber (1):
+      Staging: samsung-laptop: fix brightness level and add new device ids
+
+Nitin Gupta (2):
+      Staging: zram: simplify zram_make_request
+      staging: Allow sharing xvmalloc for zram and zcache
+
+Omar Ramirez Luna (1):
+      staging: tidspbridge: use the right type for list_is_last
+
+Pavan Savoy (4):
+      drivers:staging: ti-st: add the v7 btwilink driver
+      drivers:staging: ti-st: delete old bt_drv driver
+      Bluetooth: btwilink driver
+      staging: delete ti-st from staging
+
+Peter Huewe (3):
+      staging/comedi/me4000: fix sparse warning "obsolete struct initializer"
+      staging/comedi/icp_multi: fix sparse warning "obsolete struct initializer"
+      staging/vt6655: fix sparse warning "obsolete struct initializer"
+
+Philip Worrall (7):
+      Staging: vt6656: Ensure power.c uses proper tabbing.
+      Staging: vt6656: Use C89 comments in power.c
+      Staging: vt6656: Clean up unneccessary braces in power.c
+      Staging: vt6656: Clean up return from sending power state notifications
+      Staging: vt6656: Clean up spaces around parenthesized expressions
+      Staging: vt6656: Ensure power.c uses proper tabbing.
+      Staging: vt6656: Clean up switching to power saving mode.
+
+Ralph Loader (1):
+      staging: Fix some incorrect use of positive error codes.
+
+Ramos Falcon, Ernesto (1):
+      staging: tidspbridge: remove code referred by OPT_ZERO_COPY_LOADER
+
+Randy Dunlap (5):
+      staging: hv: hv_utils depends on CONNECTOR
+      staging: fix rts_pstor build errors
+      staging: fix olpc_dcon kconfig and build errors
+      usb-storage: ene_ub6250 depends on USB_STORAGE
+      usb-storage: fix menu ordering
+
+Rene Sapiens (12):
+      staging: tidspbridge: set1 remove hungarian from structs
+      staging: tidspbridge: set2 remove hungarian from structs
+      staging: tidspbridge: set3 remove hungarian from structs
+      staging: tidspbridge: set4 remove hungarian from structs
+      staging: tidspbridge: set5 remove hungarian from structs
+      staging: tidspbridge: set6 remove hungarian from structs
+      staging: tidspbridge: set7 remove hungarian from structs
+      staging: tidspbridge: set8 remove hungarian from structs
+      staging: tidspbridge: set9 remove hungarian from structs
+      staging: tidspbridge: set10 remove hungarian from structs
+      staging: tidspbridge: set11 remove hungarian from structs
+      staging: tidspbridge: set12 remove hungarian from structs
+
+Riccardo Magliocchetti (1):
+      Staging: samsung-laptop: Add P460 to supported laptops
+
+Richard Schütz (1):
+      staging: samsung-laptop: add support for N145P/N250P/N260P machines
+
+Robert Jennings (7):
+      zram/vmalloc: Correct tunings to enable use with 64K pages
+      zram: Prevent overflow in logical block size
+      zram/xvmalloc: free bit block insertion optimization
+      zram/xvmalloc: create CONFIG_ZRAM_DEBUG for debug code
+      zram/xvmalloc: Close 32byte hole on 64bit CPUs
+      zram: Return zero'd pages on new reads
+      zram/xvmalloc: combine duplicate block delete code
+
+Roel Van Nyen (1):
+      staging: keucr: Change the custom counting functions to hweight8 and hweight16
+
+Roland Stigge (4):
+      Staging: iio: Documented output / DAC interface
+      Staging: iio: add driver for MAX517/518/519
+      Staging: iio: max517.c: Fix client obtainment by using iio_dev_get_devdata()
+      Staging: iio: ad7476_core.c: Fixed i2c -> spi documentation typo
+
+Roland Vossen (32):
+      staging: brcm80211: replaced 2.4Ghz specific wf_channel2mhz()
+      staging: brcm80211: replaced 5Ghz specific wf_channel2mhz()
+      staging: brcm80211: replaced struct dot11_rts_frame by struct ieee80211_rts
+      staging: brcm80211: replaced struct dot11_header by struct ieee80211_hdr
+      staging: brcm80211: replaced struct dot11_management_header with ieee80211_mgmt
+      staging: brcm80211: replaced some ieee80211 preprocessor constants part 1
+      staging: brcm80211: replaced some ieee80211 preprocessor constants part 2
+      staging: brcm80211: cleaned up macros in 802.11.h
+      staging: brcm80211: deleted struct dot11_bcn_prb
+      staging: brcm80211: replaced struct ht_cap_ie by struct ieee80211_ht_cap
+      staging: brcm80211: removed unused DMA32 related code
+      staging: brcm80211: removed more unused dma32 code
+      staging: brcm80211: removed 32 bit DMA functions
+      staging: brcm80211: removed references to 32 bit DMA registers
+      staging: brcm80211: removal of inactive d11 code
+      staging: brcm80211: removed obsolete comments
+      staging: brcm80211: removed unused code because of mac rev cleanup
+      staging: brcm80211: bugfix for oops on firmware load problems
+      staging: brcm80211: bugfix for stack dump on firmware load problems
+      staging: brcm80211: improved checks on incompatible firmware
+      staging: brcm80211: bugfix for crash on heavy transmit traffic
+      staging: brcm80211: cosmetic changes
+      staging: brcm80211: removed locks around Mac80211 calls
+      staging: brcm80211: added locks in wl_mac80211.c
+      staging: brcm80211: removed compile warning
+      staging: brcm80211: bugfix for NULL scb ptr dereference
+      staging: brcm80211: bugfix for control.sta NULL ptr dereference
+      staging: brcm80211: added IEEE80211_AMPDU_TX_STOP handling
+      staging: brcm80211: invalidate all AMPDU packets on IEEE80211_AMPDU_TX_STOP
+      staging: brcm80211: removed comment in rx status processing
+      staging: brcm80211: replaced wlc_bsscfg_t by struct wlc_bsscfg
+      staging: brcm80211: lower number of wlc_bsscfg.h includes
+
+Roman Grebennikov (1):
+      staging: samsung-laptop: Add support for Samsung NP-X120/X170 laptop
+
+Sapiens, Rene (1):
+      staging: tidspbridge: overwrite DSP error codes
+
+Stanislav Fomichev (11):
+      staging: brcm80211: use %zu instead of %d for size_t
+      staging: brcm80211: replace bcopy with memcpy
+      staging: brcm80211: replace broadcom specific byte swapping routines
+      staging: brcm80211: replace broadcom specific unaligned byte swapping routines
+      staging: brcm80211: remove unused broadcom byte swapping macroses
+      staging: brcm80211: replace htod/dtoh broadcom defines
+      staging: brcm80211: remove the rest of broadcom specific byte swapping routines
+      staging: brcm80211: replace broadcom specific auth related defines
+      brcm80211: replace broadcom specific defines
+      brcm80211: use proper ieee80211 routines
+      brcm80211: remove unused TLV defines
+
+Stefan Weil (1):
+      staging: brcm80211: Fix memory leak after kmalloc failure
+
+Sutharsan Ramamoorthy (2):
+      Staging: Westbridge: fix EXPORT_SYMBOL errors reported by checkpatch.pl
+      Staging: Westbridge: added ioremap_nocache instead of phys_to_virt
+
+Thomas Viehweger (1):
+      staging: lirc: fix for "lirc_dev: lirc_register_driver: driver pointer must be not NULL!"
+
+Timo von Holtz (8):
+      Staging: usbvideo: usbvideo: fixed some coding style issues
+      Staging: usbvideo: vicam: fixed some coding style issues
+      Staging: dabusb: fixed coding style issues
+      Staging: rts_pstor: fixed some brace code styling issues
+      staging: speakup: enlosed macros with complex values in parenthesis
+      Staging: hv: replaced __attribute((packed)) with __packed
+      Staging: hv: moved assignments out of if conditions
+      Staging: quickstart: fixed coding style issues
+
+Tomas Winkler (70):
+      Staging: easycap: fix sparse warnings for module parameters
+      staging: easycap: drop redunant backslashes from the code
+      staging: easycap: kill EASYCAP_NEEDS_CARD_CREATE
+      staging: easycap: replace STRINGIZE with __stringify()
+      staging: easycap: fix sparse warnings 'Should it be static'
+      staging: easycap: fix sparse warnings :conversion of int to enum
+      staging: easycap: remove redunant headers
+      staging: easycap: use #ifndef __EASYCAP_H_ for header inclusion protection
+      staging: easycap: group module parameters handling
+      staging: easycap: make functions local to easycap_main.c static
+      staging: easycap: easycap.h use indentation for first level
+      staging/easycap: fix missing backslash in ifdef statement
+      staging/easycap: easycap.h ident correctly signed_div_result
+      staging/easycap: implement strerror function
+      staging/easycap: make OSS compilation optional instead of ALSA
+      staging/easycap: make oss ops function static in sound_oss.c
+      staging/easycap: make ALSA ops function static in sound.c
+      staging/easycap: don't cast NULL pointer
+      staging/easycap: remove comment: EASYCAP_NEEDS_ALSA
+      staging/easycap: kill EASYCAP_NEEDS_UNLOCKED_IOCTL
+      staging/easycap: repace #if defined with simpler #ifdef
+      staging/easycap: fix artificial line breaks
+      staging/easycap: improve coding style when checking return value
+      staging/easycap: remove explicit NULL initialization
+      staging/easycap: rename variable s32 to tmp
+      staging/easycap: rename variable u8 to tmp
+      staging/easycap: rename variable s16 to tmp
+      staging/easycap: replace underscored types with regular once
+      staging/easycap: don't shadow rc variable from macros
+      staging/easycap: kill declaration of not existing variables
+      stagine/easycap: make easyoss_fops static
+      staging/easycap: add level 1 tabs in usb_probe/disconnect function
+      staging/easycap: fix build when SND is not enabled
+      staging/easycap: remove paranoid argument checks in usb probe/disconnect
+      staging/easycap: prefer printk over SAY in module entry functions
+      stagine/easycap: use module paramter for default encoding instead of ifdef
+      staging/easycap: replace one more EASYCAP_NEEDS_ALSA with CONFIG_EASYCAP_OSS
+      staging/easycap: remove obsolete VIDIOC_S_CTRL_OLD ioctl
+      staging/easycap: remove AUDIOTIME feature
+      staging/easycap: remove EASYCAP_SILENT option
+      staging/easycap: remove TESTONE and EASYCAP_TESTTONE
+      staging/easycap: add first level indentation to regget/set functions
+      stagine/easycap: make functions regset and regget static
+      staging/easycap: use regget for register back reading
+      staging/easycap: replace NOREADBACK with moduel parameter
+      staging/easycap: add first level indetnation for easycap_low.c
+      staging/easycap: don't mask return value of usb_control_msg() by 0xFF
+      staging/easycap: style changes in easycap_low.c
+      staging/easycap: kill EASYCAP_NEEDS_V4L2_DEVICE_H and EASYCAP_NEEDS_V4L2_FOPS
+      staging/easycap: drop EASYCAP_NEEDS_USBVIDEO_H
+      staging/easycap: use %p for printing pointers
+      staging/easycap: fix style issues in easycap_usb_probe function
+      staging/easycap: revamp inputset population code
+      staging/easycap: easycap_usb_probe: more indentation cleanups
+      staging/easycap: use USB_SUBCLASS_AUDIOSTREAMING instead of 0x02
+      staging/easycap: add first level indentation to easycap_main
+      staging/easycap: add first level indentation to easycap_sound.c
+      staging/easycap: add first level indentation to easycap_sound_oss.c
+      staging/easycap: add first level indentation to easycap_testcard.c
+      staging/easycap: add first level indentation to easycap_ioctl.c
+      staging/easycap: more style fixing in easycap_main.c
+      staging/easycap: replace if(true == var) with if (var)
+      staging/easycap: replace if(false == var) with if (!var)
+      staging/easycap: convert comparison to NULL into boolean
+      staging/easycap: wait_i2c should be static
+      staging/easycap: reduce code duplication for ssa stk settings
+      staging/easycap: kill EASYCAP_IS_VIDEODEV_CLIENT compilation conditional
+      staging/easycap: add first level indentation to easycap_settings.c
+      staging/easycap: easycap_settings.c don't copy constant strings twice
+      staging/easycap: reduce code nesting in easycap_sound.c
+
+Tony SIM (1):
+      staging: iio: ak8975: add platform data.
+
+Uwe Kleine-König (12):
+      staging/hv/osd: don't reimplement ALIGN macro
+      staging/trivial: fix typos concerning "access"
+      staging/trivial: fix typos concerning "address"
+      staging/trivial: fix typos concerning "adjust"
+      staging/trivial: fix typos concerning "consistent"
+      staging/trivial: fix typos concerning "failed"
+      staging/trivial: fix typos concerning "function"
+      staging/trivial: fix typos concerning "implementation"
+      staging/trivial: fix typos concerning "initiali[zs]e"
+      staging/trivial: fix typos concerning "management"
+      staging/trivial: fix typos concerning "memory"
+      staging/trivial: fix typos concerning "select"
+
+Vasiliy Kulikov (3):
+      staging: cs5535_gpio: check put_user() return code
+      staging: rts_pstor: potential NULL dereference
+      staging: zcache: fix memory leak
+
+Vinay Sawal (1):
+      Staging: bcm: Bcmnet: fixed checkpatch script reported issues
+
+Vipin Mehta (16):
+      staging: ath6kl: Fixing a NULL pointer exception
+      staging: ath6kl: Fixing key settings for WPA/WPA2
+      staging: ath6kl: Return correct scan complete status
+      staging: ath6kl: Fixing target crash due to mismatch connect/disconnect
+      staging: ath6kl: Fixing driver initialization for manufacturing mode
+      staging: ath6kl: Consolidating hardware configuration
+      staging: ath6kl: Adding support for txop bursting enable/disable
+      staging: ath6kl: Fixing a memory leak
+      staging: ath6kl: Fixing a memory leak
+      staging: ath6kl: Add configuration for excessive TX retry threshold
+      staging: ath6kl: Fixing memory leak
+      staging: ath6kl: Fixing the cached copy of the BSS filter set by user
+      staging: ath6kl: Adding state in driver to track the sme state
+      staging: ath6kl: Fixing accidental overwriting of probed ssid list in the hardware
+      staging: ath6kl: Fixing disappearing of scan list due to jiffies wrap over
+      staging: ath6kl: Eliminate cfg80211 warnings
+
+Wolfram Sang (1):
+      staging/ste_rmi4: Remove obsolete cleanup for clientdata
+
+Xiaochen Wang (4):
+      staging: rtl8187se: check kmalloc return value
+      staging: rtl8192e use kmemdup and check its return value
+      staging: rtl8712: check copy_from_user return value
+      staging: rtl8712: check _malloc return value
+
+huajun li (1):
+      Staging: Merge ENE UB6250 SD card codes from keucr to drivers/usb/storage
+
+roel kluin (2):
+      Staging: iio: --/++ confusion in build_channel_array() error cleanup
+      staging: spectra: don't read past array in Conv_Spare_Data_Log2Phy_Format()
+
+wwang (5):
+      staging: add rts_pstor for Realtek PCIE cardreader
+      staging: rts_pstor: delete a function
+      staging: rts_pstor: fix sparse warning
+      staging: rts_pstor: fix a bug that a greenhouse sd card can't be recognized
+      staging: rts_pstor: MSXC card power class
 
