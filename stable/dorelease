@@ -19,38 +19,27 @@ RELEASE=$1
 REL_ARRAY=(${RELEASE//./ })
 BASE=${REL_ARRAY[0]}.${REL_ARRAY[1]}.${REL_ARRAY[2]}
 REL=${REL_ARRAY[3]}
+MINOR=${REL_ARRAY[2]}
+
+LONGTERM=0
+# see if this is a "longterm" kernel or not
+if [ $MINOR == "32" ]; then
+	LONGTERM=1
+fi
+if [ $MINOR == "33" ]; then
+	LONGTERM=1
+fi
+#echo "longterm = $LONGTERM"
+
+
 LAST=$(($REL - 1))
 if [ $LAST -eq 0 ]; then
 	LAST_REL=${BASE}
 else
 	LAST_REL=${BASE}.${LAST}
 fi
-echo "creating stable release $RELEASE (base $BASE last version $LAST_REL)"
-echo "[ret] to continue ^C to quit"
-read
-
-RELDIR="../release-$RELEASE"
-mkdir $RELDIR
-
-# apply patches
-#quilt series | while read PATCH
-#do
-#	cat $PATCH >> $RELDIR/apply.mbox
-#done
-#git-applymbox $RELDIR/apply.mbox
-#rm $RELDIR/apply.mbox
-
-# update EXTRAVERSION
-#vim +/^EXTRAVERSION Makefile
-
-# check that the EXTRAVERSION change is all that's outstanding
-echo
-echo "**** About to commit ****"
-echo
-git-diff-files -p
-
-echo "[ret] to continue"
-read
+echo "# creating stable release $RELEASE (base $BASE last version $LAST_REL)"
+echo "# "
 
 # commit EXTRAVERSION change
 #git-update-cache Makefile
@@ -60,22 +49,64 @@ read
 # tag it
 #git-tag-script -u ${GIT_GPG_KEY} -m "This is the $RELEASE stable release" v$RELEASE
 
-BASE_COMMIT="$(git-cat-file tag $(cat .git/refs/tags/v${BASE}) | grep object | cut -d" " -f2)"
-LAST_COMMIT="$(git-cat-file tag $(cat .git/refs/tags/v${LAST_REL}) | grep object | cut -d" " -f2)"
-RELEASE_COMMIT="$(git-cat-file tag $(cat .git/refs/tags/v${RELEASE}) | grep object | cut -d" " -f2)"
+#BASE_COMMIT="$(git cat-file tag $(cat .git/refs/tags/v${BASE}) | grep object | cut -d" " -f2)"
+#LAST_COMMIT="$(git cat-file tag $(cat .git/refs/tags/v${LAST_REL}) | grep object | cut -d" " -f2)"
+#RELEASE_COMMIT="$(git cat-file tag $(cat .git/refs/tags/v${RELEASE}) | grep object | cut -d" " -f2)"
+BASE_COMMIT="$(git cat-file tag v${BASE} | grep object | cut -d" " -f2)"
+LAST_COMMIT="$(git cat-file tag v${LAST_REL} | grep object | cut -d" " -f2)"
+RELEASE_COMMIT="$(git cat-file tag v${RELEASE} | grep object | cut -d" " -f2)"
 
-echo "BASE_COMMIT=$BASE_COMMIT"
-echo "LAST_COMMIT=$LAST_COMMIT"
-echo "RELEASE_COMMIT=$RELEASE_COMMIT"
+echo "# BASE_COMMIT=$BASE_COMMIT"
+echo "# LAST_COMMIT=$LAST_COMMIT"
+echo "# RELEASE_COMMIT=$RELEASE_COMMIT"
+echo "#"
+echo -n "# [ret] to continue"
+read
+
+RELDIR="../release-$RELEASE"
+mkdir $RELDIR
+
+echo "# building tree in $RELDIR"
 
 # build release materials, tarball, base patch, incr patch, changelog
-git-tar-tree HEAD linux-$RELEASE | gzip -9 > $RELDIR/linux-${RELEASE}.tar.gz
-git-diff-tree -p $BASE_COMMIT $RELEASE_COMMIT | gzip -9 > $RELDIR/patch-${RELEASE}.gz
-git-diff-tree -p $LAST_COMMIT $RELEASE_COMMIT | gzip -9 > $RELDIR/patch-${LAST_REL}-${REL}.gz
+#git tar-tree HEAD linux-$RELEASE | gzip -9 > $RELDIR/linux-${RELEASE}.tar.gz
+
+git archive --format=tar --prefix=linux-$RELEASE/ HEAD | gzip -9 > $RELDIR/linux-${RELEASE}.tar.gz
+
+
+git diff-tree -p $BASE_COMMIT $RELEASE_COMMIT | gzip -9 > $RELDIR/patch-${RELEASE}.gz
+git diff-tree -p $LAST_COMMIT $RELEASE_COMMIT | gzip -9 > $RELDIR/patch-${LAST_REL}-${REL}.gz
 zcat $RELDIR/patch-${LAST_REL}-${REL}.gz | diffstat -p1 > $RELDIR/diffstat-${LAST_REL}-${REL} 2>/dev/null
 git log ${LAST_COMMIT}..${RELEASE_COMMIT} > $RELDIR/ChangeLog-$RELEASE
-< $RELDIR/ChangeLog-$RELEASE git-shortlog > $RELDIR/shortlog-$RELEASE
+< $RELDIR/ChangeLog-$RELEASE git shortlog > $RELDIR/shortlog-$RELEASE
 
-echo "ready to upload files"
-echo "scp $RELDIR/* master.kernel.org:$RELDIR/"
-echo "don't forget to update LATEST-IS"
+#echo "ready to upload files"
+#echo "scp $RELDIR/* master.kernel.org:$RELDIR/"
+#echo "don't forget to update LATEST-IS"
+
+echo "# "
+if [ $LONGTERM -eq 1 ]; then
+	echo "# This is a longterm release"
+	echo "# finalize the release:"
+	echo "mv $RELDIR/linux-${RELEASE}.tar.gz ~/v2.6/longterm/v${BASE}/"
+	echo "mv $RELDIR/ChangeLog-${RELEASE} ~/v2.6/longterm/v${BASE}/"
+	echo "mv $RELDIR/patch-${RELEASE}.gz ~/v2.6/longterm/v${BASE}/"
+	echo "cp $RELDIR/patch-${LAST_REL}-${REL}.gz ~/v2.6/longterm/v${BASE}/"
+	echo "mv $RELDIR/patch-${LAST_REL}-${REL}.gz ~"
+	echo "mv $RELDIR/diffstat-${LAST_REL}-${REL} ~"
+	echo "mv $RELDIR/shortlog-${RELEASE} ~"
+else
+	echo "# This is a stable release"
+	echo "# finalize it:"
+	echo "mv $RELDIR/linux-${RELEASE}.tar.gz ~/v2.6/"
+	echo "mv $RELDIR/ChangeLog-${RELEASE} ~/v2.6/"
+	echo "mv $RELDIR/patch-${RELEASE}.gz ~/v2.6/"
+	echo "cp $RELDIR/patch-${LAST_REL}-${REL}.gz ~/v2.6/"
+	echo "mv $RELDIR/patch-${LAST_REL}-${REL}.gz ~"
+	echo "mv $RELDIR/diffstat-${LAST_REL}-${REL} ~"
+	echo "mv $RELDIR/shortlog-${RELEASE} ~"
+	LATEST=`ls ~/v2.6/LATEST-IS*`
+	LATEST=`basename $LATEST`
+	echo "# current LATEST-IS is '$LATEST' is that what it should be?"
+	echo "# mv ~/v2.6/${LATEST} ~/v2.6/LATEST-IS-${RELEASE}"
+fi
