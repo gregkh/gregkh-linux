@@ -2,7 +2,30 @@
 
 VERSION=`ketchup -m`
 
+REL_ARRAY=(${VERSION//./ })
+BASE=${REL_ARRAY[0]}.${REL_ARRAY[1]}.${REL_ARRAY[2]}
+REL=${REL_ARRAY[3]}
+MINOR=${REL_ARRAY[2]}
+
+LONGTERM=0
+# see if this is a "longterm" kernel or not
+if [ $MINOR == "32" ]; then
+	LONGTERM=1
+fi
+if [ $MINOR == "33" ]; then
+	LONGTERM=1
+fi
+#echo "longterm = $LONGTERM"
+
 git diff --stat > diffstat
+echo "# diffstat created"
+
 git diff | gzip -9vq > patch-$VERSION.gz
-echo "$VERSION patch created"
-echo "scp patch-$VERSION.gz gregkh@master.kernel.org:"
+echo "# $VERSION patch created"
+
+DIR="stable-review"
+if [ $LONGTERM -eq 1 ]; then
+	DIR="longterm-review"
+fi
+echo "scp patch-$VERSION.gz gregkh@master.kernel.org:v2.6/$DIR/"
+
