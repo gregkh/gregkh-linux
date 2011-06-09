@@ -1,13 +1,17 @@
 From: Greg KH <gregkh@suse.de>
 To: Linus Torvalds <torvalds@linux-foundation.org>, Andrew Morton <akpm@linux-foundation.org>
 Cc: linux-kernel@vger.kernel.org, linux-usb@vger.kernel.org
-Subject: [GIT PATCH] USB fixes for .39
+Subject: [GIT PATCH] USB fixes for 3.0
 
-Here's some small fixes for the USB tree for things that people have
-reported during the .39-rc1 merge window.
+Here's some small fixes for your 3.0 tree.
+
+Nothing major, just some small fixes for things that have been reported,
+and lots of new device ids added to drivers.
 
 Please pull from:
 	master.kernel.org:/pub/scm/linux/kernel/git/gregkh/usb-2.6.git/ usb-linus
+
+All of these have been in the linux-next tree for a while.
 
 The full patches will be sent to the linux-usb mailing list, if anyone
 wants to see them.
@@ -18,45 +22,105 @@ greg k-h
 
 ------------
 
- drivers/usb/class/cdc-acm.c    |    7 ++++++-
- drivers/usb/class/cdc-wdm.c    |    2 +-
- drivers/usb/core/devio.c       |    2 +-
- drivers/usb/host/ehci-q.c      |   12 ------------
- drivers/usb/misc/uss720.c      |    7 +++----
- drivers/usb/musb/blackfin.c    |    6 +++---
- drivers/usb/musb/musb_gadget.c |    8 ++++----
- drivers/usb/serial/usb_wwan.c  |    3 +--
- 8 files changed, 19 insertions(+), 28 deletions(-)
+ Documentation/kernel-parameters.txt    |    2 +
+ MAINTAINERS                            |    4 ++-
+ drivers/usb/class/cdc-acm.c            |    2 +
+ drivers/usb/core/hub.c                 |    6 +++-
+ drivers/usb/gadget/Kconfig             |    5 +---
+ drivers/usb/gadget/amd5536udc.c        |    1 +
+ drivers/usb/gadget/at91_udc.c          |    1 +
+ drivers/usb/gadget/dummy_hcd.c         |    1 +
+ drivers/usb/gadget/inode.c             |    4 ++-
+ drivers/usb/gadget/mv_udc_core.c       |    8 +++---
+ drivers/usb/gadget/net2280.c           |    1 +
+ drivers/usb/gadget/pxa25x_udc.c        |    5 +--
+ drivers/usb/gadget/s3c-hsotg.c         |   22 +++++++++++---------
+ drivers/usb/gadget/s3c-hsudc.c         |    7 ++++-
+ drivers/usb/gadget/s3c2410_udc.c       |    1 +
+ drivers/usb/host/ohci-pxa27x.c         |    7 ++++-
+ drivers/usb/host/xhci-dbg.c            |    8 +++---
+ drivers/usb/host/xhci-mem.c            |   14 +++++++++++-
+ drivers/usb/host/xhci-pci.c            |   14 +++++++++++-
+ drivers/usb/host/xhci-ring.c           |    2 +-
+ drivers/usb/host/xhci.c                |   18 +++++++++++++++-
+ drivers/usb/host/xhci.h                |    6 +++++
+ drivers/usb/musb/musb_core.c           |    1 +
+ drivers/usb/renesas_usbhs/mod_gadget.c |    1 +
+ drivers/usb/serial/ftdi_sio.c          |    1 +
+ drivers/usb/serial/ftdi_sio_ids.h      |    1 +
+ drivers/usb/serial/option.c            |   34 ++++++++++++++++++++++++-------
+ drivers/usb/storage/transport.c        |   29 +++++++++++++++++++++++++++
+ drivers/usb/storage/unusual_devs.h     |   19 +++++++++++++++++
+ drivers/usb/storage/usb.c              |   13 +++++++++++-
+ drivers/usb/storage/usb.h              |    2 +
+ include/linux/usb_usual.h              |    4 ++-
+ 32 files changed, 194 insertions(+), 50 deletions(-)
 
 ---------------
 
-Alan Stern (1):
-      ehci-hcd: Bug fix: don't set a QH's Halt bit
+Alan Stern (3):
+      usb-storage: redo incorrect reads
+      USB: dummy-hcd needs the has_tt flag
+      USB: CONFIG_USB_GADGET_DUALSPEED is not user-configurable
 
-Bob Liu (1):
-      usb: musb: blackfin: fix typo in new dev_pm_ops struct
+Alexey Khoroshilov (1):
+      usb-gadget: unlock data->lock mutex on error path in ep_write()
 
-Hema HK (1):
-      usb: musb: Fix for merge issue
+Bryan Wu (1):
+      usb: gadget: include <linux/prefetch.h> to fix compiling error
 
-Johan Hovold (3):
-      USB: cdc-acm: fix memory corruption / panic
-      USB: cdc-acm: fix potential null-pointer dereference
-      USB: cdc-acm: fix potential null-pointer dereference on disconnect
+Dan Williams (3):
+      option: add Zoom 4597 modem USB IDs
+      option: add Alcatel X200 to sendsetup blacklist
+      option: add Prolink PH300 modem IDs
 
-Michal Sojka (1):
-      USB: Do not pass negative length to snoop_urb()
+Dmitry Torokhov (1):
+      USB: xhci - fix interval calculation for FS isoc endpoints
 
-Mike Frysinger (2):
-      usb: musb: blackfin: fix typo in platform driver name
-      usb: musb: blackfin: fix typo in new bfin_musb_vbus_status func
+Felipe Balbi (1):
+      MAINTAINERS: add a maintainer to Gadget Framework
 
-Oliver Neukum (1):
-      usb: wwan: fix compilation without CONFIG_PM_RUNTIME
+Greg Kroah-Hartman (1):
+      Revert "USB: option: add ID for ZTE MF 330"
 
-Peter Holik (1):
-      USB: uss720 fixup refcount position
+Julia Lawall (1):
+      drivers/usb/host/ohci-pxa27x.c: add missing clk_put
 
-Robert Lukassen (1):
-      USB: Fix 'bad dma' problem on WDM device disconnect
+Libor Pechacek (1):
+      USB: core: Tolerate protocol stall during hub and port status read
+
+Maarten Lankhorst (2):
+      xhci: Add defines for hardcoded slot states
+      xhci: Do not issue device reset when device is not setup
+
+Mark Brown (1):
+      USB: s3c-hsotg: Tone down debugging
+
+Matt Evans (2):
+      xhci: Bigendian fix for skip_isoc_td()
+      xhci: Bigendian fix for xhci_check_bandwidth()
+
+Mike Frysinger (1):
+      musb: fix prefetch build failure
+
+Sage Weil (1):
+      usb: remove bad dput after dentry_unhash
+
+Sarah Sharp (1):
+      xhci: Disable MSI for some Fresco Logic hosts.
+
+Sebastian Andrzej Siewior (4):
+      usb/mv_udc_core: fix compile
+      usb/pxa25x_udc: cleanup the LUBBOCK err path
+      usb/s3c-hsudc: fix error path
+      usb/renesas_usbhs: free uep on removal
+
+Steffen Sledz (1):
+      USB: serial: add another 4N-GALAXY.DE PID to ftdi_sio driver
+
+Toby Gray (1):
+      USB: cdc-acm: Adding second ACM channel support for Nokia E7 and C7
+
+Torsten Hilbrich (1):
+      USB: option Add blacklist for ZTE K3765-Z (19d2:2002)
 

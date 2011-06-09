@@ -1,9 +1,8 @@
 s
 s1
 s2
-usb-2.6
-tty-2.6
-driver-core-2.6
-staging-2.6
-torvalds-2.6.git
-linux-2.6-allstable
+usb
+tty
+driver-core
+staging
+torvalds

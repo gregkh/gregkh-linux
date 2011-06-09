@@ -1,19 +1,24 @@
 From: Greg KH <greg@kroah.com>
 To: Linus Torvalds <torvalds@osdl.org>, Andrew Morton <akpm@osdl.org>
 Cc: linux-kernel@vger.kernel.org, devel@linuxdriverproject.org
-Subject: [GIT PATCH] STAGING for .39
+Subject: [GIT PATCH] STAGING fixes for 3.0
 
-Here is a round of bugfixes and a driver removal for your .39-rc tree.
+Here are a number of minor staging driver fixes for your 3.0 tree.
 
-A number of build fixes (one that has been reported numerous times), and
-other reported bugfixes are in here, as well as we remove a driver that
-was requested to be removed by the author as it will not be needed due
-to the cancelation of the hardware project.
+Nothing major, lots of little things.  The non-drivers/staging fix is to
+resolve a problem of a driver outside of the staging tree including a
+staging include file that had accidentally got added to
+include/staging/.  That has been fixed, and the driver will be updated
+in 3.1 to do things "correctly" allowing the staging driver to move out
+into the proper media directory.
+
+I've also removed the STAGING_EXCLUDE_BUILD Kconfig option to make it
+easier for people to build the staging tree, as we discussed at LinuxCon
+a few weeks ago.  This has already turned up some "interesting" build
+results in the linux-next tree that were previously unknown :)
 
 Please pull from:
 	master.kernel.org:/pub/scm/linux/kernel/git/gregkh/staging-2.6.git/ staging-linus
-
-All of these patches have been in the mm and -next trees for a while.
 
 These patches will be sent to the linux driver project list for all to
 see.
@@ -24,111 +29,66 @@ greg k-h
 
 --------------
 
- drivers/staging/Kconfig                            |    2 -
- drivers/staging/Makefile                           |    1 -
- drivers/staging/brcm80211/brcmsmac/wlc_main.c      |    9 +-
- drivers/staging/ft1000/ft1000-pcmcia/ft1000_dnld.c |   78 +-
- drivers/staging/hv/channel.c                       |    8 +-
- drivers/staging/hv/connection.c                    |    4 +-
- drivers/staging/hv/hv_mouse.c                      |    5 +-
- drivers/staging/hv/netvsc_drv.c                    |   24 +
- drivers/staging/hv/tools/hv_kvp_daemon.c           |   90 ++-
- drivers/staging/hv/vmbus_drv.c                     |    2 +-
- drivers/staging/hv/vmbus_private.h                 |    1 +
- drivers/staging/iio/imu/adis16400.h                |    3 +-
- drivers/staging/iio/imu/adis16400_core.c           |   20 +-
- drivers/staging/iio/imu/adis16400_ring.c           |   12 +-
- drivers/staging/memrar/Kconfig                     |   15 -
- drivers/staging/memrar/Makefile                    |    2 -
- drivers/staging/memrar/TODO                        |   43 -
- drivers/staging/memrar/memrar-abi                  |   89 --
- drivers/staging/memrar/memrar.h                    |  174 ----
- drivers/staging/memrar/memrar_allocator.c          |  432 ---------
- drivers/staging/memrar/memrar_allocator.h          |  149 ---
- drivers/staging/memrar/memrar_handler.c            | 1007 --------------------
- drivers/staging/olpc_dcon/Kconfig                  |    2 +-
- drivers/staging/olpc_dcon/olpc_dcon_xo_1_5.c       |    1 +
- drivers/staging/rtl8187se/Kconfig                  |    1 +
- drivers/staging/rtl8192e/Kconfig                   |    1 +
- drivers/staging/rtl8192u/Kconfig                   |    1 +
- drivers/staging/rts_pstor/rtsx.c                   |   14 +-
- drivers/staging/rts_pstor/rtsx_chip.c              |   11 +-
- drivers/staging/sep/sep_driver.c                   |   15 +-
- drivers/staging/sm7xx/smtcfb.c                     |    6 +-
- drivers/staging/usbip/stub_dev.c                   |    6 +-
- drivers/staging/usbip/stub_rx.c                    |   40 +-
- drivers/staging/usbip/stub_tx.c                    |   74 ++-
- drivers/staging/usbip/usbip_common.c               |   64 ++-
- drivers/staging/usbip/usbip_common.h               |    2 +
- drivers/staging/usbip/vhci_rx.c                    |    3 +
- drivers/staging/vt6655/Kconfig                     |    2 +-
- drivers/staging/vt6656/Kconfig                     |    2 +-
- .../staging/westbridge/astoria/gadget/cyasgadget.c |    1 +
- 40 files changed, 324 insertions(+), 2092 deletions(-)
- delete mode 100644 drivers/staging/memrar/Kconfig
- delete mode 100644 drivers/staging/memrar/Makefile
- delete mode 100644 drivers/staging/memrar/TODO
- delete mode 100644 drivers/staging/memrar/memrar-abi
- delete mode 100644 drivers/staging/memrar/memrar.h
- delete mode 100644 drivers/staging/memrar/memrar_allocator.c
- delete mode 100644 drivers/staging/memrar/memrar_allocator.h
- delete mode 100644 drivers/staging/memrar/memrar_handler.c
+ drivers/media/video/cx23885/cx23885-cards.c        |    2 +-
+ drivers/staging/Kconfig                            |   18 -----------------
+ drivers/staging/altera-stapl/altera-jtag.c         |    2 +-
+ drivers/staging/altera-stapl/altera.c              |    2 +-
+ .../staging/altera-stapl}/altera.h                 |    0
+ drivers/staging/ath6kl/Kconfig                     |    1 +
+ drivers/staging/ath6kl/os/linux/cfg80211.c         |    3 +-
+ drivers/staging/brcm80211/brcmfmac/wl_iw.c         |    2 -
+ drivers/staging/gma500/psb_drv.c                   |   15 +++++++++++++-
+ drivers/staging/gma500/psb_fb.c                    |   10 +++++++++
+ drivers/staging/gma500/psb_intel_bios.c            |   13 ++++++++---
+ drivers/staging/iio/dac/max517.c                   |    2 +-
+ drivers/staging/iio/imu/adis16400_ring.c           |   10 ++++++--
+ drivers/staging/iio/industrialio-trigger.c         |    1 +
+ drivers/staging/mei/init.c                         |    4 +-
+ drivers/staging/olpc_dcon/Kconfig                  |    1 +
+ drivers/staging/rts_pstor/sd.c                     |    2 +-
+ drivers/staging/usbip/stub_dev.c                   |   21 ++++++++++++++++++++
+ drivers/staging/usbip/stub_rx.c                    |   20 ++++++++++--------
+ 19 files changed, 84 insertions(+), 45 deletions(-)
+ rename {include/staging => drivers/staging/altera-stapl}/altera.h (100%)
 
 ---------------
 
-Alan Cox (1):
-      staging: sep: remove last memrar remnants
+Andre Bartke (1):
+      staging: iio: error case memory leak fix
 
-Arjan Mels (4):
-      staging: usbip: fix shutdown problems.
-      staging: usbip: bugfixes related to kthread conversion
-      staging: usbip: bugfix add number of packets for isochronous frames
-      staging: usbip: bugfix for isochronous packets and optimization
+Arjan Mels (1):
+      staging: usbip: bugfix prevent driver unbind
 
 Dan Carpenter (1):
-      Staging: westbridge/astoria: unlock on error path
+      Staging: mei: fix debug code
 
-Dave Jones (1):
-      staging: hv: fix reversed memset arguments in hv_mouse
+Greg Kroah-Hartman (3):
+      Staging: altera: move .h file to proper place
+      Staging: remove STAGING_EXCLUDE_BUILD option
+      Staging: cx23885: fix include of altera.h
 
-Greg Kroah-Hartman (2):
-      Staging: vt665?: prevent modules from being built into the kernel.
-      staging: memrar: remove driver from tree
+Michael Chang (1):
+      staging: gma500: get control from firmware framebuffer if conflicts
 
-Haiyang Zhang (1):
-      staging: hv: Fix GARP not sent after Quick Migration
+Michael Hennerich (1):
+      staging: iio: industrialio-trigger: set iio_poll_func private_data
 
-Javier M. Mellid (1):
-      staging: sm7xx: fixed defines
+Nicolas Kaiser (1):
+      staging: rts_pstor: use bitwise operator instead of logical one
 
-Michael Hennerich (6):
-      staging: IIO: IMU: ADIS16400: Fix up SPI messages cs_change behavior
-      staging: IIO: IMU: ADIS16400: Add delay after self test
-      staging: IIO: IMU: ADIS16400: Fix addresses of GYRO and ACCEL calibration offset
-      staging: IIO: IMU: ADIS16400: Make sure only enabled scan_elements are pushed into the ring
-      staging: IIO: IMU: ADIS16400: Fix product ID check, skip embedded revision number
-      staging: IIO: IMU: ADIS16400: Avoid using printk facility directly
-
-Olaf Hering (2):
-      staging: hv: use sync_bitops when interacting with the hypervisor
-      staging: hv: update dist release parsing in hv_kvp_daemon
+Patrik Jakobsson (1):
+      staging: gma500: Skip bogus LVDS VBT mode and check for LVDS before adding backlight
 
 Randy Dunlap (2):
-      staging: fix hv_mouse build, needs delay.h
-      staging/rtl81*: build as loadable modules only
+      staging: fix olpc_dcon build, needs BACKLIGHT_CLASS_DEVICE
+      staging: fix ath6kl build when CFG80211 is not enabled
 
-Roland Vossen (3):
-      staging: brcm80211: fix for 'AC_BE txop..' logs spammed problem
-      staging: brcm80211: fix for 'Short CCK' log spam
-      staging: brcm80211: removed 'is_amsdu causing toss' log spam
+Roland Stigge (1):
+      staging: iio: max517: Fix iio_info changes
 
-Sascha Silbe (1):
-      staging: fix olpc_dcon build errors
+Roland Vossen (1):
+      staging: brcm80211: fix for 'multiple definition of wl_msg_level' build err
 
-pixo (1):
-      staging: ft1000-pcmcia: Fix ft1000_dnld() to work also on 64bit architectures.
-
-wwang (2):
-      staging: rts_pstor: modify initial card clock
-      staging: rts_pstor: set lun_mode in a different place
+Vasanthakumar Thiagarajan (1):
+      staging: ath6kl: Fix a kernel panic during suspend/resume
 
