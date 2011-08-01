@@ -3,7 +3,7 @@
 TREES="driver-core staging tty usb"
 
 # First, clone Linus's tree in --bare mode as we are going to work off of that:
-#git clone --bare gregkh@master.kernel.org:/pub/scm/linux/kernel/git/torvalds/linux-2.6.git torvalds
+git clone --bare gregkh@master.kernel.org:/pub/scm/linux/kernel/git/torvalds/linux-2.6.git torvalds
 
 # now make clones of it for the different work types
 for TREE in $TREES
