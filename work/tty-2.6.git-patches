@@ -1,16 +1,17 @@
 From: Greg KH <gregkh@suse.de>
 To: Linus Torvalds <torvalds@linux-foundation.org>, Andrew Morton <akpm@linux-foundation.org>
 Cc: linux-kernel@vger.kernel.org, linux-serial@vger.kernel.org
-Subject: [GIT PATCH] TTY/serial driver fixes for .39
+Subject: [GIT PATCH] TTY/serial driver patches for 3.1
 
-Here are some small tty/serial fixes for the .39 tree.
+Here is the big tty/serial patchset for your 3.1 tree.
 
-It also includes a parport patch, as it seems relevant to the serial
-drivers (resource conflict) and there's not a parport maintainer tree
-anywhere that I know of.
+Nothing major at all, lots of line discipline tweaks for the newer ones
+that were added last release, and some small tty core fixes as well.
+
+Full details are below as to what it contains.
 
 Please pull from:
-	master.kernel.org:/pub/scm/linux/kernel/git/gregkh/tty-2.6.git/ tty-linus
+	master.kernel.org:/pub/scm/linux/kernel/git/gregkh/tty-2.6.git/ tty-next
 
 All of these patches have been in the -mm and -next trees for a while.
 
@@ -23,19 +24,95 @@ greg k-h
 
 ------------
 
- drivers/parport/parport_pc.c |    8 +++-----
- drivers/tty/n_gsm.c          |    8 ++++++--
- drivers/tty/serial/imx.c     |    3 ++-
- 3 files changed, 11 insertions(+), 8 deletions(-)
+ drivers/misc/Makefile            |    2 +-
+ drivers/misc/pch_phub.c          |    4 +-
+ drivers/misc/pti.c               |   99 ++++++----
+ drivers/parport/parport_pc.c     |   54 -----
+ drivers/parport/parport_serial.c |  229 ++++++++++++++++++++--
+ drivers/tty/moxa.c               |    5 +-
+ drivers/tty/mxser.c              |    4 +-
+ drivers/tty/n_gsm.c              |  401 +++++++++++++++++++++++++++++++++++---
+ drivers/tty/n_tty.c              |    2 +-
+ drivers/tty/serial/8250.c        |    4 +-
+ drivers/tty/serial/8250_pci.c    |  183 +++++++++++++++++-
+ drivers/tty/serial/Kconfig       |    2 +-
+ drivers/tty/serial/pch_uart.c    |   11 +-
+ drivers/tty/serial/s5pv210.c     |    4 +
+ drivers/tty/serial/samsung.c     |   27 ++--
+ drivers/tty/tty_io.c             |    4 +-
+ include/linux/gsmmux.h           |   11 +
+ include/linux/pci_ids.h          |    4 +
+ include/linux/pti.h              |    3 +-
+ include/linux/tty.h              |   37 ++--
+ 20 files changed, 903 insertions(+), 187 deletions(-)
 
 ---------------
 
-Mikhail Kshevetskiy (1):
-      tty/n_gsm: fix bug in CRC calculation for gsm1 mode
+Alexander Stein (2):
+      pch_uart: Add MSI support
+      pch_uart: add missing comment about OKI ML7223
 
-Niels de Vos (1):
-      parport_pc.c: correctly release the requested region for the IT887x
+Andrew McGregor (1):
+      tty: fix "IRQ45: nobody cared"
+
+Du, Alek (1):
+      n_gsm: fix the wrong FCS handling
+
+Florian Fainelli (1):
+      TTY: export NR_LDISC and N_* line discipline numbers to user-space
+
+Frédéric Brière (2):
+      serial: 8250_pci: add .probe member to struct pci_serial_quirk
+      parport/serial: add support for Timedia/SUNIX cards to parport_serial
+
+J Freyensee (2):
+      0 for o PTI Makefile bug.
+      PTI feature to allow user to name and mark masterchannel request.
+
+Jiri Slaby (1):
+      serial: 8250, increase PASS_LIMIT
+
+Jongpill Lee (1):
+      tty: s5pv210: Add delay loop on fifo reset function for UART
+
+Manuel Zerpies (1):
+      drivers/tty: use printk_ratelimited() instead of printk_ratelimit()
+
+Michael Reed (1):
+      8250_pci Add EEH support to the 8250 driver for IBM/Digi PCIe 2-port Adapter
+
+Mika Westerberg (1):
+      serial: mrst_max3110: initialize waitqueue earlier
+
+Mike Frysinger (1):
+      serial: bfin_5xx: fix off-by-one with resource size
+
+MyungJoo Ham (1):
+      tty: serial: samsung.c remove legacy PM code.
+
+Nicos Gollan (1):
+      Basic support for Moschip 9900 family I/O chips
+
+Ralf Baechle (1):
+      SERIAL: SC26xx: Fix link error.
+
+Russ Gorby (3):
+      tty: n_gsm: expose gsmtty device nodes at ldisc open time
+      tty: n_gsm: Add raw-ip support
+      tty: n_gsm: Added refcount usage to gsm_mux and gsm_dlci structs
+
+Shreshtha Kumar Sahu (1):
+      amba pl011: workaround for uart registers lockup
+
+Stephen Warren (1):
+      tty/serial: Fix XSCALE serial ports, e.g. ce4100
+
+Tomoya MORINAGA (1):
+      pch_phub: Fix register miss-setting issue
 
 Uwe Kleine-König (1):
-      serial/imx: read cts state only after acking cts change irq
+      serial/pch: use global div helper instead of creating a private one
+
+William Douglas (1):
+      mrst_max3110: Change max missing message priority.
 

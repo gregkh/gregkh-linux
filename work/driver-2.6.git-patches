@@ -1,12 +1,12 @@
 From: Greg KH <gregkh@suse.de>
 To: Linus Torvalds <torvalds@linux-foundation.org>, Andrew Morton <akpm@linux-foundation.org>
 Cc: linux-kernel@vger.kernel.org
-Subject: [GIT PATCH] driver core merge for .40
+Subject: [GIT PATCH] driver core merge for 3.1
 
-Here's the "big" driver core merge for the .40 tree.
+Here's the "big" driver core merge for the 3.1 tree.
 
-Not much for the driver core itself, but there is some firmware driver
-work, documentation updates and a new translation added.  Nothing major.
+Not really much at all, mostly just documentation updates, and a few
+other minor things.  Details are below.
 
 Please pull from:
 	master.kernel.org:/pub/scm/linux/kernel/git/gregkh/driver-core-2.6.git/ driver-core-next
@@ -23,155 +23,45 @@ greg k-h
 
 ------------
 
- Documentation/ABI/testing/sysfs-firmware-dmi  |   18 +-
- Documentation/ABI/testing/sysfs-firmware-gsmi |   58 ++
- Documentation/ABI/testing/sysfs-firmware-log  |    7 +
- Documentation/ABI/testing/sysfs-kernel-fscaps |    8 +
- Documentation/DocBook/device-drivers.tmpl     |    6 +-
- Documentation/driver-model/bus.txt            |   19 +-
- Documentation/driver-model/class.txt          |   17 +-
- Documentation/driver-model/device.txt         |   91 +---
- Documentation/driver-model/driver.txt         |   18 +-
- Documentation/ja_JP/HOWTO                     |  129 ++---
- Documentation/zh_CN/email-clients.txt         |  210 ++++++
- arch/arm/kernel/traps.c                       |    1 -
- arch/powerpc/kernel/traps.c                   |    1 -
- arch/sh/kernel/traps_32.c                     |    1 -
- arch/unicore32/kernel/traps.c                 |    1 -
- arch/x86/include/asm/bios_ebda.h              |   28 +-
- arch/x86/kernel/dumpstack.c                   |    1 -
- drivers/base/core.c                           |    7 +-
- drivers/base/dd.c                             |   12 +-
- drivers/base/memory.c                         |   29 +-
- drivers/base/platform.c                       |   38 +-
- drivers/char/Kconfig                          |    2 +-
- drivers/char/mem.c                            |   42 +-
- drivers/char/raw.c                            |   34 +-
- drivers/firmware/Kconfig                      |    2 +
- drivers/firmware/Makefile                     |    2 +
- drivers/firmware/efivars.c                    |   21 +-
- drivers/firmware/google/Kconfig               |   31 +
- drivers/firmware/google/Makefile              |    3 +
- drivers/firmware/google/gsmi.c                |  940 +++++++++++++++++++++++++
- drivers/firmware/google/memconsole.c          |  166 +++++
- drivers/misc/ti-st/Kconfig                    |    2 +-
- drivers/misc/ti-st/st_core.c                  |   23 +-
- drivers/misc/ti-st/st_kim.c                   |    1 +
- drivers/uio/uio.c                             |   16 +-
- drivers/uio/uio_netx.c                        |   19 +
- drivers/uio/uio_pdrv_genirq.c                 |    4 +
- fs/debugfs/file.c                             |   19 +-
- fs/sysfs/file.c                               |   12 -
- fs/sysfs/group.c                              |    6 +-
- include/linux/device.h                        |  164 +++++-
- include/linux/string.h                        |    1 +
- include/linux/sysfs.h                         |    5 -
- include/linux/ti_wilink_st.h                  |    3 +-
- kernel/ksysfs.c                               |   10 +
- kernel/params.c                               |   14 +-
- kernel/sys.c                                  |    2 +
- lib/string.c                                  |   29 +
- 48 files changed, 1885 insertions(+), 388 deletions(-)
- create mode 100644 Documentation/ABI/testing/sysfs-firmware-gsmi
- create mode 100644 Documentation/ABI/testing/sysfs-firmware-log
- create mode 100644 Documentation/ABI/testing/sysfs-kernel-fscaps
- create mode 100644 Documentation/zh_CN/email-clients.txt
- create mode 100644 drivers/firmware/google/Kconfig
- create mode 100644 drivers/firmware/google/Makefile
- create mode 100644 drivers/firmware/google/gsmi.c
- create mode 100644 drivers/firmware/google/memconsole.c
+ Documentation/driver-model/device.txt   |    2 +-
+ Documentation/driver-model/overview.txt |   52 ++++--
+ Documentation/filesystems/debugfs.txt   |    4 +-
+ Documentation/ja_JP/SubmittingPatches   |  258 +++++++++++++++++++++++++------
+ Documentation/zh_CN/email-clients.txt   |  210 +++++++++++++-------------
+ drivers/base/Kconfig                    |   64 ++++----
+ drivers/firmware/google/gsmi.c          |   19 ++-
+ drivers/misc/pti.c                      |    6 +-
+ drivers/uio/uio_pdrv_genirq.c           |   43 +++++
+ 9 files changed, 448 insertions(+), 210 deletions(-)
 
 ---------------
 
-Andrew Morton (2):
-      kmsg: properly support writev to avoid interleaved printk lines fix
-      drivers/base/memory.c: fix warning due to "memory hotplug: Speed up add/remove when blocks are larger than PAGES_PER_SECTION"
+Akinobu Mita (1):
+      debugfs: add documentation for debugfs_create_x64
 
-Anton Blanchard (1):
-      memory hotplug: Speed up add/remove when blocks are larger than PAGES_PER_SECTION
+Axel Lin (1):
+      firmware: gsmi: remove sysfs entries when unload the module
 
-Dan Carpenter (2):
-      efivars: memory leak on error in create_efivars_bin_attributes()
-      efivars: handle errors from register_efivars()
-
-Daniel Trautmann (1):
-      uio_netx: Add support for netPLC cards
-
-Felipe Balbi (1):
-      device: add dev_WARN_ONCE
-
-Greg Kroah-Hartman (1):
-      sysfs: remove "last sysfs file:" line from the oops messages
+Hans J. Koch (1):
+      uio: uio_pdrv_genirq: Add OF support
 
 Harry Wei (1):
-      Translated Documentation/email-clients.txt
+      Documentation/zh_CN: Fix messy code file email-clients.txt
 
-Hillf Danton (2):
-      uio: fix finding mm index for vma
-      uio: fix allocating minor id for uio device
+J Freyensee (1):
+      pti: pti_tty_install documentation mispelling.
 
-Jan Kara (1):
-      Allow setting of number of raw devices as a module parameter
+Keiichi Kii (1):
+      updated Documentation/ja_JP/SubmittingPatches
 
-Jie Zhou (1):
-      uio: clean uioinfo when uninstall uio driver
-
-Jonathan Cameron (3):
-      Add a strtobool function matching semantics of existing in kernel equivalents
-      debugfs: move to new strtobool
-      params.c: Use new strtobool function to process boolean inputs
-
-Karthigan Srinivasan (1):
-      drivers/base/core.c: Fixed brace coding style issue.
-
-Kay Sievers (2):
-      printk: /dev/kmsg - properly support writev() to avoid interleaved printk() lines
-      reboot: disable usermodehelper to prevent fs access
-
-Ludwig Nussel (1):
-      kernel/ksysfs.c: expose file_caps_enabled in sysfs
-
-Mike Waychison (6):
-      firmware: Fix grammar in sysfs-firmware-dmi doc
-      x86: get_bios_ebda_length()
-      x86: Better comments for get_bios_ebda()
-      driver: Google EFI SMI
-      driver: Google Memory Console
-      Introduce CONFIG_GOOGLE_FIRMWARE
-
-Pavan Savoy (2):
-      drivers:misc:ti-st: handle delayed tty receive
-      drivers:misc:ti-st: remove rfkill dependency
-
-Randy Dunlap (2):
-      misc: fix ti-st build issues
-      efivars: prevent oops on unload when efi is not enabled
+Márton Németh (1):
+      driver core: add more help description for "path to uevent helper"
 
 Robert P. J. Day (2):
-      RAW driver: Remove call to kobject_put().
-      SYSFS: Fix erroneous comments for sysfs_update_group().
+      DOCUMENTATION: Update overview.txt in Doc/driver-model.
+      DOCUMENTATION: Replace create_device() with device_create().
 
-Sebastian Ott (1):
-      driver-core: fix race between device_register and driver_register
-
-Stephen Boyd (1):
-      debugfs: Silence DEBUG_STRICT_USER_COPY_CHECKS=y warning
-
-Stephen Hemminger (1):
-      drivers: make device_type const
-
-Tsugikazu Shibata (1):
-      HOWTO: sync up Documentaion/ja_JP/HOWTO
-
-Uwe Kleine-König (5):
-      driver core/platform_device_add_data: set platform_data to NULL if !data
-      driver core/platform_device_add_data: free platform data before overwriting
-      driver core/platform_device_add_resources: set resource to NULL if !res
-      driver core/platform_device_add_resources: free resource before overwriting
-      driver core: let dev_set_drvdata return int instead of void as it can fail
-
-Wanlong Gao (3):
-      drivers:base:fix the coding format of memory.c
-      driver core: Add the device driver-model structures to kerneldoc
-      driver core: remove the driver-model structures from the documentation
+matt mooney (2):
+      driver-core: Kconfig grammar corrections in firmware configuration
+      driver-core: modify FIRMWARE_IN_KERNEL help message
 
