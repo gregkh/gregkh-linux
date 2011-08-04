@@ -6,13 +6,13 @@ if [ "$VERSION" == "" ] ; then
 	exit
 fi
 echo "VERSION=$VERSION"
-DIR="queue-2.6.$VERSION"
+DIR="queue-$VERSION"
 
 
 mkdir ../tmp
-git ls-files -o | grep queue-2\.6\.$VERSION | xargs -i  cp {} -v ../tmp/
+git ls-files -o | grep queue-$VERSION | xargs -i  cp {} -v ../tmp/
 git add $DIR
-git commit $DIR -m ".$VERSION patches"
+git commit $DIR -m "$VERSION patches"
 for file in `ls ../tmp/`
 do
 	../added-to-stable-version $VERSION ../tmp/$file
