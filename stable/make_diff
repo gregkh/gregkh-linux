@@ -17,6 +17,13 @@ if [ $MINOR == "33" ]; then
 fi
 #echo "longterm = $LONGTERM"
 
+# see if this is 3.X or 2.X
+THREE=0
+if [ ${REL_ARRAY[0]} == "3" ] ; then
+	# 3.0
+	THREE=1
+fi
+
 git diff --stat > diffstat
 echo "# diffstat created"
 
@@ -27,5 +34,11 @@ DIR="stable-review"
 if [ $LONGTERM -eq 1 ]; then
 	DIR="longterm-review"
 fi
-echo "scp patch-$VERSION.gz gregkh@master.kernel.org:v2.6/$DIR/"
+
+if [ $THREE -eq 1 ]; then
+	VER="3.0"
+else
+	VER="2.6"
+fi
+echo "scp patch-$VERSION.gz gregkh@master.kernel.org:v$VER/$DIR/"
 
