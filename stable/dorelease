@@ -3,8 +3,11 @@
 # Copyright (c) 2005 Chris Wright <chrisw@osdl.org>
 
 if [ $# -ne 1 ]; then
-	echo -e "Usage:\t $0 release_number\ne.g.\t $0 2.6.11.12"
-	exit 1
+	RELEASE=`ketchup -m`
+	#echo -e "Usage:\t $0 release_number\ne.g.\t $0 2.6.11.12"
+	#exit 1
+else
+	RELEASE=$1
 fi
 
 #if [ -z "${GIT_GPG_KEY}" ]; then
@@ -15,7 +18,7 @@ fi
 #git-tag -u "${GIT_GPG_KEY}" -m "this is a TEST" vTest
 #exit 0
 
-RELEASE=$1
+#RELEASE=$1
 REL_ARRAY=(${RELEASE//./ })
 BASE=${REL_ARRAY[0]}.${REL_ARRAY[1]}.${REL_ARRAY[2]}
 REL=${REL_ARRAY[3]}
@@ -30,6 +33,16 @@ if [ $MINOR == "33" ]; then
 	LONGTERM=1
 fi
 #echo "longterm = $LONGTERM"
+
+# 3.0 or 2.6?
+VER="2.6"
+if [ ${REL_ARRAY[0]} == "3" ] ; then
+	# 3.x series
+	VER="3.0"
+	BASE=${REL_ARRAY[0]}.${REL_ARRAY[1]}
+	REL=${REL_ARRAY[2]}
+	MINOR=${REL_ARRAY[1]}
+fi
 
 
 LAST=$(($REL - 1))
@@ -98,15 +111,15 @@ if [ $LONGTERM -eq 1 ]; then
 else
 	echo "# This is a stable release"
 	echo "# finalize it:"
-	echo "mv $RELDIR/linux-${RELEASE}.tar.gz ~/v2.6/"
-	echo "mv $RELDIR/ChangeLog-${RELEASE} ~/v2.6/"
-	echo "mv $RELDIR/patch-${RELEASE}.gz ~/v2.6/"
-	echo "cp $RELDIR/patch-${LAST_REL}-${REL}.gz ~/v2.6/incr/"
+	echo "mv $RELDIR/linux-${RELEASE}.tar.gz ~/v${VER}/"
+	echo "mv $RELDIR/ChangeLog-${RELEASE} ~/v${VER}/"
+	echo "mv $RELDIR/patch-${RELEASE}.gz ~/v${VER}/"
+	echo "cp $RELDIR/patch-${LAST_REL}-${REL}.gz ~/v${VER}/incr/"
 	echo "mv $RELDIR/patch-${LAST_REL}-${REL}.gz ~"
 	echo "mv $RELDIR/diffstat-${LAST_REL}-${REL} ~"
 	echo "mv $RELDIR/shortlog-${RELEASE} ~"
-	LATEST=`ls ~/v2.6/LATEST-IS*`
+	LATEST=`ls ~/v${VER}/LATEST-IS*`
 	LATEST=`basename $LATEST`
 	echo "# current LATEST-IS is '$LATEST' is that what it should be?"
-	echo "# mv ~/v2.6/${LATEST} ~/v2.6/LATEST-IS-${RELEASE}"
+	echo "# mv ~/v${VER}/${LATEST} ~/v${VER}/LATEST-IS-${RELEASE}"
 fi
