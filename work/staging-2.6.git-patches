@@ -1,24 +1,17 @@
 From: Greg KH <greg@kroah.com>
 To: Linus Torvalds <torvalds@osdl.org>, Andrew Morton <akpm@osdl.org>
 Cc: linux-kernel@vger.kernel.org, devel@linuxdriverproject.org
-Subject: [GIT PATCH] STAGING fixes for 3.0
+Subject: [GIT PATCH] more STAGING fixes for 3.1
 
-Here are a number of minor staging driver fixes for your 3.0 tree.
+Here are a number of minor staging driver fixes for your 3.1 tree.
 
-Nothing major, lots of little things.  The non-drivers/staging fix is to
-resolve a problem of a driver outside of the staging tree including a
-staging include file that had accidentally got added to
-include/staging/.  That has been fixed, and the driver will be updated
-in 3.1 to do things "correctly" allowing the staging driver to move out
-into the proper media directory.
-
-I've also removed the STAGING_EXCLUDE_BUILD Kconfig option to make it
-easier for people to build the staging tree, as we discussed at LinuxCon
-a few weeks ago.  This has already turned up some "interesting" build
-results in the linux-next tree that were previously unknown :)
+Full details are below, nothing really major, but lots of build fixes
+for stuff people have reported.
 
 Please pull from:
 	master.kernel.org:/pub/scm/linux/kernel/git/gregkh/staging-2.6.git/ staging-linus
+
+All patches have been in the -next releases for a while now.
 
 These patches will be sent to the linux driver project list for all to
 see.
@@ -29,66 +22,32 @@ greg k-h
 
 --------------
 
- drivers/media/video/cx23885/cx23885-cards.c        |    2 +-
- drivers/staging/Kconfig                            |   18 -----------------
- drivers/staging/altera-stapl/altera-jtag.c         |    2 +-
- drivers/staging/altera-stapl/altera.c              |    2 +-
- .../staging/altera-stapl}/altera.h                 |    0
- drivers/staging/ath6kl/Kconfig                     |    1 +
- drivers/staging/ath6kl/os/linux/cfg80211.c         |    3 +-
- drivers/staging/brcm80211/brcmfmac/wl_iw.c         |    2 -
- drivers/staging/gma500/psb_drv.c                   |   15 +++++++++++++-
- drivers/staging/gma500/psb_fb.c                    |   10 +++++++++
- drivers/staging/gma500/psb_intel_bios.c            |   13 ++++++++---
- drivers/staging/iio/dac/max517.c                   |    2 +-
- drivers/staging/iio/imu/adis16400_ring.c           |   10 ++++++--
- drivers/staging/iio/industrialio-trigger.c         |    1 +
- drivers/staging/mei/init.c                         |    4 +-
- drivers/staging/olpc_dcon/Kconfig                  |    1 +
- drivers/staging/rts_pstor/sd.c                     |    2 +-
- drivers/staging/usbip/stub_dev.c                   |   21 ++++++++++++++++++++
- drivers/staging/usbip/stub_rx.c                    |   20 ++++++++++--------
- 19 files changed, 84 insertions(+), 45 deletions(-)
- rename {include/staging => drivers/staging/altera-stapl}/altera.h (100%)
+ drivers/staging/brcm80211/brcmsmac/otp.c     |    1 +
+ drivers/staging/brcm80211/brcmsmac/types.h   |    1 +
+ drivers/staging/octeon/ethernet-rgmii.c      |    1 +
+ drivers/staging/octeon/ethernet-spi.c        |    1 +
+ drivers/staging/tidspbridge/core/dsp-clock.c |    1 -
+ drivers/staging/zcache/tmem.c                |    2 +-
+ drivers/staging/zcache/zcache-main.c         |    8 ++++----
+ 7 files changed, 9 insertions(+), 6 deletions(-)
 
 ---------------
 
-Andre Bartke (1):
-      staging: iio: error case memory leak fix
-
-Arjan Mels (1):
-      staging: usbip: bugfix prevent driver unbind
+Arend Van Spriel (1):
+      staging: brcm80211: fix compile error on non-x86 archs since 3.0 kernel
 
 Dan Carpenter (1):
-      Staging: mei: fix debug code
+      Staging: zcache: signedness bug in tmem_get()
 
-Greg Kroah-Hartman (3):
-      Staging: altera: move .h file to proper place
-      Staging: remove STAGING_EXCLUDE_BUILD option
-      Staging: cx23885: fix include of altera.h
+David Daney (1):
+      staging: octeon-ethernet: Add missing #includes.
 
-Michael Chang (1):
-      staging: gma500: get control from firmware framebuffer if conflicts
+Omar Ramirez Luna (1):
+      staging: tidspbridge: fix compilation on dsp clock functions
 
-Michael Hennerich (1):
-      staging: iio: industrialio-trigger: set iio_poll_func private_data
+Pieter-Paul Giesberts (1):
+      staging: brcm80211: SPARC build error fix
 
-Nicolas Kaiser (1):
-      staging: rts_pstor: use bitwise operator instead of logical one
-
-Patrik Jakobsson (1):
-      staging: gma500: Skip bogus LVDS VBT mode and check for LVDS before adding backlight
-
-Randy Dunlap (2):
-      staging: fix olpc_dcon build, needs BACKLIGHT_CLASS_DEVICE
-      staging: fix ath6kl build when CFG80211 is not enabled
-
-Roland Stigge (1):
-      staging: iio: max517: Fix iio_info changes
-
-Roland Vossen (1):
-      staging: brcm80211: fix for 'multiple definition of wl_msg_level' build err
-
-Vasanthakumar Thiagarajan (1):
-      staging: ath6kl: Fix a kernel panic during suspend/resume
+Seth Jennings (1):
+      staging: zcache: fix crash on high memory swap
 

@@ -1,13 +1,9 @@
 From: Greg KH <gregkh@suse.de>
 To: Linus Torvalds <torvalds@linux-foundation.org>, Andrew Morton <akpm@linux-foundation.org>
 Cc: linux-kernel@vger.kernel.org, linux-serial@vger.kernel.org
-Subject: [GIT PATCH] TTY/serial driver fixes for .39
+Subject: [GIT PATCH] TTY/serial driver fixes for 3.1
 
-Here are some small tty/serial fixes for the .39 tree.
-
-It also includes a parport patch, as it seems relevant to the serial
-drivers (resource conflict) and there's not a parport maintainer tree
-anywhere that I know of.
+Here are some small tty/serial fixes for the 3.1 release.
 
 Please pull from:
 	master.kernel.org:/pub/scm/linux/kernel/git/gregkh/tty-2.6.git/ tty-linus
@@ -23,19 +19,55 @@ greg k-h
 
 ------------
 
- drivers/parport/parport_pc.c |    8 +++-----
- drivers/tty/n_gsm.c          |    8 ++++++--
- drivers/tty/serial/imx.c     |    3 ++-
- 3 files changed, 11 insertions(+), 8 deletions(-)
+ drivers/tty/pty.c                 |   17 +++++++++++++++--
+ drivers/tty/serial/8250.c         |    8 +++++---
+ drivers/tty/serial/8250_pci.c     |   11 +++++------
+ drivers/tty/serial/8250_pnp.c     |    3 +++
+ drivers/tty/serial/atmel_serial.c |    8 +++++---
+ drivers/tty/serial/max3107-aava.c |    2 +-
+ drivers/tty/serial/max3107.c      |    2 +-
+ drivers/tty/serial/mrst_max3110.c |    2 +-
+ drivers/tty/serial/omap-serial.c  |    3 +--
+ drivers/tty/serial/pch_uart.c     |    3 ++-
+ drivers/tty/serial/samsung.c      |    8 ++++++--
+ drivers/tty/serial/serial_core.c  |    5 +++++
+ drivers/tty/serial/ucc_uart.c     |    2 +-
+ drivers/tty/tty_io.c              |    3 +--
+ include/linux/tty.h               |    2 ++
+ include/linux/tty_driver.h        |    3 +++
+ 16 files changed, 57 insertions(+), 25 deletions(-)
 
 ---------------
 
-Mikhail Kshevetskiy (1):
-      tty/n_gsm: fix bug in CRC calculation for gsm1 mode
+Al Cooper (1):
+      8250: Fix race condition in serial8250_backup_timeout().
 
-Niels de Vos (1):
-      parport_pc.c: correctly release the requested region for the IT887x
+Axel Lin (1):
+      tty: Add "spi:" prefix for spi modalias
 
-Uwe Kleine-König (1):
-      serial/imx: read cts state only after acking cts change irq
+Bjorn Helgaas (1):
+      serial: 8250_pnp: add Intermec CV60 touchscreen device
+
+Eric Smith (1):
+      8250_pci: add support for Rosewill RC-305 4x serial port card
+
+Jiri Slaby (2):
+      TTY: pty, fix pty counting
+      TTY: serial, document ignoring of uart->ops->startup error
+
+Kukjin Kim (1):
+      serial: samsung: Fix build error
+
+Kumar Gala (1):
+      drivers/serial/ucc_uart.c: Fix compiler warning
+
+Nick Pelly (1):
+      omap-serial: Allow IXON and IXOFF to be disabled.
+
+Tomoya MORINAGA (2):
+      pch_uart: Set PCIe bus number using probe parameter
+      serial/8250_pci: delete duplicate data definition
+
+Voss, Nikolaus (1):
+      atmel_serial: fix atmel_default_console_device
 
