@@ -9,100 +9,15 @@ Lots of new device ids, some xhci bug fixes to resolve issues that
 were reported, and some build fixes that people hit.
 
 Please pull from:
-	master.kernel.org:/pub/scm/linux/kernel/git/gregkh/usb-2.6.git/ usb-linus
+	master.kernel.org:/pub/scm/linux/kernel/git/gregkh/usb-2.6.git/ usb-next
 
 All have been in the -next releases for a while now.
+
+The full patches will be sent to the linux-usb mailing list, if anyone
+wants to see them.
 
 thanks,
 
 greg k-h
 
 ------------
-
- drivers/usb/core/hcd.c           |    2 +
- drivers/usb/gadget/f_phonet.c    |    1 +
- drivers/usb/host/ehci-hub.c      |    7 +--
- drivers/usb/host/ehci-s5p.c      |    1 +
- drivers/usb/host/xhci-hub.c      |   17 +++++--
- drivers/usb/host/xhci-ring.c     |   90 +++++++++++++++++++++++----------
- drivers/usb/host/xhci.c          |   28 +++++++++--
- drivers/usb/musb/blackfin.c      |    1 +
- drivers/usb/musb/cppi_dma.c      |   26 ++++++---
- drivers/usb/musb/musb_core.h     |   12 +++--
- drivers/usb/musb/musb_gadget.c   |    4 +-
- drivers/usb/musb/musb_regs.h     |    6 ++-
- drivers/usb/musb/tusb6010.c      |    1 +
- drivers/usb/musb/tusb6010_omap.c |    1 +
- drivers/usb/musb/ux500_dma.c     |   38 ++++++++------
- drivers/usb/serial/ftdi_sio.c    |   20 +++++++-
- drivers/usb/serial/option.c      |  104 ++++++++++++++++++++++++++++++++++++-
- 17 files changed, 283 insertions(+), 76 deletions(-)
-
----------------
-
-Andiry Xu (2):
-      xHCI: fix port U3 status check condition
-      xHCI: report USB2 port in resuming as suspend
-
-Andrew Bird (3):
-      USB option driver add PID of Huawei Vodafone K3806
-      USB option driver add PID of Huawei Vodafone K4605
-      USB option driver K3765/K4505 avoid CDC_DATA interface
-
-Axel Lin (1):
-      usb: gadget: s3c2410_udc: fix unterminated platform_device_id table
-
-Bob Liu (1):
-      usb: musb: blackfin: include prefetch head file
-
-Felipe Balbi (1):
-      usb: musb: tusb6010: fix compilation
-
-Gavin.zhu (1):
-      USB: option: add YUGA device id to driver
-
-Jean-Christophe PLAGNIOL-VILLARD (1):
-      USB: ftdi_sio: add Calao reference board support
-
-John Stultz (1):
-      usb: musb: fix oops on musb_gadget_pullup
-
-Kuninori Morimoto (1):
-      usb: gadget: renesas_usbhs: fix DMA build by including dma-mapping.h
-
-Ming Lei (1):
-      usb: host: ehci-omap: fix .remove and failure handling path of .probe(v1)
-
-Per Forlin (3):
-      usb: musb: ux500: set dma config for both src and dst
-      usb: musb: ux500: replace missing DBG with dev_dbg
-      usb: musb: cppi: fix build errors due to DBG and missing musb variable
-
-Rabin Vincent (1):
-      usb: musb: fix Kconfig
-
-Sarah Sharp (5):
-      xhci: Fix memory leak during failed enqueue.
-      xhci: Fix failed enqueue in the middle of isoch TD.
-      xhci: Remove TDs from TD lists when URBs are canceled.
-      USB: Avoid NULL pointer deref in usb_hcd_alloc_bandwidth.
-      xhci: Handle zero-length isochronous packets.
-
-Sebastian Andrzej Siewior (4):
-      usb: gadget: fusb300: remove #if 0 block
-      usb: gadget: composite: fix bMaxPacketSize for SuperSpeed
-      usb: gadget: f_phonet: unlock in error case
-      usb: musb: gadget: fix error path
-
-Sebastian Bauer (1):
-      usb: gadget: hid: don't STALL when processing a HID Descriptor request
-
-Sergei Trofimovich (1):
-      usb: musb: tusb6010_omap: fix build failure: error: 'musb' undeclared
-
-Wang Zhi (1):
-      USB: EHCI: Do not rely on PORT_SUSPEND to stop USB resuming in ehci_bus_resume().
-
-Yulgon Kim (1):
-      usb: s5p-ehci: fix a NULL pointer deference
-
