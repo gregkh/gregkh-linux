@@ -178,8 +178,8 @@ reply()
 	# talk to the suse network instead of localhost (due to the way suse.de now handles email...)
 	#smtpsend -server=$SMTP_SERVER $to -from=$FROM
 	#msmtp $to
-#	~/bin/msmtp-enqueue.sh -a suse $to
-	~/bin/msmtp-enqueue.sh -a coco $to
+	~/bin/msmtp-enqueue.sh -a suse $to
+#	~/bin/msmtp-enqueue.sh -a coco $to
 }
 
 for patch_file in $*
