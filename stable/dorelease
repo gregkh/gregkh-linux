@@ -1,6 +1,9 @@
 #!/bin/bash
 # build -stable release from current -stable series
 # Copyright (c) 2005 Chris Wright <chrisw@osdl.org>
+# Copyright (c) 2006-2011 Greg Kroah-Hartman <greg@kroah.com>
+#
+
 
 if [ $# -ne 1 ]; then
 	RELEASE=`ketchup -m`
