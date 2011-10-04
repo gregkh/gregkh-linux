@@ -148,7 +148,7 @@ reply()
 		echo "    $SUBJECT"
 		echo
 		echo "to my tty git tree which can be found at"
-		echo "    git://git.kernel.org/pub/scm/linux/kernel/git/gregkh/tty-2.6.git"
+		echo "    git://git.kernel.org/pub/scm/linux/kernel/git/gregkh/tty.git"
 		echo "in the tty-next branch."
 		echo
 		echo "The patch will show up in the next release of the linux-next tree"

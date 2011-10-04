@@ -12,6 +12,7 @@ read
 
 
 # tag it
-git tag -u kroah.com -m "This is the $RELEASE stable release" v$RELEASE
+#git tag -u kroah.com -m "This is the $RELEASE stable release" v$RELEASE
+git tag -u 6092693E -m "This is the $RELEASE stable release" v$RELEASE
 
 exit

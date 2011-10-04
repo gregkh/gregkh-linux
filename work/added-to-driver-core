@@ -148,7 +148,7 @@ reply()
 		echo "    $SUBJECT"
 		echo
 		echo "to my driver-core git tree which can be found at"
-		echo "    git://git.kernel.org/pub/scm/linux/kernel/git/gregkh/driver-core-2.6.git"
+		echo "    git://git.kernel.org/pub/scm/linux/kernel/git/gregkh/driver-core.git"
 		echo "in the driver-core-linus branch."
 		echo
 		echo "The patch will show up in the next release of the linux-next tree"
