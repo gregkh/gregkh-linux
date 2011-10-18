@@ -1,0 +1,75 @@
+#!/usr/bin/perl
+#
+# Update hook for stable git tree to email patches we need to care about
+#
+
+# --- Constants
+chomp($cwd=`pwd`);
+
+# --- Command line
+$refname=$ARGV[0];
+$oldrev=$ARGV[1];
+$newrev=$ARGV[2];
+
+# --- Safety check
+if ($ENV{'GIT_DIR'} eq '') {
+        print STDERR "Don't run this script from the command line.";
+        print STDERR " (if you want, you could supply GIT_DIR then run";
+        print STDERR "  $0 <ref> <oldrev> <newrev>)\n";
+        exit 1;
+}
+
+if ($refname eq '' || $oldrev eq '' || $newrev eq '') {
+        print STDERR "Usage: $0 <ref> <oldrev> <newrev>";
+        exit 1;
+}
+
+if ($refname ne 'refs/heads/master') {
+    print STDERR "Branch $refname not master, not generating email\n";
+    exit 0;
+}
+
+chomp(@commitlist = `git-rev-list --no-merges $newrev ^$oldrev`);
+
+foreach $commit (@commitlist) {
+    # skip if someone else's commit or merge
+#    $recipients = 'jejb@kernel.org, stable@kernel.org';
+    $recipients = 'greg@kroah.com, stable@vger.kernel.org';
+    $found = 0;
+    $subject = '';
+
+    foreach $_ (`git-log $commit^..$commit`) {
+        if (/^    \S/ && $subject eq '') {
+            chomp($subject = substr($_, 4));
+        } elsif (/^    cc:.*stable\@kernel\.org/i) {
+            $found = 1;
+            last;
+        } elsif (/^    cc:.*stable\@vger\.kernel\.org/i) {
+            $found = 1;
+            last;
+        }
+    }
+    next if (!$found);
+    @email = (
+# Generate header
+              "From: Gregs git-bot <greg\@kroah.com>",
+              "To: $recipients",
+              "Subject: Patch Upstream: $subject",
+              "X-Git-Oldrev: $oldrev",
+              "X-Git-Newrev: $newrev",
+              "",
+# body goes here
+              "commit: $commit",
+              );
+    chomp(@commitlog = `git format-patch -k --stdout $commit^..$commit`);
+    # get rid of the mbox header
+    shift @commitlog;
+    push @email, @commitlog;
+    open(EMAIL, "| /usr/sbin/sendmail -t") || die;
+    print EMAIL join("\n", @email);
+    close(EMAIL);
+    print "$subject\n";
+}
+
+exit 0
+
