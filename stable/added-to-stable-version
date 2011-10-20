@@ -8,7 +8,7 @@ echo "VERSION=$KERNEL"
 
 EMAIL_ADDRESS='<gregkh@suse.de>'
 
-STABLE='<stable@kernel.org>'
+STABLE='<stable@vger.kernel.org>'
 STABLE_COMMITS='<stable-commits@vger.kernel.org>'
 
 extract_addr()
@@ -157,7 +157,7 @@ reply()
 		echo "and it can be found in the queue-$KERNEL subdirectory."
 		echo
 		echo "If you, or anyone else, feels it should not be added to the stable tree,"
-		echo "please let <stable@kernel.org> know about it."
+		echo "please let <stable@vger.kernel.org> know about it."
 		echo
 		echo
 		cat $PATCH
