@@ -85,7 +85,7 @@ echo "# building tree in $RELDIR"
 #fi
 #zcat $RELDIR/patch-${LAST_REL}-${REL}.gz | diffstat -p1 > $RELDIR/diffstat-${LAST_REL}-${REL} 2>/dev/null
 
-git archive --format=tar --prefix=linux-$RELEASE/ HEAD > $RELDIR/linux-${RELEASE}.tar
+git archive --format=tar --prefix=linux-$RELEASE/ $RELEASE_COMMIT > $RELDIR/linux-${RELEASE}.tar
 git diff-tree -p $BASE_COMMIT $RELEASE_COMMIT > $RELDIR/patch-${RELEASE}
 if [ $INCREMENTAL -ne 0 ]; then
 	git diff-tree -p $LAST_COMMIT $RELEASE_COMMIT > $RELDIR/patch-${LAST_REL}-${REL}
