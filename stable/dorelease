@@ -103,16 +103,12 @@ if [ $INCREMENTAL -ne 0 ]; then
 fi
 
 
-#echo "ready to upload files"
-#echo "scp $RELDIR/* master.kernel.org:$RELDIR/"
-#echo "don't forget to update LATEST-IS"
-
 echo "# "
-echo "cd ${RELDIR}"
 HOST="gregkh@geb.kernel.org"
 if [ $LONGTERM -eq 1 ]; then
 	echo "# This is a longterm release"
 	echo "# finalize the release:"
+	echo "cd ${RELDIR}"
 	echo "mv $RELDIR/linux-${RELEASE}.tar.gz ~/v2.6/longterm/v${BASE}/"
 	echo "mv $RELDIR/ChangeLog-${RELEASE} ~/v2.6/longterm/v${BASE}/"
 	echo "mv $RELDIR/patch-${RELEASE}.gz ~/v2.6/longterm/v${BASE}/"
@@ -123,7 +119,8 @@ if [ $LONGTERM -eq 1 ]; then
 else
 	echo "# This is a stable release"
 	echo "# finalize it:"
-	echo "kup --host=${HOST} put linux-${RELEASE}.tar linux-${RELEASE}.tar.asc /pub/linux/kernel/v${VER}/linux-${RELEASE}.tar.gz"
+	echo "cd ${RELDIR}"
+	echo "kup --host=${HOST} put --tar --prefix=linux-${RELEASE}/ /pub/scm/linux/kernel/git/stable/linux-stable.git v${RELEASE} linux-${RELEASE}.tar.asc /pub/linux/kernel/v${VER}/linux-${RELEASE}.tar.gz"
 	echo "kup --host=${HOST} put ChangeLog-${RELEASE} ChangeLog-3.0.7.asc      /pub/linux/kernel/v${VER}/"
 	echo "kup --host=${HOST} put patch-${RELEASE}     patch-${RELEASE}.asc     /pub/linux/kernel/v${VER}/patch-${RELEASE}.gz"
 	if [ $INCREMENTAL -ne 0 ]; then
