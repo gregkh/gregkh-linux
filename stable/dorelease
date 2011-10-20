@@ -6,22 +6,18 @@
 
 
 if [ $# -ne 1 ]; then
+	KETCHUP=`which ketchup 2>/dev/null`
+	if [ -z "$KETCHUP" ]; then
+		echo -e "Usage:\t $0 release_number"
+		echo -e "e.g.\t $0 2.6.11.12"
+		echo -e "or install ketchup to automatically release the latest kernel version."
+		exit 1
+	fi
 	RELEASE=`ketchup -m`
-	#echo -e "Usage:\t $0 release_number\ne.g.\t $0 2.6.11.12"
-	#exit 1
 else
 	RELEASE=$1
 fi
 
-#if [ -z "${GIT_GPG_KEY}" ]; then
-#	echo -e "Error:\tMust set GIT_GPG_KEY env variable"
-#	exit 1
-#fi
-#
-#git-tag -u "${GIT_GPG_KEY}" -m "this is a TEST" vTest
-#exit 0
-
-#RELEASE=$1
 REL_ARRAY=(${RELEASE//./ })
 BASE=${REL_ARRAY[0]}.${REL_ARRAY[1]}.${REL_ARRAY[2]}
 REL=${REL_ARRAY[3]}
@@ -33,6 +29,12 @@ if [ $MINOR == "32" ]; then
 	LONGTERM=1
 fi
 if [ $MINOR == "33" ]; then
+	LONGTERM=1
+fi
+if [ $MINOR == "34" ]; then
+	LONGTERM=1
+fi
+if [ $MINOR == "35" ]; then
 	LONGTERM=1
 fi
 #echo "longterm = $LONGTERM"
@@ -49,33 +51,24 @@ fi
 
 
 LAST=$(($REL - 1))
+INCREMENTAL=1
 if [ $LAST -eq 0 ]; then
 	LAST_REL=${BASE}
+	INCREMENTAL=0
 else
 	LAST_REL=${BASE}.${LAST}
 fi
-echo "# creating stable release $RELEASE (base $BASE last version $LAST_REL)"
+echo "# About to create stable release $RELEASE (base $BASE last version $LAST_REL)"
 echo "# "
 
-# commit EXTRAVERSION change
-#git-update-cache Makefile
-#RELEASE_COMMIT=$(echo "Linux $RELEASE" | git-commit-tree $(git-write-tree) -p HEAD)
-#echo $RELEASE_COMMIT > .git/HEAD
-
-# tag it
-#git-tag-script -u ${GIT_GPG_KEY} -m "This is the $RELEASE stable release" v$RELEASE
-
-#BASE_COMMIT="$(git cat-file tag $(cat .git/refs/tags/v${BASE}) | grep object | cut -d" " -f2)"
-#LAST_COMMIT="$(git cat-file tag $(cat .git/refs/tags/v${LAST_REL}) | grep object | cut -d" " -f2)"
-#RELEASE_COMMIT="$(git cat-file tag $(cat .git/refs/tags/v${RELEASE}) | grep object | cut -d" " -f2)"
 BASE_COMMIT="$(git cat-file tag v${BASE} | grep object | cut -d" " -f2)"
 LAST_COMMIT="$(git cat-file tag v${LAST_REL} | grep object | cut -d" " -f2)"
 RELEASE_COMMIT="$(git cat-file tag v${RELEASE} | grep object | cut -d" " -f2)"
+#echo "# BASE_COMMIT=$BASE_COMMIT"
+#echo "# LAST_COMMIT=$LAST_COMMIT"
+#echo "# RELEASE_COMMIT=$RELEASE_COMMIT"
+#echo "#"
 
-echo "# BASE_COMMIT=$BASE_COMMIT"
-echo "# LAST_COMMIT=$LAST_COMMIT"
-echo "# RELEASE_COMMIT=$RELEASE_COMMIT"
-echo "#"
 echo -n "# [ret] to continue"
 read
 
@@ -85,22 +78,38 @@ mkdir $RELDIR
 echo "# building tree in $RELDIR"
 
 # build release materials, tarball, base patch, incr patch, changelog
-#git tar-tree HEAD linux-$RELEASE | gzip -9 > $RELDIR/linux-${RELEASE}.tar.gz
+#git archive --format=tar --prefix=linux-$RELEASE/ HEAD | gzip -9 > $RELDIR/linux-${RELEASE}.tar.gz
+#git diff-tree -p $BASE_COMMIT $RELEASE_COMMIT | gzip -9 > $RELDIR/patch-${RELEASE}.gz
+#if [ $INCREMENTAL -ne 0 ]; then
+#	git diff-tree -p $LAST_COMMIT $RELEASE_COMMIT | gzip -9 > $RELDIR/patch-${LAST_REL}-${REL}.gz
+#fi
+#zcat $RELDIR/patch-${LAST_REL}-${REL}.gz | diffstat -p1 > $RELDIR/diffstat-${LAST_REL}-${REL} 2>/dev/null
 
-git archive --format=tar --prefix=linux-$RELEASE/ HEAD | gzip -9 > $RELDIR/linux-${RELEASE}.tar.gz
-
-
-git diff-tree -p $BASE_COMMIT $RELEASE_COMMIT | gzip -9 > $RELDIR/patch-${RELEASE}.gz
-git diff-tree -p $LAST_COMMIT $RELEASE_COMMIT | gzip -9 > $RELDIR/patch-${LAST_REL}-${REL}.gz
-zcat $RELDIR/patch-${LAST_REL}-${REL}.gz | diffstat -p1 > $RELDIR/diffstat-${LAST_REL}-${REL} 2>/dev/null
+git archive --format=tar --prefix=linux-$RELEASE/ HEAD > $RELDIR/linux-${RELEASE}.tar
+git diff-tree -p $BASE_COMMIT $RELEASE_COMMIT > $RELDIR/patch-${RELEASE}
+if [ $INCREMENTAL -ne 0 ]; then
+	git diff-tree -p $LAST_COMMIT $RELEASE_COMMIT > $RELDIR/patch-${LAST_REL}-${REL}
+fi
+cat $RELDIR/patch-${LAST_REL}-${REL} | diffstat -p1 > $RELDIR/diffstat-${LAST_REL}-${REL} 2>/dev/null
 git log ${LAST_COMMIT}..${RELEASE_COMMIT} > $RELDIR/ChangeLog-$RELEASE
 < $RELDIR/ChangeLog-$RELEASE git shortlog > $RELDIR/shortlog-$RELEASE
+
+# sign all the needed files
+gpg -a -b ${RELDIR}/linux-${RELEASE}.tar
+gpg -a -b ${RELDIR}/patch-${RELEASE}
+gpg -a -b ${RELDIR}/ChangeLog-${RELEASE}
+if [ $INCREMENTAL -ne 0 ]; then
+	gpg -a -b ${RELDIR}/patch-${LAST_REL}-${REL}
+fi
+
 
 #echo "ready to upload files"
 #echo "scp $RELDIR/* master.kernel.org:$RELDIR/"
 #echo "don't forget to update LATEST-IS"
 
 echo "# "
+echo "cd ${RELDIR}"
+HOST="gregkh@geb.kernel.org"
 if [ $LONGTERM -eq 1 ]; then
 	echo "# This is a longterm release"
 	echo "# finalize the release:"
@@ -114,10 +123,12 @@ if [ $LONGTERM -eq 1 ]; then
 else
 	echo "# This is a stable release"
 	echo "# finalize it:"
-	echo "mv $RELDIR/linux-${RELEASE}.tar.gz ~/v${VER}/"
-	echo "mv $RELDIR/ChangeLog-${RELEASE} ~/v${VER}/"
-	echo "mv $RELDIR/patch-${RELEASE}.gz ~/v${VER}/"
-	echo "cp $RELDIR/patch-${LAST_REL}-${REL}.gz ~/v${VER}/incr/"
+	echo "kup --host=${HOST} put linux-${RELEASE}.tar linux-${RELEASE}.tar.asc /pub/linux/kernel/v${VER}/linux-${RELEASE}.tar.gz"
+	echo "kup --host=${HOST} put ChangeLog-${RELEASE} ChangeLog-3.0.7.asc      /pub/linux/kernel/v${VER}/"
+	echo "kup --host=${HOST} put patch-${RELEASE}     patch-${RELEASE}.asc     /pub/linux/kernel/v${VER}/patch-${RELEASE}.gz"
+	if [ $INCREMENTAL -ne 0 ]; then
+		echo "kup --host=${HOST} put patch-${LAST_REL}-${REL} patch-${LAST_REL}-${REL}.asc /pub/linux/kernel/v${VER}/incr/patch-${LAST_REL}-${REL}.gz"
+	fi
 	echo "mv $RELDIR/patch-${LAST_REL}-${REL}.gz ~"
 	echo "mv $RELDIR/diffstat-${LAST_REL}-${REL} ~"
 	echo "mv $RELDIR/shortlog-${RELEASE} ~"
