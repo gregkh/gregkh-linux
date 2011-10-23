@@ -121,16 +121,16 @@ else
 	echo "# finalize it:"
 	echo "cd ${RELDIR}"
 	echo "kup --host=${HOST} put --tar --prefix=linux-${RELEASE}/ /pub/scm/linux/kernel/git/stable/linux-stable.git v${RELEASE} linux-${RELEASE}.tar.asc /pub/linux/kernel/v${VER}/linux-${RELEASE}.tar.gz"
-	echo "kup --host=${HOST} put ChangeLog-${RELEASE} ChangeLog-3.0.7.asc      /pub/linux/kernel/v${VER}/"
+	echo "kup --host=${HOST} put ChangeLog-${RELEASE} ChangeLog-${RELEASE}.asc      /pub/linux/kernel/v${VER}/"
 	echo "kup --host=${HOST} put patch-${RELEASE}     patch-${RELEASE}.asc     /pub/linux/kernel/v${VER}/patch-${RELEASE}.gz"
 	if [ $INCREMENTAL -ne 0 ]; then
 		echo "kup --host=${HOST} put patch-${LAST_REL}-${REL} patch-${LAST_REL}-${REL}.asc /pub/linux/kernel/v${VER}/incr/patch-${LAST_REL}-${REL}.gz"
 	fi
-	echo "mv $RELDIR/patch-${LAST_REL}-${REL}.gz ~"
-	echo "mv $RELDIR/diffstat-${LAST_REL}-${REL} ~"
-	echo "mv $RELDIR/shortlog-${RELEASE} ~"
-	LATEST=`ls ~/v${VER}/LATEST-IS*`
-	LATEST=`basename $LATEST`
-	echo "# current LATEST-IS is '$LATEST' is that what it should be?"
-	echo "# mv ~/v${VER}/${LATEST} ~/v${VER}/LATEST-IS-${RELEASE}"
+#	echo "mv $RELDIR/patch-${LAST_REL}-${REL}.gz ~"
+#	echo "mv $RELDIR/diffstat-${LAST_REL}-${REL} ~"
+#	echo "mv $RELDIR/shortlog-${RELEASE} ~"
+#	LATEST=`ls ~/v${VER}/LATEST-IS*`
+#	LATEST=`basename $LATEST`
+#	echo "# current LATEST-IS is '$LATEST' is that what it should be?"
+#	echo "# mv ~/v${VER}/${LATEST} ~/v${VER}/LATEST-IS-${RELEASE}"
 fi
