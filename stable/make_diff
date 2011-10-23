@@ -1,6 +1,7 @@
 #!/bin/bash
 
 VERSION=`ketchup -m`
+HOST="gregkh@geb.kernel.org"
 
 REL_ARRAY=(${VERSION//./ })
 BASE=${REL_ARRAY[0]}.${REL_ARRAY[1]}.${REL_ARRAY[2]}
@@ -27,8 +28,11 @@ fi
 git diff --stat > diffstat
 echo "# diffstat created"
 
-git diff | gzip -9vq > patch-$VERSION.gz
+git diff > patch-$VERSION
 echo "# $VERSION patch created"
+
+gpg -a -b patch-${VERSION}
+
 
 DIR="stable-review"
 if [ $LONGTERM -eq 1 ]; then
@@ -40,5 +44,7 @@ if [ $THREE -eq 1 ]; then
 else
 	VER="2.6"
 fi
-echo "scp patch-$VERSION.gz gregkh@master.kernel.org:v$VER/$DIR/"
+echo "scp patch-$VERSION gregkh@master.kernel.org:v$VER/$DIR/"
+
+echo "kup --host=${HOST} put patch-${VERSION} patch-${VERSION}.asc /pub/linux/kernel/v${VER}/${DIR}/patch-${VERSION}.gz"
 
