@@ -1,1 +1,3 @@
 cat ~/linux/p1 | formail -A "In-Reply-To: <20090313151749.42863ptymm5f0hic@webmail.oregonstate.edu>" -s  msmtp -t 
+
+cat mbox.new | formail -A "In-Reply-To: <20090313151749.42863ptymm5f0hic@webmail.oregonstate.edu>" -s  msmtp-enqueue.sh
