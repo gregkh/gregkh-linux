@@ -40,6 +40,6 @@ apply_it ()
 	cd ..
 }
 
-apply_it 33
+#apply_it 33
 apply_it 32
 
