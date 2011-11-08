@@ -9,10 +9,28 @@ echo "VERSION=$VERSION"
 DIR="queue-2.6.$VERSION"
 
 
+# create a temp directory and copy the patches there
+# FIXME, use a "real" temp directory name, not just tmp, as that messes things
+# up when the script is run twice at the same time for different versions.
 mkdir ../tmp
 git ls-files -o | grep queue-2\.6\.$VERSION | xargs -i  cp {} -v ../tmp/
+
+# create a commit message
+# FIXME, use a "real" temporary file name, not just 'commit.msg'
+echo "$VERSION patches" > commit.msg
+echo "" >> commit.msg
+echo "added patches:" >> commit.msg
+for file in `ls ../tmp/`
+do
+	echo "	`basename $file`" >> commit.msg
+done
+
+# add the files and commit them to git
 git add $DIR
-git commit $DIR -m ".$VERSION patches"
+git commit $DIR -F commit.msg
+rm commit.msg
+
+# do notification for the authors that the patches are now added to the tree.
 for file in `ls ../tmp/`
 do
 	../added-to-longterm-version $VERSION ../tmp/$file
