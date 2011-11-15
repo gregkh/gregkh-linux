@@ -5,5 +5,5 @@ usb
 tty
 driver-core
 staging
-stable-patch
 torvalds
+char-misc
