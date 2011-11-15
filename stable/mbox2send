@@ -62,7 +62,7 @@ while ($line = <MBOX>) {
 
 			# write out our custom header too
 			print FILE "\n";
-			print FILE "$version-stable review patch.  If anyone has any objections, please let us know.\n";
+			print FILE "$version-stable review patch.  If anyone has any objections, please let me know.\n";
 			print FILE "\n";
 			print FILE "------------------\n";
 		}
