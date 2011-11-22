@@ -1,0 +1,48 @@
+From: Greg KH <gregkh@suse.de>
+To: Linus Torvalds <torvalds@linux-foundation.org>, Andrew Morton <akpm@linux-foundation.org>, Arnd Bergmann <arnd@arndb.de>
+Cc: linux-kernel@vger.kernel.org
+Subject: [GIT PATCH] char and misc fixes for 3.2
+
+Arnd and I are going to be trying to tame the char and misc drivers, so
+here's a pull request to add us as maintainers, and a few other minor
+misc driver fixes that are needed for the 3.2 release.
+
+Please pull from:
+	git.kernel.org:/pub/scm/linux/kernel/git/gregkh/char-misc.git/ char-misc-linus
+
+All of these patches have been in the linux-next and mm trees for a
+while now.
+
+The patches will be sent as a follow-on to this message to lkml for
+people to see.
+
+thanks,
+
+greg k-h
+
+------------
+
+ MAINTAINERS                          |    8 +++
+ drivers/misc/Kconfig                 |   15 +++---
+ drivers/misc/ad525x_dpot.h           |    2 +-
+ drivers/misc/pch_phub.c              |   81 ++++++++++++++++++++++++---------
+ drivers/misc/spear13xx_pcie_gadget.c |    2 +-
+ 5 files changed, 77 insertions(+), 31 deletions(-)
+
+---------------
+
+Axel Lin (1):
+      pcie-gadget-spear: Add "platform:" prefix for platform modalias
+
+Greg Kroah-Hartman (1):
+      MAINTAINERS: add CHAR and MISC driver maintainers
+
+Michael Hennerich (1):
+      misc: ad525x_dpot: Fix AD8400 spi transfer size.
+
+Tomoya MORINAGA (4):
+      pch_phub: Support new device LAPIS Semiconductor ML7831 IOH
+      pch_phub: Change company name OKI SEMICONDUCTOR to LAPIS Semiconductor
+      pch_phub: Improve ADE(Address Decode Enable) control
+      pch_phub: Fix MAC address writing issue for LAPIS ML7831
+

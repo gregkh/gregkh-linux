@@ -1,20 +1,14 @@
 From: Greg KH <gregkh@suse.de>
 To: Linus Torvalds <torvalds@linux-foundation.org>, Andrew Morton <akpm@linux-foundation.org>
 Cc: linux-kernel@vger.kernel.org
-Subject: [GIT PATCH] driver core patches for 3.2
+Subject: [GIT PATCH] driver core fixes for 3.2
 
-Here is the "big" driver core update for your 3.2 tree.
+Here are some small driver core fixes for your 3.2 tree.
 
 Nothing major here, all is explained below in the shortlog.
 
-One note, it would be nice if you could merge this before the USB tree
-in order to make a working bisectable tree for some embedded
-controllers, as they rely on the change to the platform core code in
-order to run properly (the tree will build either way, so it's probably
-not a big deal.)
-
 Please pull from:
-	git.kernel.org:/pub/scm/linux/kernel/git/gregkh/driver-core.git/ driver-core-next
+	git.kernel.org:/pub/scm/linux/kernel/git/gregkh/driver-core.git/ driver-core-linus
 
 All of these patches have been in the linux-next and mm trees for a
 while now.
@@ -28,115 +22,19 @@ greg k-h
 
 ------------
 
- Documentation/DocBook/uio-howto.tmpl            |    2 +-
- Documentation/driver-model/binding.txt          |    4 -
- Documentation/driver-model/device.txt           |   65 ++++-----
- Documentation/filesystems/sysfs.txt             |   10 ++-
- Documentation/stable_kernel_rules.txt           |   14 +-
- Documentation/zh_CN/SubmitChecklist             |  109 --------------
- MAINTAINERS                                     |    6 +
- arch/arm/plat-mxc/devices.c                     |   53 -------
- arch/arm/plat-mxc/include/mach/devices-common.h |   16 ++-
- drivers/base/core.c                             |    5 +-
- drivers/base/dd.c                               |    3 +
- drivers/base/memory.c                           |   62 ++++++---
- drivers/base/platform.c                         |   52 ++++---
- drivers/misc/pch_phub.c                         |   10 +-
- drivers/uio/uio.c                               |   14 +-
- drivers/uio/uio_pci_generic.c                   |    5 -
- drivers/uio/uio_pdrv_genirq.c                   |    2 +-
- fs/debugfs/inode.c                              |    2 +-
- fs/sysfs/dir.c                                  |  166 +++++++++++++++-------
- fs/sysfs/inode.c                                |   14 +--
- fs/sysfs/sysfs.h                                |   17 ++-
- include/linux/device.h                          |    5 +
- include/linux/dynamic_debug.h                   |   72 ++++++----
- include/linux/netdevice.h                       |   10 +-
- include/linux/platform_device.h                 |   48 ++++++-
- include/linux/uio_driver.h                      |    7 +-
- lib/dynamic_debug.c                             |  173 ++++++++++++++++-------
- lib/kobject_uevent.c                            |    2 +-
- net/core/dev.c                                  |    3 +-
- 29 files changed, 523 insertions(+), 428 deletions(-)
- delete mode 100644 Documentation/zh_CN/SubmitChecklist
+ Documentation/DocBook/uio-howto.tmpl |    7 ++++++-
+ drivers/base/node.c                  |   14 ++++++++------
+ include/linux/device.h               |    2 +-
+ 3 files changed, 15 insertions(+), 8 deletions(-)
 
 ---------------
 
-Andy Shevchenko (1):
-      pch_phub: use kernel's '%pM' format option to print MAC
+Claudio Scordino (1):
+      drivers/base/node.c: fix compilation error with older versions of gcc
 
-Anton Blanchard (1):
-      memory hotplug: Refuse to add unaligned memory regions
+Geoff Thorpe (1):
+      uio: documentation fixups
 
-Bart Van Assche (3):
-      docs/sysfs: Specify ABI documentation requirements
-      docs/driver-model: Document device.groups
-      docs/driver-model: Update device class docs
-
-Greg Kroah-Hartman (1):
-      Revert "memory hotplug: Correct page reservation checking"
-
-Hans J. Koch (1):
-      uio: uio_pci_generic: Remove useless spin_lock
-
-Harry Wei (2):
-      debugfs: Fix a comment mistake
-      remove the messy code file Documentation/zh_CN/SubmitChecklist
-
-Heiko Carstens (1):
-      sysfs: add unsigned long cast to prevent compile warning
-
-Jason Baron (8):
-      dynamic_debug: remove unused control variables
-      dynamic_debug: add Jason Baron as maintainer
-      dynamic_debug: make netdev_dbg() call __netdev_printk()
-      dynamic_debug: make netif_dbg() call __netdev_printk()
-      dynamic_debug: consolidate repetitive struct _ddebug descriptor definitions
-      dynamic_debug: remove num_enabled accounting
-      dynamic_debug: use a single printk() to emit messages
-      dynamic_debug: fix undefined reference to `__netdev_printk'
-
-Joe Perches (4):
-      dynamic_debug: Add __dynamic_dev_dbg
-      dynamic_debug: Consolidate prefix output to single routine
-      dynamic_debug: Remove uses of KERN_CONT in dynamic_emit_prefix
-      dynamic_debug: Convert printks to pr_<level>
-
-Josh Boyer (1):
-      Update email address for stable patch submission
-
-Kai Jiang (1):
-      uio: Support physical addresses >32 bits on 32-bit systems
-
-Mel Gorman (1):
-      mm: memory hotplug: Check if pages are correctly reserved on a per-section basis
-
-Mikulas Patocka (4):
-      sysfs: count subdirectories
-      sysfs: use rb-tree for name lookups
-      sysfs: remove s_sibling hacks
-      sysfs: use rb-tree for inode number lookup
-
-Milan Broz (1):
-      kobj_uevent: Ignore if some listeners cannot handle message
-
-Nathan Fontenot (1):
-      memory hotplug: Correct page reservation checking
-
-Sebastian Andrzej Siewior (1):
-      drivers_base: platform: use always ->name for uevent
-
-Tomoya MORINAGA (1):
-      pch_phub: Care FUNCSEL register in PM
-
-Uwe Kleine-König (2):
-      new helper to create platform devices with dma mask
-      ARM: mxc: convert device creation to use platform_device_register_full
-
-Wanlong Gao (2):
-      drivers:uio:change the goto label to consistent with others
-      drivers:uio:fix section mismatch in uio_pdrv_genirq.c
-
-Wolfram Sang (1):
-      drivers: base: print rejected matches with DEBUG_DRIVER
+Marcos Paulo de Souza (1):
+      device.h: Fix struct member documentation
 
