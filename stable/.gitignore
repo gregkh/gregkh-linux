@@ -1,7 +1,8 @@
 linux-2.6*
 linux-3.*
 stable-queue
-release
+linux-stable
+release-*
 for_27
 for_28
 for_31
