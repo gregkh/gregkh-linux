@@ -1,11 +1,9 @@
 linux-2.6*
 linux-3.*
+linux-stable
 stable-queue
 linux-stable
 release-*
-for_27
-for_28
-for_31
 old
 s
 x/
