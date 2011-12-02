@@ -1,16 +1,16 @@
 From: Greg KH <gregkh@suse.de>
 To: Linus Torvalds <torvalds@linux-foundation.org>, Andrew Morton <akpm@linux-foundation.org>
 Cc: linux-kernel@vger.kernel.org, linux-usb@vger.kernel.org
-Subject: [GIT PATCH] USB fixes for 3.2
+Subject: [GIT PATCH] more USB fixes for 3.2
 
-Here are a number of USB fixes and new device ids for the 3.2 tree.
+Here are a small number of USB fixes and new device ids for the 3.2 tree.
 
 All pretty minor, full details are in the shortlog below.
 
 Please pull from:
 	git.kernel.org:/pub/scm/linux/kernel/git/gregkh/usb.git/ usb-linus
 
-All have been in the -next releases for a while now.
+All have been in the -next releases.
 
 The full patches will be sent to the linux-usb mailing list, if anyone
 wants to see them.
@@ -21,153 +21,82 @@ greg k-h
 
 ------------
 
- drivers/usb/class/cdc-acm.c            |    8 +-
- drivers/usb/core/hub.c                 |    6 ++
- drivers/usb/core/quirks.c              |   27 ++++++
- drivers/usb/dwc3/gadget.c              |    1 +
- drivers/usb/gadget/Kconfig             |    9 +-
- drivers/usb/gadget/ci13xxx_msm.c       |    2 +
- drivers/usb/gadget/ci13xxx_udc.c       |   21 +++--
- drivers/usb/gadget/f_mass_storage.c    |    6 +-
- drivers/usb/gadget/f_midi.c            |  138 +++++++++++++++-----------------
- drivers/usb/gadget/file_storage.c      |    4 +-
- drivers/usb/gadget/fsl_udc_core.c      |    3 +-
- drivers/usb/gadget/inode.c             |    5 +-
- drivers/usb/gadget/pch_udc.c           |   10 ++-
- drivers/usb/gadget/r8a66597-udc.c      |   30 +++-----
- drivers/usb/gadget/udc-core.c          |   10 +-
- drivers/usb/host/ehci-sched.c          |   15 +++-
- drivers/usb/host/ehci-xls.c            |    2 +-
- drivers/usb/host/ohci-at91.c           |    6 ++
- drivers/usb/host/ohci-hcd.c            |   15 ++--
- drivers/usb/host/ohci-pci.c            |   26 ------
- drivers/usb/host/ohci.h                |    1 -
- drivers/usb/host/pci-quirks.c          |   57 ++++++--------
- drivers/usb/host/xhci-mem.c            |    5 -
- drivers/usb/host/xhci-ring.c           |   13 ++--
- drivers/usb/host/xhci.c                |   34 ++++----
- drivers/usb/musb/Kconfig               |    3 +-
- drivers/usb/musb/am35x.c               |    1 +
- drivers/usb/musb/da8xx.c               |    1 +
- drivers/usb/musb/musb_core.c           |    3 +-
- drivers/usb/musb/musb_gadget.c         |    4 -
- drivers/usb/renesas_usbhs/common.c     |    2 +-
- drivers/usb/renesas_usbhs/fifo.c       |    4 +-
- drivers/usb/renesas_usbhs/mod.h        |    8 +-
- drivers/usb/renesas_usbhs/mod_gadget.c |    4 +-
- drivers/usb/renesas_usbhs/mod_host.c   |   63 +++++++++------
- drivers/usb/serial/ark3116.c           |   10 +-
- drivers/usb/serial/ftdi_sio.c          |   14 +++-
- drivers/usb/serial/option.c            |   28 +++++++
- drivers/usb/serial/pl2303.c            |    1 -
- drivers/usb/serial/pl2303.h            |    4 -
- drivers/usb/storage/ene_ub6250.c       |    3 +-
- drivers/usb/storage/protocol.c         |    7 +-
- 42 files changed, 332 insertions(+), 282 deletions(-)
+ Documentation/usb/linux-cdc-acm.inf    |    4 +-
+ drivers/usb/gadget/amd5536udc.c        |    2 +-
+ drivers/usb/gadget/f_serial.c          |    4 +-
+ drivers/usb/gadget/fsl_mxc_udc.c       |    3 +-
+ drivers/usb/gadget/fsl_qe_udc.c        |    3 +-
+ drivers/usb/gadget/fsl_udc_core.c      |   75 +++++++++++++++-----------------
+ drivers/usb/gadget/fsl_usb2_udc.h      |   10 ++++
+ drivers/usb/gadget/m66592-udc.c        |    2 +-
+ drivers/usb/gadget/net2280.c           |    2 +-
+ drivers/usb/gadget/r8a66597-udc.c      |    2 +-
+ drivers/usb/gadget/s3c-hsotg.c         |    4 +-
+ drivers/usb/gadget/s3c-hsudc.c         |    3 +-
+ drivers/usb/host/ehci-sched.c          |    9 ++--
+ drivers/usb/host/whci/qset.c           |    2 +-
+ drivers/usb/host/xhci.c                |    5 ++-
+ drivers/usb/musb/musb_core.c           |    6 ---
+ drivers/usb/musb/musb_gadget.c         |    2 +-
+ drivers/usb/renesas_usbhs/mod_gadget.c |   47 ++++++++-----------
+ drivers/usb/serial/ftdi_sio.c          |    1 +
+ drivers/usb/serial/ftdi_sio_ids.h      |    1 +
+ drivers/usb/serial/option.c            |    4 ++
+ drivers/usb/storage/unusual_devs.h     |    7 +++
+ 22 files changed, 101 insertions(+), 97 deletions(-)
 
 ---------------
 
-Alan Stern (4):
-      USB: workaround for bug in old version of GCC
-      USB: XHCI: resume root hubs when the controller resumes
-      usb-storage: Accept 8020i-protocol commands longer than 12 bytes
-      OHCI: final fix for NVIDIA problems (I hope)
+Andiry Xu (2):
+      xHCI: reset-on-resume quirk for NEC uPD720200
+      xHCI: fix bug in xhci_clear_command_ring()
 
-Alexander Aring (1):
-      usb: gadget: fsl_udc_core: fix compile error.
+Dan Carpenter (1):
+      USB: whci-hcd: fix endian conversion in qset_clear()
 
-Andrew Worsley (1):
-      USB: Fix Corruption issue in USB ftdi driver ftdi_sio.c
+Dirk Nehring (1):
+      usb: option: add Huawei E353 controlling interfaces
 
-Bart Hartgers (1):
-      USB: ark3116 initialisation fix
+Fabio Estevam (2):
+      usb: fsl_mxc_udc.c: Fix build issue by including missing header file
+      usb: fsl_mxc_udc.c: Remove compile-time dependency of MX35 SoC type
 
-Daniel Mack (1):
-      usb: gadget: fix MIDI gadget jack allocation
+Kevin Hilman (1):
+      usb: musb: PM: fix context save/restore in suspend/resume path
 
-Don Zickus (2):
-      usb, xhci: fix lockdep warning on endpoint timeout
-      usb, xhci: Clear warm reset change event during init
+Klaus Schwarzkopf (1):
+      USB: linux-cdc-acm.inf: add support for the acm_ms gadget
 
-Felipe Balbi (6):
-      usb: gadget: udc-core: fix bug on soft_connect and srp interfaces
-      usb: musb: gadget: don't call ->disconnect() on exit
-      usb: gadget: core: fix bug when removing gadget drivers
-      usb: gadget: core: allow everybody to read sysfs attributes
-      usb: musb: fix compilation breakage introduced by de47725
-      USB: storage: ene_ub6250: fix compile warnings
+Kuninori Morimoto (4):
+      usb: renesas_usbhs: fixup device_register timing
+      usb: renesas_usbhs: fixup signal the driver that cable was disconnected
+      usb: renesas_usbhs: fixup gadget.dev.driver when udc_stop.
+      usb: renesas_usbhs: fixup driver speed
 
-Ferenc Wagner (1):
-      USB: option: add PID of Huawei E173s 3G modem
+Li Yang (1):
+      usb: gadget: fsl_udc: fix dequeuing a request in progress
 
-Havard Skinnemoen (1):
-      USB: cdc-acm: Fix disconnect() vs close() race
+Marcin Kościelnicki (1):
+      usb: ftdi_sio: add PID for Propox ISPcable III
 
-Jayachandran C (1):
-      usb: Netlogic: Fix HC_LENGTH call in ehci-xls.c
+Matthieu CASTET (1):
+      EHCI : Fix a regression in the ISO scheduler
 
-Jean-Christophe PLAGNIOL-VILLARD (1):
-      USB: at91: at91-ohci: fix set/get power
+Michal Nazarewicz (1):
+      usb: udc: Fix gadget driver's speed check in various UDC drivers
 
-Josh Boyer (1):
-      USB: add quirk for Logitech C600 web cam
+Peter Chen (1):
+      USB: fsl_udc_core: use usb_endpoint_xfer_isoc to judge ISO XFER
 
-Kuninori Morimoto (6):
-      usb: gadget: renesas_usbhs: fixup struct completion usage
-      usb: gadget: renesas_usbhs: fixup bogus conversion
-      usb: gadget: renesas_usbhs: fixup section mismatch warning
-      usb: gadget: renesas_usbhs: bugfix: care pipe direction
-      usb: gadget: renesas_usbhs: bugfix: disable irq when device stop
-      usb: gadget: renesas_usbhs: bugfix: set DATA0 when usbhsh_endpoint_alloc()
+Qinglin Ye (1):
+      USB: usb-storage: unusual_devs entry for Kingston DT 101 G2
 
-Luciano Coelho (1):
-      usb: musb: hdrc: fix dependency on USB_GADGET_DUALSPEED in Kconfig
-
-Marc Kleine-Budde (4):
-      USB: gadgetfs: gadgetfs_disconnect: fix inconsistent lock state
-      USB: ci13xxx_udc: fix deadlock during rmmod
-      USB: ci13xxx_udc: fix debug trace code
-      USB: ci13xxx_msm: add module license
-
-Mian Yousaf Kaukab (1):
-      usb: musb: remove incorrectly added ARCH_U5500 define
-
-Michael Grzeschik (1):
-      USB: ci13xxx_udc: fix logic to mark request dma addresses as invalid
-
-Paul Zimmerman (2):
-      usb: gadget: storage: check for valid USB_BULK_GET_MAX_LUN_REQUEST
-      usb: gadget: storage: check for valid USB_BULK_RESET_REQUEST wLength
+Robert Jarzmik (1):
+      usb: gadget: fix g_serial regression
 
 Sarah Sharp (1):
-      xhci: Set slot and ep0 flags for address command.
+      Revert "xHCI: reset-on-resume quirk for NEC uPD720200"
 
-Sebastian Andrzej Siewior (1):
-      usb: dwc3: gadget: initialize max_streams
-
-Shaohui Xie (1):
-      powerpc/usb: fix type cast for address of ioremap to compatible with 64-bit
-
-Thomas Poussevin (1):
-      USB: EHCI: fix HUB TT scheduling issue with iso transfer
-
-Tomoya MORINAGA (2):
-      USB: pch_udc: Support new device LAPIS Semiconductor ML7831 IOH
-      USB: pch_udc: Change company name OKI SEMICONDUCTOR to LAPIS Semiconductor
-
-VU Tuan Duc (1):
-      USB: option: add id for 3G dongle Model VT1000 of Viettel
-
-Yoshihiro Shimoda (2):
-      usb: gadget: r8a66597-udc: fix for udc-newstyle
-      usb: gadget: r8a66597-udc: fix flush fifo handling
-
-sordna (1):
-      USB: quirks: adding more quirky webcams to avoid squeaky audio
-
-wangyanqing (1):
-      USB: serial: pl2303: rm duplicate id
-
-zheng.zhijian@zte.com.cn (1):
-      USB: option: release new PID for ZTE 3G modem
+Veli-Pekka Peltola (1):
+      usb: option: add SIMCom SIM5218
 

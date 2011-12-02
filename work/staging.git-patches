@@ -1,10 +1,12 @@
 From: Greg KH <greg@kroah.com>
 To: Linus Torvalds <torvalds@linux-foundation.org>, Andrew Morton <akpm@linux-foundation.org>
 Cc: linux-kernel@vger.kernel.org, devel@linuxdriverproject.org
-Subject: [GIT PATCH] staging fixes for 3.2
+Subject: [GIT PATCH] more staging fixes for 3.2
 
-Here are a few build fixes for the staging tree that need to get into
-the final 3.2 release as people keep hitting them.
+You're right, I have been chuckling evilly here, but that's for the 3.3
+merge, not for 3.2 :)
+
+Here are a few minor fixes for the staging tree to be merged into your tree.
 
 Please pull from:
 	git://git.kernel.org/pub/scm/linux/kernel/git/gregkh/staging.git/ staging-linus
@@ -17,18 +19,34 @@ greg k-h
 
 --------------
 
- drivers/staging/et131x/Kconfig  |    3 ++-
- drivers/staging/et131x/et131x.c |   12 ++++++------
- drivers/staging/slicoss/Kconfig |    2 +-
- 3 files changed, 9 insertions(+), 8 deletions(-)
+ drivers/staging/comedi/comedi_fops.c         |   96 +++++++++++++++++++------
+ drivers/staging/comedi/drivers/usbduxsigma.c |    7 +-
+ drivers/staging/rts_pstor/rtsx.c             |    1 +
+ drivers/staging/usbip/vhci_rx.c              |   10 ++-
+ 4 files changed, 84 insertions(+), 30 deletions(-)
 
 ---------------
 
-Mark Einon (1):
-      linux-next: et131x: Fix build error when CONFIG_PM_SLEEP not enabled
+Bart Westgeest (1):
+      staging: usbip: bugfix for deadlock
 
-Randy Dunlap (3):
-      staging: slicoss depends on NET
-      staging: et131x depends on NET
-      staging: fix more ET131X build errors
+Bernd Porr (2):
+      staging: comedi: usbduxsigma: Fixed wrong range for the analogue channel.
+      staging: comedi: fix oops for USB DAQ devices.
+
+Dan Carpenter (1):
+      Staging: comedi: integer overflow in do_insnlist_ioctl()
+
+Federico Vaga (2):
+      Staging: comedi: fix mmap_count
+      Staging: comedi: fix signal handling in read and write
+
+Greg Kroah-Hartman (1):
+      Revert "Staging: comedi: integer overflow in do_insnlist_ioctl()"
+
+Xi Wang (1):
+      Staging: comedi: fix integer overflow in do_insnlist_ioctl()
+
+wwang (1):
+      staging:rts_pstor:Complete scanning_done variable
 
