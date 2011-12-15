@@ -105,15 +105,18 @@ fi
 
 echo "# "
 HOST="gregkh@geb.kernel.org"
+SCRIPT="${RELDIR}/upload_v${RELEASE}"
+touch ${SCRIPT}
+
 if [ $LONGTERM -eq 1 ]; then
 	echo "# This is a longterm release"
 	echo "# finalize the release:"
 	echo "cd ${RELDIR}"
-	echo "kup --host=${HOST} put --tar --prefix=linux-${RELEASE}/ /pub/scm/linux/kernel/git/stable/linux-stable.git v${RELEASE} linux-${RELEASE}.tar.asc /pub/linux/kernel/v${VER}/longterm/linux-${RELEASE}.tar.gz"
-	echo "kup --host=${HOST} put ChangeLog-${RELEASE} ChangeLog-${RELEASE}.asc      /pub/linux/kernel/v${VER}/longterm/"
-	echo "kup --host=${HOST} put patch-${RELEASE}     patch-${RELEASE}.asc     /pub/linux/kernel/v${VER}/longterm/patch-${RELEASE}.gz"
+	echo "kup --host=${HOST} put --tar --prefix=linux-${RELEASE}/ /pub/scm/linux/kernel/git/stable/linux-stable.git v${RELEASE} linux-${RELEASE}.tar.asc /pub/linux/kernel/v${VER}/longterm/v${BASE}/linux-${RELEASE}.tar.gz" | tee -a ${SCRIPT}
+	echo "kup --host=${HOST} put ChangeLog-${RELEASE} ChangeLog-${RELEASE}.asc      /pub/linux/kernel/v${VER}/longterm/v${BASE}/" | tee -a ${SCRIPT}
+	echo "kup --host=${HOST} put patch-${RELEASE}     patch-${RELEASE}.asc     /pub/linux/kernel/v${VER}/longterm/v${BASE}/patch-${RELEASE}.gz" | tee -a ${SCRIPT}
 	if [ $INCREMENTAL -ne 0 ]; then
-		echo "kup --host=${HOST} put patch-${LAST_REL}-${REL} patch-${LAST_REL}-${REL}.asc /pub/linux/kernel/v${VER}/longterm/incr/patch-${LAST_REL}-${REL}.gz"
+		echo "kup --host=${HOST} put patch-${LAST_REL}-${REL} patch-${LAST_REL}-${REL}.asc /pub/linux/kernel/v${VER}/longterm/v${BASE}/incr/patch-${LAST_REL}-${REL}.gz" | tee -a ${SCRIPT}
 	fi
 #	echo "mv $RELDIR/linux-${RELEASE}.tar.gz ~/v2.6/longterm/v${BASE}/"
 #	echo "mv $RELDIR/ChangeLog-${RELEASE} ~/v2.6/longterm/v${BASE}/"
