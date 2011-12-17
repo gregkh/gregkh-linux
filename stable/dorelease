@@ -25,6 +25,9 @@ MINOR=${REL_ARRAY[2]}
 
 LONGTERM=0
 # see if this is a "longterm" kernel or not
+if [ $MINOR == "27" ]; then
+	LONGTERM=1
+fi
 if [ $MINOR == "32" ]; then
 	LONGTERM=1
 fi
