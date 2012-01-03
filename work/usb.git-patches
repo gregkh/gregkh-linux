@@ -1,16 +1,18 @@
 From: Greg KH <gregkh@suse.de>
 To: Linus Torvalds <torvalds@linux-foundation.org>, Andrew Morton <akpm@linux-foundation.org>
 Cc: linux-kernel@vger.kernel.org, linux-usb@vger.kernel.org
-Subject: [GIT PATCH] more USB fixes for 3.2
+Subject: [GIT PATCH] final USB fixes for 3.2
 
-Here are a small number of USB fixes and new device ids for the 3.2 tree.
+Here are 4 tiny USB fixes for the 3.2 tree.  After this, I don't
+anticipate any more patches for 3.2 that I know of at the moment, which
+is good, as I'll be away from a computer all next week.
 
 All pretty minor, full details are in the shortlog below.
 
 Please pull from:
 	git.kernel.org:/pub/scm/linux/kernel/git/gregkh/usb.git/ usb-linus
 
-All have been in the -next releases.
+All have been in the last -next release.
 
 The full patches will be sent to the linux-usb mailing list, if anyone
 wants to see them.
@@ -21,82 +23,21 @@ greg k-h
 
 ------------
 
- Documentation/usb/linux-cdc-acm.inf    |    4 +-
- drivers/usb/gadget/amd5536udc.c        |    2 +-
- drivers/usb/gadget/f_serial.c          |    4 +-
- drivers/usb/gadget/fsl_mxc_udc.c       |    3 +-
- drivers/usb/gadget/fsl_qe_udc.c        |    3 +-
- drivers/usb/gadget/fsl_udc_core.c      |   75 +++++++++++++++-----------------
- drivers/usb/gadget/fsl_usb2_udc.h      |   10 ++++
- drivers/usb/gadget/m66592-udc.c        |    2 +-
- drivers/usb/gadget/net2280.c           |    2 +-
- drivers/usb/gadget/r8a66597-udc.c      |    2 +-
- drivers/usb/gadget/s3c-hsotg.c         |    4 +-
- drivers/usb/gadget/s3c-hsudc.c         |    3 +-
- drivers/usb/host/ehci-sched.c          |    9 ++--
- drivers/usb/host/whci/qset.c           |    2 +-
- drivers/usb/host/xhci.c                |    5 ++-
- drivers/usb/musb/musb_core.c           |    6 ---
- drivers/usb/musb/musb_gadget.c         |    2 +-
- drivers/usb/renesas_usbhs/mod_gadget.c |   47 ++++++++-----------
- drivers/usb/serial/ftdi_sio.c          |    1 +
- drivers/usb/serial/ftdi_sio_ids.h      |    1 +
- drivers/usb/serial/option.c            |    4 ++
- drivers/usb/storage/unusual_devs.h     |    7 +++
- 22 files changed, 101 insertions(+), 97 deletions(-)
+ drivers/usb/dwc3/core.c         |    2 +-
+ drivers/usb/gadget/epautoconf.c |    3 ---
+ drivers/usb/host/isp1760-if.c   |    8 ++++----
+ drivers/usb/musb/musb_host.c    |    4 ++++
+ 4 files changed, 9 insertions(+), 8 deletions(-)
 
 ---------------
 
-Andiry Xu (2):
-      xHCI: reset-on-resume quirk for NEC uPD720200
-      xHCI: fix bug in xhci_clear_command_ring()
+Ajay Kumar Gupta (1):
+      usb: musb: fix reset issue with full speed device
 
-Dan Carpenter (1):
-      USB: whci-hcd: fix endian conversion in qset_clear()
+David Miller (1):
+      USB: Fix usb/isp1760 build on sparc
 
-Dirk Nehring (1):
-      usb: option: add Huawei E353 controlling interfaces
-
-Fabio Estevam (2):
-      usb: fsl_mxc_udc.c: Fix build issue by including missing header file
-      usb: fsl_mxc_udc.c: Remove compile-time dependency of MX35 SoC type
-
-Kevin Hilman (1):
-      usb: musb: PM: fix context save/restore in suspend/resume path
-
-Klaus Schwarzkopf (1):
-      USB: linux-cdc-acm.inf: add support for the acm_ms gadget
-
-Kuninori Morimoto (4):
-      usb: renesas_usbhs: fixup device_register timing
-      usb: renesas_usbhs: fixup signal the driver that cable was disconnected
-      usb: renesas_usbhs: fixup gadget.dev.driver when udc_stop.
-      usb: renesas_usbhs: fixup driver speed
-
-Li Yang (1):
-      usb: gadget: fsl_udc: fix dequeuing a request in progress
-
-Marcin Kościelnicki (1):
-      usb: ftdi_sio: add PID for Propox ISPcable III
-
-Matthieu CASTET (1):
-      EHCI : Fix a regression in the ISO scheduler
-
-Michal Nazarewicz (1):
-      usb: udc: Fix gadget driver's speed check in various UDC drivers
-
-Peter Chen (1):
-      USB: fsl_udc_core: use usb_endpoint_xfer_isoc to judge ISO XFER
-
-Qinglin Ye (1):
-      USB: usb-storage: unusual_devs entry for Kingston DT 101 G2
-
-Robert Jarzmik (1):
-      usb: gadget: fix g_serial regression
-
-Sarah Sharp (1):
-      Revert "xHCI: reset-on-resume quirk for NEC uPD720200"
-
-Veli-Pekka Peltola (1):
-      usb: option: add SIMCom SIM5218
+Felipe Balbi (2):
+      usb: dwc3: core: fix cached revision on our structure
+      usb: gadget: epautoconf: do not change number of streams
 
