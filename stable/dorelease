@@ -132,11 +132,11 @@ else
 	echo "# This is a stable release"
 	echo "# finalize it:"
 	echo "cd ${RELDIR}"
-	echo "kup --host=${HOST} put --tar --prefix=linux-${RELEASE}/ /pub/scm/linux/kernel/git/stable/linux-stable.git v${RELEASE} linux-${RELEASE}.tar.asc /pub/linux/kernel/v${VER}/linux-${RELEASE}.tar.gz"
-	echo "kup --host=${HOST} put ChangeLog-${RELEASE} ChangeLog-${RELEASE}.asc      /pub/linux/kernel/v${VER}/"
-	echo "kup --host=${HOST} put patch-${RELEASE}     patch-${RELEASE}.asc     /pub/linux/kernel/v${VER}/patch-${RELEASE}.gz"
+	echo "kup --host=${HOST} put --tar --prefix=linux-${RELEASE}/ /pub/scm/linux/kernel/git/stable/linux-stable.git v${RELEASE} linux-${RELEASE}.tar.asc /pub/linux/kernel/v${VER}/linux-${RELEASE}.tar.gz" | tee -a ${SCRIPT}
+	echo "kup --host=${HOST} put ChangeLog-${RELEASE} ChangeLog-${RELEASE}.asc      /pub/linux/kernel/v${VER}/" | tee -a ${SCRIPT}
+	echo "kup --host=${HOST} put patch-${RELEASE}     patch-${RELEASE}.asc     /pub/linux/kernel/v${VER}/patch-${RELEASE}.gz" | tee -a ${SCRIPT}
 	if [ $INCREMENTAL -ne 0 ]; then
-		echo "kup --host=${HOST} put patch-${LAST_REL}-${REL} patch-${LAST_REL}-${REL}.asc /pub/linux/kernel/v${VER}/incr/patch-${LAST_REL}-${REL}.gz"
+		echo "kup --host=${HOST} put patch-${LAST_REL}-${REL} patch-${LAST_REL}-${REL}.asc /pub/linux/kernel/v${VER}/incr/patch-${LAST_REL}-${REL}.gz" | tee -a ${SCRIPT}
 	fi
 #	echo "mv $RELDIR/patch-${LAST_REL}-${REL}.gz ~"
 #	echo "mv $RELDIR/diffstat-${LAST_REL}-${REL} ~"
