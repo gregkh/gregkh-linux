@@ -1,14 +1,15 @@
 From: Greg KH <gregkh@suse.de>
 To: Linus Torvalds <torvalds@linux-foundation.org>, Andrew Morton <akpm@linux-foundation.org>, Arnd Bergmann <arnd@arndb.de>
 Cc: linux-kernel@vger.kernel.org
-Subject: [GIT PATCH] char and misc fixes for 3.2
+Subject: [GIT PATCH] char and misc patches for 3.3
 
-Arnd and I are going to be trying to tame the char and misc drivers, so
-here's a pull request to add us as maintainers, and a few other minor
-misc driver fixes that are needed for the 3.2 release.
+Here are the char/misc patches for the 3.3 merge.
+
+Not much here at all, just some minor driver updates, and a few
+cleanups.  Nothing exciting overall.
 
 Please pull from:
-	git.kernel.org:/pub/scm/linux/kernel/git/gregkh/char-misc.git/ char-misc-linus
+	git.kernel.org:/pub/scm/linux/kernel/git/gregkh/char-misc.git/ char-misc-next
 
 All of these patches have been in the linux-next and mm trees for a
 while now.
@@ -22,27 +23,33 @@ greg k-h
 
 ------------
 
- MAINTAINERS                          |    8 +++
- drivers/misc/Kconfig                 |   15 +++---
- drivers/misc/ad525x_dpot.h           |    2 +-
- drivers/misc/pch_phub.c              |   81 ++++++++++++++++++++++++---------
- drivers/misc/spear13xx_pcie_gadget.c |    2 +-
- 5 files changed, 77 insertions(+), 31 deletions(-)
+ drivers/misc/ad525x_dpot-i2c.c |   10 +---
+ drivers/misc/ad525x_dpot-spi.c |   97 ++++++++++++++++------------------------
+ drivers/misc/ad525x_dpot.c     |   24 +++++-----
+ drivers/misc/ad525x_dpot.h     |    8 +---
+ drivers/misc/bmp085.c          |    2 +-
+ drivers/misc/isl29020.c        |    2 +-
+ drivers/misc/ti-st/st_core.c   |   18 ++++++--
+ drivers/misc/ti-st/st_kim.c    |   84 ++++++++++++++++++++++------------
+ drivers/s390/char/tape_class.h |    1 -
+ fs/char_dev.c                  |    6 +-
+ 10 files changed, 126 insertions(+), 126 deletions(-)
 
 ---------------
 
-Axel Lin (1):
-      pcie-gadget-spear: Add "platform:" prefix for platform modalias
+Greg Kroah-Hartman (2):
+      s390: tape_class.h: remove kobj_map.h inclusion
+      char_dev.c: fix up some whitespace errors
 
-Greg Kroah-Hartman (1):
-      MAINTAINERS: add CHAR and MISC driver maintainers
+Jesper Juhl (2):
+      BMP085: Remove redundant semi-colon from return statement
+      isl29020: Remove a redundant semi-colon from return statement
 
 Michael Hennerich (1):
-      misc: ad525x_dpot: Fix AD8400 spi transfer size.
+      misc: ad525x_dpot: Add support for SPI module device table matching
 
-Tomoya MORINAGA (4):
-      pch_phub: Support new device LAPIS Semiconductor ML7831 IOH
-      pch_phub: Change company name OKI SEMICONDUCTOR to LAPIS Semiconductor
-      pch_phub: Improve ADE(Address Decode Enable) control
-      pch_phub: Fix MAC address writing issue for LAPIS ML7831
+Pavan Savoy (3):
+      drivers:misc: ti-st: protect registrations
+      drivers:misc: ti-st: flush UART upon fw failure
+      drivers:misc: ti-st: DEBUG uart, baud rate mods
 

@@ -1,17 +1,39 @@
 From: Greg KH <greg@kroah.com>
 To: Linus Torvalds <torvalds@linux-foundation.org>, Andrew Morton <akpm@linux-foundation.org>
 Cc: linux-kernel@vger.kernel.org, devel@linuxdriverproject.org
-Subject: [GIT PATCH] more staging fixes for 3.2
+Subject: [GIT PATCH] big staging merge for 3.3
 
-You're right, I have been chuckling evilly here, but that's for the 3.3
-merge, not for 3.2 :)
+Here's the big staging merge for the 3.3 tree.
 
-Here are a few minor fixes for the staging tree to be merged into your tree.
+Overall, the story is pretty good:
+ 462 files changed, 24350 insertions(+), 36046 deletions(-)
+
+With this merge, we are adding some new drivers (notably, the android
+code is back, but that codebase is tiny), and removing a cleaning up a
+lot of other drivers.  The network Hyper-V drivers also moved out of
+staging and into drivers/net/hyperv.  The few places outside of
+drivers/staging/ that are touched in this series has been acked by the
+relevant subsystem maintainers (like the networking ones for the hyperv
+drivers).
+
+The lttng code also shows up for a brief while in this patch series,
+only to disappear again at the urging of the core trace/perf developers,
+and it seems that all of these developers are now on the same page for
+how to progress forward with a unified solution, so that's a good
+outcome for everyone.
+
+Full details as to what is changing can be found below in the shortlog,
+if anyone is interested.
+
+Note, you will get a merge conflict in the
+drivers/staging/iio/adc/ad799x_core.c file, but it's pretty simple to
+resolve (just delete the module_init/exit calls, and keep the
+MODULE_ALIAS line).
 
 Please pull from:
-	git://git.kernel.org/pub/scm/linux/kernel/git/gregkh/staging.git/ staging-linus
+	git://git.kernel.org/pub/scm/linux/kernel/git/gregkh/staging.git/ staging-next
 
-All patches have been in the -next releases for a while now.
+All of these patches have been in the -next releases for a while now.
 
 thanks,
 
@@ -19,34 +41,1226 @@ greg k-h
 
 --------------
 
- drivers/staging/comedi/comedi_fops.c         |   96 +++++++++++++++++++------
- drivers/staging/comedi/drivers/usbduxsigma.c |    7 +-
- drivers/staging/rts_pstor/rtsx.c             |    1 +
- drivers/staging/usbip/vhci_rx.c              |   10 ++-
- 4 files changed, 84 insertions(+), 30 deletions(-)
+ .../devicetree/bindings/nvec/nvec_nvidia.txt       |    9 +
+ MAINTAINERS                                        |   39 +-
+ drivers/net/Kconfig                                |    2 +
+ drivers/net/Makefile                               |    2 +
+ drivers/net/hyperv/Kconfig                         |    5 +
+ drivers/net/hyperv/Makefile                        |    3 +
+ drivers/{staging/hv => net/hyperv}/hyperv_net.h    |  139 +-
+ drivers/{staging/hv => net/hyperv}/netvsc.c        |  164 +-
+ drivers/{staging/hv => net/hyperv}/netvsc_drv.c    |  162 +-
+ drivers/{staging/hv => net/hyperv}/rndis_filter.c  |   44 +-
+ drivers/staging/Kconfig                            |    8 +-
+ drivers/staging/Makefile                           |    4 +-
+ drivers/staging/android/Kconfig                    |  110 +
+ drivers/staging/android/Makefile                   |    9 +
+ drivers/staging/android/TODO                       |   10 +
+ drivers/staging/android/android_pmem.h             |   93 +
+ drivers/staging/android/ashmem.c                   |  752 ++++
+ drivers/staging/android/ashmem.h                   |   48 +
+ drivers/staging/android/binder.c                   | 3600 ++++++++++++++++
+ drivers/staging/android/binder.h                   |  330 ++
+ drivers/staging/android/logger.c                   |  616 +++
+ drivers/staging/android/logger.h                   |   49 +
+ drivers/staging/android/lowmemorykiller.c          |  219 +
+ drivers/staging/android/pmem.c                     | 1345 ++++++
+ drivers/staging/android/ram_console.c              |  443 ++
+ drivers/staging/android/ram_console.h              |   22 +
+ drivers/staging/android/switch/Kconfig             |   11 +
+ drivers/staging/android/switch/Makefile            |    4 +
+ drivers/staging/android/switch/switch.h            |   53 +
+ drivers/staging/android/switch/switch_class.c      |  174 +
+ drivers/staging/android/switch/switch_gpio.c       |  172 +
+ drivers/staging/android/timed_gpio.c               |  176 +
+ drivers/staging/android/timed_gpio.h               |   33 +
+ drivers/staging/android/timed_output.c             |  123 +
+ drivers/staging/android/timed_output.h             |   37 +
+ drivers/staging/asus_oled/asus_oled.c              |    4 +-
+ drivers/staging/bcm/Bcmchar.c                      |  376 +-
+ drivers/staging/bcm/HandleControlPacket.c          |  323 +-
+ drivers/staging/bcm/InterfaceDld.c                 |   12 +-
+ drivers/staging/bcm/InterfaceIdleMode.c            |   33 +-
+ drivers/staging/bcm/InterfaceInit.c                |   12 +-
+ drivers/staging/bcm/InterfaceMisc.c                |   24 +-
+ drivers/staging/bcm/Misc.c                         |   32 +-
+ drivers/staging/bcm/hostmibs.c                     |  178 +-
+ drivers/staging/bcm/led_control.c                  | 1131 +++---
+ drivers/staging/bcm/nvm.c                          |   95 +-
+ drivers/staging/comedi/comedi_fops.c               |   86 +-
+ .../staging/comedi/drivers/addi-data/addi_common.c |  137 +-
+ drivers/staging/comedi/drivers/adl_pci7230.c       |   10 +-
+ drivers/staging/comedi/drivers/adl_pci7296.c       |    6 +-
+ drivers/staging/comedi/drivers/adl_pci7432.c       |    6 +-
+ drivers/staging/comedi/drivers/adl_pci8164.c       |    6 +-
+ drivers/staging/comedi/drivers/adl_pci9111.c       |    6 +-
+ drivers/staging/comedi/drivers/adv_pci1710.c       |   32 +-
+ drivers/staging/comedi/drivers/adv_pci_dio.c       |   23 +-
+ drivers/staging/comedi/drivers/amplc_dio200.c      |    9 +-
+ drivers/staging/comedi/drivers/amplc_pc236.c       |    6 +-
+ drivers/staging/comedi/drivers/amplc_pc263.c       |    6 +-
+ drivers/staging/comedi/drivers/amplc_pci224.c      |    9 +-
+ drivers/staging/comedi/drivers/amplc_pci230.c      |    9 +-
+ drivers/staging/comedi/drivers/cb_das16_cs.c       |   20 +-
+ drivers/staging/comedi/drivers/cb_pcidas.c         |   42 +-
+ drivers/staging/comedi/drivers/cb_pcidas64.c       |   26 +-
+ drivers/staging/comedi/drivers/cb_pcidda.c         |   18 +-
+ drivers/staging/comedi/drivers/cb_pcidio.c         |   23 +-
+ drivers/staging/comedi/drivers/cb_pcimdas.c        |   50 +-
+ drivers/staging/comedi/drivers/cb_pcimdda.c        |   30 +-
+ drivers/staging/comedi/drivers/contec_pci_dio.c    |   19 +-
+ drivers/staging/comedi/drivers/daqboard2000.c      |   73 +-
+ drivers/staging/comedi/drivers/das08.c             |    6 +-
+ drivers/staging/comedi/drivers/das08_cs.c          |    8 +-
+ drivers/staging/comedi/drivers/das16m1.c           |   37 +-
+ drivers/staging/comedi/drivers/das1800.c           |   65 +-
+ drivers/staging/comedi/drivers/das6402.c           |   23 +-
+ drivers/staging/comedi/drivers/das800.c            |   43 +-
+ drivers/staging/comedi/drivers/dt3000.c            |   38 +-
+ drivers/staging/comedi/drivers/jr3_pci.c           |   81 +-
+ drivers/staging/comedi/drivers/ke_counter.c        |    6 +-
+ drivers/staging/comedi/drivers/me_daq.c            |    9 +-
+ drivers/staging/comedi/drivers/ni_at_a2150.c       |    8 +-
+ drivers/staging/comedi/drivers/ni_daq_dio24.c      |   19 +-
+ drivers/staging/comedi/drivers/ni_labpc_cs.c       |    2 +-
+ drivers/staging/comedi/drivers/ni_pcimio.c         |   29 +-
+ drivers/staging/comedi/drivers/pcl816.c            |    4 +-
+ drivers/staging/comedi/drivers/pcl818.c            |  108 +-
+ drivers/staging/comedi/drivers/pcmmio.c            |   26 +-
+ drivers/staging/comedi/drivers/pcmuio.c            |   40 +-
+ drivers/staging/comedi/drivers/serial2002.c        |    7 +-
+ drivers/staging/comedi/drivers/usbduxsigma.c       |   16 +-
+ drivers/staging/crystalhd/bc_dts_defs.h            |  262 +-
+ drivers/staging/cxt1e1/comet.h                     |   22 -
+ drivers/staging/cxt1e1/comet_tables.c              |   24 -
+ drivers/staging/cxt1e1/comet_tables.h              |   24 -
+ drivers/staging/cxt1e1/libsbew.h                   |   32 -
+ drivers/staging/cxt1e1/musycc.c                    |   49 -
+ drivers/staging/cxt1e1/musycc.h                    |   31 -
+ drivers/staging/cxt1e1/ossiRelease.c               |   10 -
+ drivers/staging/cxt1e1/pmc93x6_eeprom.h            |   21 -
+ drivers/staging/cxt1e1/pmcc4.h                     |   42 -
+ drivers/staging/cxt1e1/pmcc4_cpld.h                |   33 -
+ drivers/staging/cxt1e1/pmcc4_defs.h                |   14 -
+ drivers/staging/cxt1e1/pmcc4_drv.c                 |   70 -
+ drivers/staging/cxt1e1/pmcc4_ioctls.h              |   16 -
+ drivers/staging/cxt1e1/sbe_bid.h                   |   14 -
+ drivers/staging/cxt1e1/sbe_promformat.h            |   27 -
+ drivers/staging/cxt1e1/sbecom_inline_linux.h       |   20 -
+ drivers/staging/cxt1e1/sbeproc.h                   |   20 -
+ drivers/staging/cxt1e1/sbew_ioc.h                  |   55 -
+ drivers/staging/et131x/et131x.c                    |  370 +-
+ drivers/staging/frontier/tranzport.c               |    2 +-
+ drivers/staging/gma500/Kconfig                     |    2 +-
+ drivers/staging/gma500/power.c                     |    2 +-
+ drivers/staging/hv/Kconfig                         |   12 -
+ drivers/staging/hv/Makefile                        |    3 -
+ drivers/staging/hv/TODO                            |    4 +-
+ drivers/staging/hv/hv_mouse.c                      |  599 ---
+ drivers/staging/hv/storvsc_drv.c                   |  310 +-
+ drivers/staging/iio/Documentation/generic_buffer.c |    8 +
+ drivers/staging/iio/Documentation/iio_utils.h      |   26 +-
+ drivers/staging/iio/Documentation/ring.txt         |   10 -
+ drivers/staging/iio/Documentation/sysfs-bus-iio    |   10 +
+ drivers/staging/iio/Kconfig                        |    1 -
+ drivers/staging/iio/accel/adis16201_core.c         |   36 +-
+ drivers/staging/iio/accel/adis16201_ring.c         |   14 +-
+ drivers/staging/iio/accel/adis16203_core.c         |   24 +-
+ drivers/staging/iio/accel/adis16203_ring.c         |   14 +-
+ drivers/staging/iio/accel/adis16204_core.c         |   35 +-
+ drivers/staging/iio/accel/adis16204_ring.c         |   14 +-
+ drivers/staging/iio/accel/adis16209_core.c         |   32 +-
+ drivers/staging/iio/accel/adis16209_ring.c         |    9 +-
+ drivers/staging/iio/accel/adis16220_core.c         |   27 +-
+ drivers/staging/iio/accel/adis16240_core.c         |   32 +-
+ drivers/staging/iio/accel/adis16240_ring.c         |    9 +-
+ drivers/staging/iio/accel/kxsd9.c                  |   10 +-
+ drivers/staging/iio/accel/lis3l02dq.h              |   12 -
+ drivers/staging/iio/accel/lis3l02dq_core.c         |   35 +-
+ drivers/staging/iio/accel/lis3l02dq_ring.c         |   61 +-
+ drivers/staging/iio/accel/sca3000_core.c           |   24 +-
+ drivers/staging/iio/accel/sca3000_ring.c           |   17 +-
+ drivers/staging/iio/adc/ad7192.c                   |   80 +-
+ drivers/staging/iio/adc/ad7280a.c                  |   28 +-
+ drivers/staging/iio/adc/ad7291.c                   |   39 +-
+ drivers/staging/iio/adc/ad7298.h                   |    5 -
+ drivers/staging/iio/adc/ad7298_core.c              |   67 +-
+ drivers/staging/iio/adc/ad7298_ring.c              |   45 +-
+ drivers/staging/iio/adc/ad7476.h                   |    5 -
+ drivers/staging/iio/adc/ad7476_core.c              |   25 +-
+ drivers/staging/iio/adc/ad7476_ring.c              |   31 +-
+ drivers/staging/iio/adc/ad7606.h                   |    1 -
+ drivers/staging/iio/adc/ad7606_core.c              |    6 +-
+ drivers/staging/iio/adc/ad7606_par.c               |    1 -
+ drivers/staging/iio/adc/ad7606_ring.c              |   30 +-
+ drivers/staging/iio/adc/ad7606_spi.c               |    3 +-
+ drivers/staging/iio/adc/ad7780.c                   |    8 +-
+ drivers/staging/iio/adc/ad7793.c                   |   95 +-
+ drivers/staging/iio/adc/ad7816.c                   |    2 +-
+ drivers/staging/iio/adc/ad7887.h                   |    5 -
+ drivers/staging/iio/adc/ad7887_core.c              |   13 +-
+ drivers/staging/iio/adc/ad7887_ring.c              |   46 +-
+ drivers/staging/iio/adc/ad799x.h                   |    6 -
+ drivers/staging/iio/adc/ad799x_core.c              |    8 +-
+ drivers/staging/iio/adc/ad799x_ring.c              |   47 +-
+ drivers/staging/iio/adc/adt7310.c                  |    3 +-
+ drivers/staging/iio/adc/adt7410.c                  |    1 +
+ drivers/staging/iio/adc/max1363.h                  |   14 +-
+ drivers/staging/iio/adc/max1363_core.c             |   78 +-
+ drivers/staging/iio/adc/max1363_ring.c             |   92 +-
+ drivers/staging/iio/addac/adt7316-spi.c            |    1 -
+ drivers/staging/iio/addac/adt7316.c                |    1 +
+ drivers/staging/iio/{buffer_generic.h => buffer.h} |   87 +-
+ drivers/staging/iio/cdc/ad7150.c                   |    8 +-
+ drivers/staging/iio/cdc/ad7152.c                   |   38 +-
+ drivers/staging/iio/cdc/ad7746.c                   |   50 +-
+ drivers/staging/iio/chrdev.h                       |   25 -
+ drivers/staging/iio/dac/Kconfig                    |   39 +-
+ drivers/staging/iio/dac/Makefile                   |    3 +
+ drivers/staging/iio/dac/ad5064.c                   |    6 +-
+ drivers/staging/iio/dac/ad5360.c                   |   24 +-
+ drivers/staging/iio/dac/ad5380.c                   |  676 +++
+ drivers/staging/iio/dac/ad5421.c                   |  555 +++
+ drivers/staging/iio/dac/ad5421.h                   |   32 +
+ drivers/staging/iio/dac/ad5446.c                   |  184 +-
+ drivers/staging/iio/dac/ad5446.h                   |   10 +-
+ drivers/staging/iio/dac/ad5504.c                   |  132 +-
+ drivers/staging/iio/dac/ad5504.h                   |    5 +-
+ drivers/staging/iio/dac/ad5624r.h                  |    4 +-
+ drivers/staging/iio/dac/ad5624r_spi.c              |  127 +-
+ drivers/staging/iio/dac/ad5686.c                   |    5 +-
+ drivers/staging/iio/dac/ad5764.c                   |  393 ++
+ drivers/staging/iio/dac/ad5791.c                   |   15 +-
+ drivers/staging/iio/dds/ad5930.c                   |    1 +
+ drivers/staging/iio/dds/ad9832.c                   |    5 +-
+ drivers/staging/iio/dds/ad9834.c                   |    7 +-
+ drivers/staging/iio/dds/ad9850.c                   |    1 +
+ drivers/staging/iio/dds/ad9852.c                   |    1 +
+ drivers/staging/iio/dds/ad9910.c                   |    1 +
+ drivers/staging/iio/dds/ad9951.c                   |    1 +
+ drivers/staging/iio/events.h                       |  103 +
+ drivers/staging/iio/gyro/Kconfig                   |    6 +-
+ drivers/staging/iio/gyro/adis16060_core.c          |    8 +-
+ drivers/staging/iio/gyro/adis16080_core.c          |    1 +
+ drivers/staging/iio/gyro/adis16130_core.c          |    1 +
+ drivers/staging/iio/gyro/adis16260_core.c          |   45 +-
+ drivers/staging/iio/gyro/adis16260_ring.c          |    9 +-
+ drivers/staging/iio/gyro/adxrs450.h                |    5 +
+ drivers/staging/iio/gyro/adxrs450_core.c           |   88 +-
+ drivers/staging/iio/iio.h                          |  144 +-
+ drivers/staging/iio/iio_core.h                     |   11 -
+ drivers/staging/iio/iio_core_trigger.h             |    3 +-
+ drivers/staging/iio/iio_dummy_evgen.c              |    4 +
+ drivers/staging/iio/iio_simple_dummy.c             |   49 +-
+ drivers/staging/iio/iio_simple_dummy_buffer.c      |   12 +-
+ drivers/staging/iio/iio_simple_dummy_events.c      |    1 +
+ drivers/staging/iio/impedance-analyzer/ad5933.c    |   30 +-
+ drivers/staging/iio/imu/adis16400.h                |    2 +
+ drivers/staging/iio/imu/adis16400_core.c           |  269 +-
+ drivers/staging/iio/imu/adis16400_ring.c           |   23 +-
+ drivers/staging/iio/industrialio-buffer.c          |  346 +-
+ drivers/staging/iio/industrialio-core.c            |   70 +-
+ drivers/staging/iio/industrialio-trigger.c         |   34 +-
+ drivers/staging/iio/kfifo_buf.c                    |   72 +-
+ drivers/staging/iio/kfifo_buf.h                    |    2 +-
+ drivers/staging/iio/light/isl29018.c               |    7 +-
+ drivers/staging/iio/light/tsl2563.c                |   11 +-
+ drivers/staging/iio/light/tsl2583.c                |   17 +-
+ drivers/staging/iio/magnetometer/ak8975.c          |    4 +-
+ drivers/staging/iio/magnetometer/hmc5843.c         |    5 +-
+ drivers/staging/iio/meter/ade7753.c                |    1 +
+ drivers/staging/iio/meter/ade7754.c                |    1 +
+ drivers/staging/iio/meter/ade7758_core.c           |   37 +-
+ drivers/staging/iio/meter/ade7758_ring.c           |   10 +-
+ drivers/staging/iio/meter/ade7759.c                |    1 +
+ drivers/staging/iio/meter/ade7854-spi.c            |    1 +
+ drivers/staging/iio/resolver/ad2s1200.c            |    1 +
+ drivers/staging/iio/resolver/ad2s1210.c            |    1 +
+ drivers/staging/iio/resolver/ad2s90.c              |    1 +
+ drivers/staging/iio/ring_sw.c                      |  151 +-
+ drivers/staging/iio/ring_sw.h                      |    2 +-
+ drivers/staging/iio/sysfs.h                        |   43 -
+ drivers/staging/iio/trigger.h                      |    2 -
+ .../staging/iio/trigger/iio-trig-periodic-rtc.c    |    1 -
+ drivers/staging/iio/types.h                        |   49 +
+ drivers/staging/intel_sst/Kconfig                  |   19 -
+ drivers/staging/intel_sst/Makefile                 |    7 -
+ drivers/staging/intel_sst/TODO                     |   13 -
+ drivers/staging/intel_sst/intel_sst.c              |  649 ---
+ drivers/staging/intel_sst/intel_sst.h              |  162 -
+ .../staging/intel_sst/intel_sst_app_interface.c    | 1460 -------
+ drivers/staging/intel_sst/intel_sst_common.h       |  623 ---
+ .../staging/intel_sst/intel_sst_drv_interface.c    |  564 ---
+ drivers/staging/intel_sst/intel_sst_dsp.c          |  496 ---
+ drivers/staging/intel_sst/intel_sst_fw_ipc.h       |  416 --
+ drivers/staging/intel_sst/intel_sst_ioctl.h        |  440 --
+ drivers/staging/intel_sst/intel_sst_ipc.c          |  774 ----
+ drivers/staging/intel_sst/intel_sst_pvt.c          |  313 --
+ drivers/staging/intel_sst/intel_sst_stream.c       |  583 ---
+ .../staging/intel_sst/intel_sst_stream_encoded.c   | 1273 ------
+ drivers/staging/intel_sst/intelmid.c               | 1022 -----
+ drivers/staging/intel_sst/intelmid.h               |  209 -
+ drivers/staging/intel_sst/intelmid_adc_control.h   |  193 -
+ drivers/staging/intel_sst/intelmid_ctrl.c          |  921 -----
+ drivers/staging/intel_sst/intelmid_msic_control.c  | 1047 -----
+ drivers/staging/intel_sst/intelmid_pvt.c           |  173 -
+ drivers/staging/intel_sst/intelmid_snd_control.h   |  123 -
+ drivers/staging/intel_sst/intelmid_v0_control.c    |  866 ----
+ drivers/staging/intel_sst/intelmid_v1_control.c    |  978 -----
+ drivers/staging/intel_sst/intelmid_v2_control.c    | 1156 ------
+ drivers/staging/line6/Makefile                     |    3 +-
+ drivers/staging/line6/capture.c                    |   44 +-
+ drivers/staging/line6/capture.h                    |    2 +
+ drivers/staging/line6/driver.c                     |   74 +-
+ drivers/staging/line6/driver.h                     |   10 +-
+ drivers/staging/line6/midi.c                       |   37 +-
+ drivers/staging/line6/midi.h                       |    4 +-
+ drivers/staging/line6/pcm.c                        |  115 +-
+ drivers/staging/line6/pcm.h                        |    8 -
+ drivers/staging/line6/playback.c                   |   53 +-
+ drivers/staging/line6/playback.h                   |    2 +
+ drivers/staging/line6/pod.c                        |    6 +-
+ drivers/staging/line6/podhd.c                      |  154 +
+ drivers/staging/line6/podhd.h                      |   30 +
+ drivers/staging/line6/revision.h                   |    2 +-
+ drivers/staging/line6/toneport.c                   |    6 +-
+ drivers/staging/line6/usbdefs.h                    |   91 +-
+ drivers/staging/line6/variax.c                     |    6 +-
+ drivers/staging/mei/init.c                         |   49 +-
+ drivers/staging/mei/interface.c                    |    8 +-
+ drivers/staging/mei/interface.h                    |   11 +
+ drivers/staging/mei/interrupt.c                    |  322 +-
+ drivers/staging/mei/iorw.c                         |   77 +-
+ drivers/staging/mei/main.c                         |  576 +--
+ drivers/staging/mei/mei.txt                        |  226 +-
+ drivers/staging/mei/mei_dev.h                      |   13 -
+ drivers/staging/mei/wd.c                           |   32 +-
+ drivers/staging/nvec/nvec.c                        |   30 +-
+ drivers/staging/olpc_dcon/olpc_dcon.c              |   18 +-
+ drivers/staging/olpc_dcon/olpc_dcon.h              |    2 +-
+ drivers/staging/olpc_dcon/olpc_dcon_xo_1.c         |   10 +-
+ drivers/staging/olpc_dcon/olpc_dcon_xo_1_5.c       |   10 +-
+ drivers/staging/omapdrm/Kconfig                    |   25 +
+ drivers/staging/omapdrm/Makefile                   |   21 +
+ drivers/staging/omapdrm/TODO                       |   38 +
+ drivers/staging/omapdrm/omap_connector.c           |  371 ++
+ drivers/staging/omapdrm/omap_crtc.c                |  326 ++
+ drivers/staging/omapdrm/omap_debugfs.c             |   42 +
+ drivers/staging/omapdrm/omap_dmm_priv.h            |  187 +
+ drivers/staging/omapdrm/omap_dmm_tiler.c           |  830 ++++
+ drivers/staging/omapdrm/omap_dmm_tiler.h           |  135 +
+ drivers/staging/omapdrm/omap_drm.h                 |  123 +
+ drivers/staging/omapdrm/omap_drv.c                 |  821 ++++
+ drivers/staging/omapdrm/omap_drv.h                 |  135 +
+ drivers/staging/omapdrm/omap_encoder.c             |  171 +
+ drivers/staging/omapdrm/omap_fb.c                  |  243 ++
+ drivers/staging/omapdrm/omap_fbdev.c               |  372 ++
+ drivers/staging/omapdrm/omap_gem.c                 | 1231 ++++++
+ drivers/staging/omapdrm/omap_gem_helpers.c         |  169 +
+ drivers/staging/omapdrm/omap_priv.h                |   47 +
+ drivers/staging/omapdrm/tcm-sita.c                 |  703 ++++
+ drivers/staging/omapdrm/tcm-sita.h                 |   95 +
+ drivers/staging/omapdrm/tcm.h                      |  326 ++
+ drivers/staging/phison/phison.c                    |    2 +-
+ drivers/staging/rtl8192e/Kconfig                   |   50 +-
+ drivers/staging/rtl8192e/Makefile                  |   46 +-
+ drivers/staging/rtl8192e/dot11d.c                  |    4 +-
+ drivers/staging/rtl8192e/dot11d.h                  |    2 +-
+ drivers/staging/rtl8192e/rtl8192e/Kconfig          |    9 +
+ drivers/staging/rtl8192e/rtl8192e/Makefile         |   21 +
+ .../staging/rtl8192e/{ => }/rtl8192e/r8190P_def.h  |    0
+ .../rtl8192e/{ => }/rtl8192e/r8190P_rtl8256.c      |    0
+ .../rtl8192e/{ => }/rtl8192e/r8190P_rtl8256.h      |    0
+ .../rtl8192e/{ => }/rtl8192e/r8192E_cmdpkt.c       |    0
+ .../rtl8192e/{ => }/rtl8192e/r8192E_cmdpkt.h       |    0
+ .../staging/rtl8192e/{ => }/rtl8192e/r8192E_dev.c  |    0
+ .../staging/rtl8192e/{ => }/rtl8192e/r8192E_dev.h  |    0
+ .../rtl8192e/{ => }/rtl8192e/r8192E_firmware.c     |    0
+ .../rtl8192e/{ => }/rtl8192e/r8192E_firmware.h     |    0
+ .../staging/rtl8192e/{ => }/rtl8192e/r8192E_hw.h   |    0
+ .../rtl8192e/{ => }/rtl8192e/r8192E_hwimg.c        |    0
+ .../rtl8192e/{ => }/rtl8192e/r8192E_hwimg.h        |    0
+ .../staging/rtl8192e/{ => }/rtl8192e/r8192E_phy.c  |    3 +-
+ .../staging/rtl8192e/{ => }/rtl8192e/r8192E_phy.h  |    0
+ .../rtl8192e/{ => }/rtl8192e/r8192E_phyreg.h       |    0
+ .../rtl8192e/{ => }/rtl8192e/r819xE_phyreg.h       |    0
+ drivers/staging/rtl8192e/{ => }/rtl8192e/rtl_cam.c |    0
+ drivers/staging/rtl8192e/{ => }/rtl8192e/rtl_cam.h |    0
+ .../staging/rtl8192e/{ => }/rtl8192e/rtl_core.c    |   68 +-
+ .../staging/rtl8192e/{ => }/rtl8192e/rtl_core.h    |   53 +-
+ .../staging/rtl8192e/{ => }/rtl8192e/rtl_crypto.h  |    0
+ .../staging/rtl8192e/{ => }/rtl8192e/rtl_debug.c   |   79 -
+ drivers/staging/rtl8192e/{ => }/rtl8192e/rtl_dm.c  |    0
+ drivers/staging/rtl8192e/{ => }/rtl8192e/rtl_dm.h  |    0
+ .../staging/rtl8192e/{ => }/rtl8192e/rtl_eeprom.c  |    0
+ .../staging/rtl8192e/{ => }/rtl8192e/rtl_eeprom.h  |    0
+ .../staging/rtl8192e/{ => }/rtl8192e/rtl_ethtool.c |    0
+ drivers/staging/rtl8192e/{ => }/rtl8192e/rtl_pci.c |    0
+ drivers/staging/rtl8192e/{ => }/rtl8192e/rtl_pci.h |    1 -
+ drivers/staging/rtl8192e/{ => }/rtl8192e/rtl_pm.c  |    2 -
+ drivers/staging/rtl8192e/{ => }/rtl8192e/rtl_pm.h  |    4 -
+ drivers/staging/rtl8192e/{ => }/rtl8192e/rtl_ps.c  |    0
+ drivers/staging/rtl8192e/{ => }/rtl8192e/rtl_ps.h  |    2 +-
+ drivers/staging/rtl8192e/{ => }/rtl8192e/rtl_wx.c  |    3 +-
+ drivers/staging/rtl8192e/{ => }/rtl8192e/rtl_wx.h  |    0
+ drivers/staging/rtl8192e/rtl819x_BAProc.c          |    1 -
+ drivers/staging/rtl8192e/rtl819x_HTProc.c          |    5 +-
+ drivers/staging/rtl8192e/rtl819x_TSProc.c          |    1 +
+ drivers/staging/rtl8192e/rtl_debug.h               |  299 --
+ drivers/staging/rtl8192e/rtllib.h                  |  113 +-
+ drivers/staging/rtl8192e/rtllib_crypt.c            |   80 +-
+ drivers/staging/rtl8192e/rtllib_crypt.h            |   64 +-
+ drivers/staging/rtl8192e/rtllib_crypt_ccmp.c       |   26 +-
+ drivers/staging/rtl8192e/rtllib_crypt_tkip.c       |   38 +-
+ drivers/staging/rtl8192e/rtllib_crypt_wep.c        |   25 +-
+ drivers/staging/rtl8192e/rtllib_debug.h            |   86 +
+ drivers/staging/rtl8192e/rtllib_module.c           |   38 +-
+ drivers/staging/rtl8192e/rtllib_rx.c               |   21 +-
+ drivers/staging/rtl8192e/rtllib_softmac.c          |   96 +-
+ drivers/staging/rtl8192e/rtllib_softmac_wx.c       |   19 +-
+ drivers/staging/rtl8192e/rtllib_tx.c               |   19 +-
+ drivers/staging/rtl8192e/rtllib_wx.c               |  109 +-
+ drivers/staging/rtl8192u/ieee80211/api.c           |  244 --
+ drivers/staging/rtl8712/rtl871x_mlme.c             |    2 +-
+ drivers/staging/rts5139/rts51x.h                   |    1 -
+ drivers/staging/rts5139/rts51x_transport.h         |    1 -
+ drivers/staging/sep/sep_driver.c                   |    2 +
+ drivers/staging/serial/68360serial.c               |    4 +-
+ drivers/staging/sm7xx/smtcfb.c                     |    6 +-
+ drivers/staging/speakup/kobjects.c                 |    3 +-
+ drivers/staging/speakup/main.c                     |    5 +-
+ drivers/staging/spectra/Kconfig                    |   41 -
+ drivers/staging/spectra/Makefile                   |   11 -
+ drivers/staging/spectra/README                     |   29 -
+ drivers/staging/spectra/ffsdefs.h                  |   58 -
+ drivers/staging/spectra/ffsport.c                  |  834 ----
+ drivers/staging/spectra/ffsport.h                  |   85 -
+ drivers/staging/spectra/flash.c                    | 4305 --------------------
+ drivers/staging/spectra/flash.h                    |  198 -
+ drivers/staging/spectra/lld.c                      |  339 --
+ drivers/staging/spectra/lld.h                      |  111 -
+ drivers/staging/spectra/lld_cdma.c                 |  910 -----
+ drivers/staging/spectra/lld_cdma.h                 |  123 -
+ drivers/staging/spectra/lld_emu.c                  |  776 ----
+ drivers/staging/spectra/lld_emu.h                  |   51 -
+ drivers/staging/spectra/lld_mtd.c                  |  683 ----
+ drivers/staging/spectra/lld_mtd.h                  |   51 -
+ drivers/staging/spectra/lld_nand.c                 | 2619 ------------
+ drivers/staging/spectra/lld_nand.h                 |  131 -
+ drivers/staging/spectra/nand_regs.h                |  619 ---
+ drivers/staging/spectra/spectraswconfig.h          |   82 -
+ drivers/staging/usbip/stub_dev.c                   |    5 -
+ drivers/staging/usbip/stub_rx.c                    |    2 +-
+ drivers/staging/usbip/usbip_common.c               |   61 +-
+ drivers/staging/usbip/usbip_common.h               |   17 +-
+ drivers/staging/usbip/vhci_rx.c                    |    2 +-
+ drivers/staging/vme/TODO                           |   67 +-
+ drivers/staging/vme/bridges/vme_ca91cx42.c         |   31 +-
+ drivers/staging/vme/bridges/vme_tsi148.c           |   36 +-
+ drivers/staging/vme/devices/Kconfig                |   13 +
+ drivers/staging/vme/devices/Makefile               |    3 +
+ drivers/staging/vme/devices/vme_pio2.h             |  249 ++
+ drivers/staging/vme/devices/vme_pio2_cntr.c        |   71 +
+ drivers/staging/vme/devices/vme_pio2_core.c        |  524 +++
+ drivers/staging/vme/devices/vme_pio2_gpio.c        |  232 ++
+ drivers/staging/vme/devices/vme_user.h             |   10 +-
+ drivers/staging/vme/vme.c                          |   69 +-
+ drivers/staging/vme/vme.h                          |   38 +-
+ drivers/staging/vme/vme_api.txt                    |   61 +-
+ drivers/staging/vme/vme_bridge.h                   |   38 +-
+ drivers/staging/vt6655/device_main.c               |    6 +-
+ drivers/staging/vt6655/ioctl.c                     |    8 +
+ drivers/staging/vt6655/iwctl.c                     |   12 -
+ drivers/staging/vt6655/iwctl.h                     |    5 -
+ drivers/staging/vt6656/80211mgr.c                  |   35 +-
+ drivers/staging/vt6656/baseband.c                  |   61 +-
+ drivers/staging/vt6656/bssdb.c                     |  100 +-
+ drivers/staging/vt6656/card.c                      |   14 +-
+ drivers/staging/vt6656/card.h                      |    4 +-
+ drivers/staging/vt6656/int.c                       |    5 +-
+ drivers/staging/vt6656/int.h                       |    2 +-
+ drivers/staging/vt6656/ioctl.c                     |    8 +
+ drivers/staging/vt6656/iwctl.c                     |   12 -
+ drivers/staging/vt6656/iwctl.h                     |    5 -
+ drivers/staging/vt6656/mac.c                       |    4 +-
+ drivers/staging/vt6656/mac.h                       |    2 +-
+ drivers/staging/vt6656/main_usb.c                  |   12 +-
+ drivers/staging/wlags49_h2/wl_pci.c                |   13 +-
+ drivers/staging/xgifb/Makefile                     |    2 +-
+ drivers/staging/xgifb/XGI_main.h                   |   13 +-
+ drivers/staging/xgifb/XGI_main_26.c                |  158 +-
+ drivers/staging/xgifb/XGIfb.h                      |    3 +
+ drivers/staging/xgifb/vb_ext.c                     |  444 --
+ drivers/staging/xgifb/vb_ext.h                     |    9 -
+ drivers/staging/xgifb/vb_init.c                    |  276 +-
+ drivers/staging/xgifb/vb_setmode.c                 | 1003 ++----
+ drivers/staging/xgifb/vb_setmode.h                 |   52 +-
+ drivers/staging/xgifb/vb_struct.h                  |    4 +-
+ drivers/staging/xgifb/vb_table.h                   |   27 -
+ drivers/staging/xgifb/vgatypes.h                   |    2 -
+ drivers/staging/zcache/zcache-main.c               |    6 +-
+ drivers/staging/zram/zram_drv.c                    |    3 +-
+ drivers/staging/zram/zram_sysfs.c                  |    6 +-
+ drivers/video/omap2/omapfb/Kconfig                 |    2 +-
+ include/linux/hyperv.h                             |    2 +-
+ 462 files changed, 24350 insertions(+), 36046 deletions(-)
+ create mode 100644 Documentation/devicetree/bindings/nvec/nvec_nvidia.txt
+ create mode 100644 drivers/net/hyperv/Kconfig
+ create mode 100644 drivers/net/hyperv/Makefile
+ rename drivers/{staging/hv => net/hyperv}/hyperv_net.h (92%)
+ rename drivers/{staging/hv => net/hyperv}/netvsc.c (91%)
+ rename drivers/{staging/hv => net/hyperv}/netvsc_drv.c (77%)
+ rename drivers/{staging/hv => net/hyperv}/rndis_filter.c (94%)
+ create mode 100644 drivers/staging/android/Kconfig
+ create mode 100644 drivers/staging/android/Makefile
+ create mode 100644 drivers/staging/android/TODO
+ create mode 100644 drivers/staging/android/android_pmem.h
+ create mode 100644 drivers/staging/android/ashmem.c
+ create mode 100644 drivers/staging/android/ashmem.h
+ create mode 100644 drivers/staging/android/binder.c
+ create mode 100644 drivers/staging/android/binder.h
+ create mode 100644 drivers/staging/android/logger.c
+ create mode 100644 drivers/staging/android/logger.h
+ create mode 100644 drivers/staging/android/lowmemorykiller.c
+ create mode 100644 drivers/staging/android/pmem.c
+ create mode 100644 drivers/staging/android/ram_console.c
+ create mode 100644 drivers/staging/android/ram_console.h
+ create mode 100644 drivers/staging/android/switch/Kconfig
+ create mode 100644 drivers/staging/android/switch/Makefile
+ create mode 100644 drivers/staging/android/switch/switch.h
+ create mode 100644 drivers/staging/android/switch/switch_class.c
+ create mode 100644 drivers/staging/android/switch/switch_gpio.c
+ create mode 100644 drivers/staging/android/timed_gpio.c
+ create mode 100644 drivers/staging/android/timed_gpio.h
+ create mode 100644 drivers/staging/android/timed_output.c
+ create mode 100644 drivers/staging/android/timed_output.h
+ delete mode 100644 drivers/staging/hv/hv_mouse.c
+ rename drivers/staging/iio/{buffer_generic.h => buffer.h} (67%)
+ delete mode 100644 drivers/staging/iio/chrdev.h
+ create mode 100644 drivers/staging/iio/dac/ad5380.c
+ create mode 100644 drivers/staging/iio/dac/ad5421.c
+ create mode 100644 drivers/staging/iio/dac/ad5421.h
+ create mode 100644 drivers/staging/iio/dac/ad5764.c
+ create mode 100644 drivers/staging/iio/events.h
+ create mode 100644 drivers/staging/iio/types.h
+ delete mode 100644 drivers/staging/intel_sst/Kconfig
+ delete mode 100644 drivers/staging/intel_sst/Makefile
+ delete mode 100644 drivers/staging/intel_sst/TODO
+ delete mode 100644 drivers/staging/intel_sst/intel_sst.c
+ delete mode 100644 drivers/staging/intel_sst/intel_sst.h
+ delete mode 100644 drivers/staging/intel_sst/intel_sst_app_interface.c
+ delete mode 100644 drivers/staging/intel_sst/intel_sst_common.h
+ delete mode 100644 drivers/staging/intel_sst/intel_sst_drv_interface.c
+ delete mode 100644 drivers/staging/intel_sst/intel_sst_dsp.c
+ delete mode 100644 drivers/staging/intel_sst/intel_sst_fw_ipc.h
+ delete mode 100644 drivers/staging/intel_sst/intel_sst_ioctl.h
+ delete mode 100644 drivers/staging/intel_sst/intel_sst_ipc.c
+ delete mode 100644 drivers/staging/intel_sst/intel_sst_pvt.c
+ delete mode 100644 drivers/staging/intel_sst/intel_sst_stream.c
+ delete mode 100644 drivers/staging/intel_sst/intel_sst_stream_encoded.c
+ delete mode 100644 drivers/staging/intel_sst/intelmid.c
+ delete mode 100644 drivers/staging/intel_sst/intelmid.h
+ delete mode 100644 drivers/staging/intel_sst/intelmid_adc_control.h
+ delete mode 100644 drivers/staging/intel_sst/intelmid_ctrl.c
+ delete mode 100644 drivers/staging/intel_sst/intelmid_msic_control.c
+ delete mode 100644 drivers/staging/intel_sst/intelmid_pvt.c
+ delete mode 100644 drivers/staging/intel_sst/intelmid_snd_control.h
+ delete mode 100644 drivers/staging/intel_sst/intelmid_v0_control.c
+ delete mode 100644 drivers/staging/intel_sst/intelmid_v1_control.c
+ delete mode 100644 drivers/staging/intel_sst/intelmid_v2_control.c
+ create mode 100644 drivers/staging/line6/podhd.c
+ create mode 100644 drivers/staging/line6/podhd.h
+ create mode 100644 drivers/staging/omapdrm/Kconfig
+ create mode 100644 drivers/staging/omapdrm/Makefile
+ create mode 100644 drivers/staging/omapdrm/TODO
+ create mode 100644 drivers/staging/omapdrm/omap_connector.c
+ create mode 100644 drivers/staging/omapdrm/omap_crtc.c
+ create mode 100644 drivers/staging/omapdrm/omap_debugfs.c
+ create mode 100644 drivers/staging/omapdrm/omap_dmm_priv.h
+ create mode 100644 drivers/staging/omapdrm/omap_dmm_tiler.c
+ create mode 100644 drivers/staging/omapdrm/omap_dmm_tiler.h
+ create mode 100644 drivers/staging/omapdrm/omap_drm.h
+ create mode 100644 drivers/staging/omapdrm/omap_drv.c
+ create mode 100644 drivers/staging/omapdrm/omap_drv.h
+ create mode 100644 drivers/staging/omapdrm/omap_encoder.c
+ create mode 100644 drivers/staging/omapdrm/omap_fb.c
+ create mode 100644 drivers/staging/omapdrm/omap_fbdev.c
+ create mode 100644 drivers/staging/omapdrm/omap_gem.c
+ create mode 100644 drivers/staging/omapdrm/omap_gem_helpers.c
+ create mode 100644 drivers/staging/omapdrm/omap_priv.h
+ create mode 100644 drivers/staging/omapdrm/tcm-sita.c
+ create mode 100644 drivers/staging/omapdrm/tcm-sita.h
+ create mode 100644 drivers/staging/omapdrm/tcm.h
+ create mode 100644 drivers/staging/rtl8192e/rtl8192e/Kconfig
+ create mode 100644 drivers/staging/rtl8192e/rtl8192e/Makefile
+ rename drivers/staging/rtl8192e/{ => }/rtl8192e/r8190P_def.h (100%)
+ rename drivers/staging/rtl8192e/{ => }/rtl8192e/r8190P_rtl8256.c (100%)
+ rename drivers/staging/rtl8192e/{ => }/rtl8192e/r8190P_rtl8256.h (100%)
+ rename drivers/staging/rtl8192e/{ => }/rtl8192e/r8192E_cmdpkt.c (100%)
+ rename drivers/staging/rtl8192e/{ => }/rtl8192e/r8192E_cmdpkt.h (100%)
+ rename drivers/staging/rtl8192e/{ => }/rtl8192e/r8192E_dev.c (100%)
+ rename drivers/staging/rtl8192e/{ => }/rtl8192e/r8192E_dev.h (100%)
+ rename drivers/staging/rtl8192e/{ => }/rtl8192e/r8192E_firmware.c (100%)
+ rename drivers/staging/rtl8192e/{ => }/rtl8192e/r8192E_firmware.h (100%)
+ rename drivers/staging/rtl8192e/{ => }/rtl8192e/r8192E_hw.h (100%)
+ rename drivers/staging/rtl8192e/{ => }/rtl8192e/r8192E_hwimg.c (100%)
+ rename drivers/staging/rtl8192e/{ => }/rtl8192e/r8192E_hwimg.h (100%)
+ rename drivers/staging/rtl8192e/{ => }/rtl8192e/r8192E_phy.c (99%)
+ rename drivers/staging/rtl8192e/{ => }/rtl8192e/r8192E_phy.h (100%)
+ rename drivers/staging/rtl8192e/{ => }/rtl8192e/r8192E_phyreg.h (100%)
+ rename drivers/staging/rtl8192e/{ => }/rtl8192e/r819xE_phyreg.h (100%)
+ rename drivers/staging/rtl8192e/{ => }/rtl8192e/rtl_cam.c (100%)
+ rename drivers/staging/rtl8192e/{ => }/rtl8192e/rtl_cam.h (100%)
+ rename drivers/staging/rtl8192e/{ => }/rtl8192e/rtl_core.c (98%)
+ rename drivers/staging/rtl8192e/{ => }/rtl8192e/rtl_core.h (97%)
+ rename drivers/staging/rtl8192e/{ => }/rtl8192e/rtl_crypto.h (100%)
+ rename drivers/staging/rtl8192e/{ => }/rtl8192e/rtl_debug.c (94%)
+ rename drivers/staging/rtl8192e/{ => }/rtl8192e/rtl_dm.c (100%)
+ rename drivers/staging/rtl8192e/{ => }/rtl8192e/rtl_dm.h (100%)
+ rename drivers/staging/rtl8192e/{ => }/rtl8192e/rtl_eeprom.c (100%)
+ rename drivers/staging/rtl8192e/{ => }/rtl8192e/rtl_eeprom.h (100%)
+ rename drivers/staging/rtl8192e/{ => }/rtl8192e/rtl_ethtool.c (100%)
+ rename drivers/staging/rtl8192e/{ => }/rtl8192e/rtl_pci.c (100%)
+ rename drivers/staging/rtl8192e/{ => }/rtl8192e/rtl_pci.h (99%)
+ rename drivers/staging/rtl8192e/{ => }/rtl8192e/rtl_pm.c (99%)
+ rename drivers/staging/rtl8192e/{ => }/rtl8192e/rtl_pm.h (97%)
+ rename drivers/staging/rtl8192e/{ => }/rtl8192e/rtl_ps.c (100%)
+ rename drivers/staging/rtl8192e/{ => }/rtl8192e/rtl_ps.h (98%)
+ rename drivers/staging/rtl8192e/{ => }/rtl8192e/rtl_wx.c (99%)
+ rename drivers/staging/rtl8192e/{ => }/rtl8192e/rtl_wx.h (100%)
+ delete mode 100644 drivers/staging/rtl8192e/rtl_debug.h
+ create mode 100644 drivers/staging/rtl8192e/rtllib_debug.h
+ delete mode 100644 drivers/staging/rtl8192u/ieee80211/api.c
+ delete mode 100644 drivers/staging/spectra/Kconfig
+ delete mode 100644 drivers/staging/spectra/Makefile
+ delete mode 100644 drivers/staging/spectra/README
+ delete mode 100644 drivers/staging/spectra/ffsdefs.h
+ delete mode 100644 drivers/staging/spectra/ffsport.c
+ delete mode 100644 drivers/staging/spectra/ffsport.h
+ delete mode 100644 drivers/staging/spectra/flash.c
+ delete mode 100644 drivers/staging/spectra/flash.h
+ delete mode 100644 drivers/staging/spectra/lld.c
+ delete mode 100644 drivers/staging/spectra/lld.h
+ delete mode 100644 drivers/staging/spectra/lld_cdma.c
+ delete mode 100644 drivers/staging/spectra/lld_cdma.h
+ delete mode 100644 drivers/staging/spectra/lld_emu.c
+ delete mode 100644 drivers/staging/spectra/lld_emu.h
+ delete mode 100644 drivers/staging/spectra/lld_mtd.c
+ delete mode 100644 drivers/staging/spectra/lld_mtd.h
+ delete mode 100644 drivers/staging/spectra/lld_nand.c
+ delete mode 100644 drivers/staging/spectra/lld_nand.h
+ delete mode 100644 drivers/staging/spectra/nand_regs.h
+ delete mode 100644 drivers/staging/spectra/spectraswconfig.h
+ create mode 100644 drivers/staging/vme/devices/vme_pio2.h
+ create mode 100644 drivers/staging/vme/devices/vme_pio2_cntr.c
+ create mode 100644 drivers/staging/vme/devices/vme_pio2_core.c
+ create mode 100644 drivers/staging/vme/devices/vme_pio2_gpio.c
+ delete mode 100644 drivers/staging/xgifb/vb_ext.c
+ delete mode 100644 drivers/staging/xgifb/vb_ext.h
 
 ---------------
 
-Bart Westgeest (1):
-      staging: usbip: bugfix for deadlock
+Aaro Koskinen (42):
+      staging: xgifb: delete XGI_GetSenseStatus()
+      staging: xgifb: rename XGINew_GetLCDDDCInfo() to XGINew_SenseLCD()
+      staging: xgifb: move XGINew_SenseLCD() to vb_init.c
+      staging: xgifb: delete vb_ext.{c,h}
+      staging: xgifb: vb_setmode: make XGI_LongWait() static
+      staging: xgifb: vb_setmode: make XGI_GetResInfo() static
+      staging: xgifb: vb_setmode: make XGI_SetXG21FPBits() static
+      staging: xgifb: vb_setmode: make XGI_SetXG27FPBits() static
+      staging: xgifb: vb_setmode: make XGI_XG21BLSignalVDD() static
+      staging: xgifb: vb_setmode: make XGI_XG27BLSignalVDD() static
+      staging: xgifb: vb_setmode: make XGI_XG21SetPanelDelay() static
+      staging: xgifb: vb_setmode: make XGI_GetLVDSOEMTableIndex() static
+      staging: xgifb: vb_setmode: make internal functions static
+      staging: xgifb: vb_setmode: eliminate GetVGAType/Set_VGAType
+      staging: xgifb: vb_setmode: inline XGI_SetMiscRegs()
+      staging: xgifb: vb_setmode: delete commented-out code
+      staging: xgifb: vb_setmode: delete XGI_VBLongWait()
+      staging: xgifb: vb_setmode: delete empty if statement blocks
+      staging: xgifb: vb_setmode: reduce if nesting in XGI_SetLockRegs()
+      staging: xgifb: vb_setmode: reduce if nesting in XGI_GetVCLK2Ptr()
+      staging: xgifb: vb_setmode: clean up a single statement if
+      staging: xgifb: ReadVBIOSTablData(): avoid duplicating code
+      staging: xgifb: ReadVBIOSTablData(): rearrange code to avoid nesting
+      staging: xgifb: ReadVBIOSTablData(): use ARRAY_SIZE
+      staging: xgifb: ReadVBIOSTablData(): rename pVideoMemory
+      staging: xgifb: ReadVBIOSTablData(): use a pointer to access the array
+      staging: xgifb: XGINew_GetXG21Sense(): eliminate video BIOS access
+      staging: xgifb: move video BIOS handling completely to ReadVBIOSTablData()
+      staging: xgifb: delete ROMAddr
+      staging: xgifb: delete pjVirtualRomBase
+      staging: xgifb: use u8 for video BIOS data
+      staging: xgifb: ReadVBIOSTablData(): check the BIOS size
+      staging: xgifb: ReadVBIOSTablData(): copy only a single LVDS entry
+      staging: xgifb: ReadVBIOSTablData(): rename to xgifb_read_vbios()
+      staging: xgifb: delete XGIfb_GetXG21LVDSData()
+      staging: xgifb: disable LVDS on XG27
+      staging: xgifb: move XGI21_LVDSCapStruct into xgifb_video_info
+      staging: xgifb: vb_table: delete XGI21_LCDCapList
+      staging: xgifb: delete "userom" option
+      staging: xgifb: enable forcecrt2type on XG21
+      staging: xgifb: enable forcecrt2type as a module parameter
+      MAINTAINERS: update xgifb maintainer's e-mail address
 
-Bernd Porr (2):
-      staging: comedi: usbduxsigma: Fixed wrong range for the analogue channel.
-      staging: comedi: fix oops for USB DAQ devices.
+Alan Cox (1):
+      gma500: mark staging broken
 
-Dan Carpenter (1):
-      Staging: comedi: integer overflow in do_insnlist_ioctl()
+Alexander Beregalov (3):
+      Staging: cxt1e1: remove unnecessary includes
+      Staging: cxt1e1: remove ifdef __cplusplus
+      Staging: cxt1e1: remove rcs keywords and log
 
-Federico Vaga (2):
-      Staging: comedi: fix mmap_count
-      Staging: comedi: fix signal handling in read and write
+Andor Daam (2):
+      Staging: line6/midi.c: Fixed call of obsolete function strict_strtoul
+      Staging: line6/midi.c: Fixed call of obsolete function strict_strtoul
 
-Greg Kroah-Hartman (1):
-      Revert "Staging: comedi: integer overflow in do_insnlist_ioctl()"
+Andreas Ruprecht (7):
+      Staging: iio/accel: Changed data type in adis16220_write_16bit to u16
+      Staging: iio/accel: Changed data type for val to unsigned long in write_frequency
+      Staging: iio/accel: Changed data type of val in store_measurement_mode to u8
+      Staging: iio/adc: strict_strtoul was used with a long type variable
+      Staging: iio/accel: Changed return type of lis3l02dq_read_event_config() to int
+      Staging: iio/accel: Changed data type of mask in store_measurement_mode() to u8
+      Staging: iio/accel: Added a range check for val in store_measurement_mode()
 
-Xi Wang (1):
-      Staging: comedi: fix integer overflow in do_insnlist_ioctl()
+Andy Gross (2):
+      drm/omap: DMM/TILER support for OMAP4+ platform
+      staging: drm/omap: add debugfs support
 
-wwang (1):
-      staging:rts_pstor:Complete scanning_done variable
+Arve Hjønnevåg (8):
+      android-common: include linux/slab.h
+      Staging: android: ram_console: Start ram console earlier
+      Staging: android: timed_gpio: Request gpios.
+      binder: Use seq_file for debug interface.
+      staging: android: binder: Move debugging information from procfs to debugfs
+      Staging: android: binder: Create dedicated workqueue for binder deferred work
+      staging: android: lowmemorykiller: Ignore shmem pages in page-cache
+      ashmem: Fix ASHMEM_SET_PROT_MASK.
+
+Bart Westgeest (2):
+      staging: usbip: removed dead code from receive function
+      staging: usbip: removed unused definitions from header
+
+Bernhard Heinloth (1):
+      Staging: zcache: Fix calls to obsolete function
+
+Bjorn Bringert (2):
+      ashmem: Implement read(2) in ashmem driver
+      ashmem: Support lseek(2) in ashmem driver
+
+Bryan Freed (1):
+      iio: light sensor: Improve granularity of tsl2583 lux values.
+
+Christopher Brannon (1):
+      Staging: speakup: Don't try to access an unallocated struct.
+
+Christopher Lais (1):
+      staging: binder: Fix memory corruption via page aliasing
+
+Colin Cross (6):
+      android-common: Fix slab.h includes for 2.6.34-rc4
+      staging: android: lowmemorykiller: Update arguments of shrinker for 2.6.35
+      android: lowmemorykiller: Fix arguments to lowmem_shrink
+      staging: android: ram_console: pass in a boot info string
+      ashmem: Update arguments of shrinker for 2.6.35
+      ashmem: Fix arguments to ashmem_shrink
+
+Corentin Chary (1):
+      staging/android: fix build issues
+
+Dan Carpenter (7):
+      Staging: iio/dac/ad5064.c: signedness bug in ad5064_read_raw()
+      Staging: iio/dac/ad5360.c: signedness bug in ad5360_read_raw()
+      Staging: iio: fix endian conversion in ad7298_scan_direct()
+      Staging: sep: potential buffer overflow in ioctl
+      Staging: line6: NULL dereference in dev_err()
+      Staging: comedi: unlock on error in usbdux_ao_inttrig()
+      Staging: comedi: unlock on error in usbduxsigma_attach()
+
+Devendra Naga (2):
+      Staging: remove version.h includes in drivers/staging/rts5139
+      staging: remove version.h includes in rtl8192e
+
+Diego F. Marfil (3):
+      Staging: bcm: hostmibs: C99 comments replaced
+      Staging: bcm: hostmibs: White spaces and indentation fixes.
+      Staging: bcm: hostmibs: Added temporary variable to shorten lines
+
+Florian Schmaus (3):
+      staging: comedi: comedi_fops: Replace deprecated strict_strtoul with kstrtouint
+      staging: comedi: comedi_fops: Removed int overflow check
+      staging: comedi_fops.c whitespace fixes
+
+Francois Romieu (6):
+      et131x: add static qualifiers.
+      et131x: uintxy_t removal.
+      et131x: fix error paths in et131x_pci_setup.
+      et131x: remove extraneous pci_save_state.
+      et131x: kiss netdev.{base_addr, irq} goodbye.
+      et131x: uncloak PCIe capabilities.
+
+Geert Uytterhoeven (1):
+      m68k/serial: Remove obsolete IRQ_FLG_* users
+
+Greg Kroah-Hartman (11):
+      Staging: rtl8192u: remove api.c file
+      Subject: fix build breakage in drivers/staging/iio/industrialio-core.c
+      Staging: delete spectra driver
+      Revert "Staging: android: delete android drivers"
+      Revert "Staging: android: mark subsystem as broken"
+      Staging: android: add the code back to the build
+      Staging: hv: remove hv_mouse driver as it's now in the hid directory
+      Staging: hv: update TODO file
+      staging: remove intel_sst driver
+      Staging: lttng: remove from the drivers/staging/ tree
+      staging: android: switch: minor code formatting cleanups
+
+Haiyang Zhang (7):
+      staging: hv: move hv_netvsc out of staging area
+      net/hyperv: Fix long lines in netvsc.c
+      net/hyperv: Add support for promiscuous mode setting
+      net/hyperv: Fix the stop/wake queue mechanism
+      net/hyperv: Remove unnecessary kmap_atomic in netvsc driver
+      net/hyperv: Add NETVSP protocol version negotiation
+      net/hyperv: Add support for jumbo frame up to 64KB
+
+JP Abgrall (1):
+      android: logger: bump up the logger buffer sizes
+
+Jerome Marchand (1):
+      Staging: zram: Add a missing GFP_KERNEL specifier in zram_init_device()
+
+Jesper Juhl (2):
+      line6: fix memory leaks in line6_init_midi()
+      rtl8192e: Don't copy huge struct by value (and make it const).
+
+Joe Perches (4):
+      MAINTAINERS: Delete generic_serial section
+      MAINTAINERS: brcm80211: Update F: pattern
+      MAINTAINERS: staging: westbridge: Delete section
+      MAINTAINERS: staging: tty: Update F: patterns
+
+Johannes Tenschert (10):
+      staging: bcm: led_control.c: fix whitespaces
+      staging: bcm: led_control.c: fix indentation
+      staging: bcm: led_control.c: fix comments
+      staging: bcm: led_control.c: fix parens/braces
+      staging: bcm: led_control.c: breaking of long lines
+      staging: bcm: HandleControlPacket.c: fix whitespaces
+      staging: bcm: HandleControlPacket.c: fix indentation
+      staging: bcm: HandleControlPacket.c: fix comments
+      staging: bcm: HandleControlPacket.c: fix parens/braces
+      staging: bcm: HandleControlPacket.c: breaking of long lines
+
+Johannes Thumshirn (1):
+      staging: comedi: Unbreak output of printk()s in pcmmio
+
+John Stultz (1):
+      ashmem: Whitespace cleanups
+
+Jonathan Cameron (45):
+      staging:iio:light:tsl2563 both intensity channels have same chan_spec.
+      staging:iio:triggers Remove unecessary existence checks and return val
+      staging:iio:industrialio-trigger.c Trivial code style brackets fix
+      staging:iio:kfifo remove entirely pointless code.
+      staging:iio: trigger fixes for repeat request of same trigger and allocation failure
+      staging:iio:core shared attrs do not work with modifier.
+      staging:iio: core. Allow for event chrdev obtaining ioctl if no buffer present.
+      staging:iio: header reorganization
+      staging:iio:treewide only use shared to decide on interfaces
+      staging:iio: filter description - low pass 3db frequency.
+      staging:iio:imu:adis16400 add control of data filtering.
+      staging:iio:documentation: document filter_low_pass_3db_frequency.
+      staging:iio:Documentation: cleanup properly in buffer handling code
+      staging:iio:generic_buffer example - handle endian differences
+      staging:iio:adc:max1363 actually make timestamp controllable
+      staging:iio:find iio channel from scan index util function
+      staging:iio:buffer add a cache of the timestamp scan index.
+      staging:iio: add hook to allow core to perform scan related config.
+      staging:iio: make iio_sw_buffer_preenable much more general.
+      staging:iio: add demux optionally to path from device to buffer
+      staging:iio:adc:max1363 use new demuxing support.
+      staging:iio:adc:max1363 correctly set channels as big endian.
+      staging:iio: core: add datasheet_name to chan_spec
+      staging:iio:adc:max1363 add datasheet_name entries.
+      staging:iio:buffer drop bpe field.
+      staging:iio: remove userspace access to bytes per datum.
+      staging:iio:buffer move setup ops from buffer instance to iio_dev
+      staging:iio: scrap scan_count and ensure all drivers use active_scan_mask
+      staging:iio:buffer remove unused owner field from struct iio_buffer
+      staging:iio:accel:lis3l02dq scrap reading from buffer for sysfs access.
+      staging:iio:adc:ad7192 scrap read from buffer for sysfs access.
+      staging:iio:adc:ad7476 scrap read from buffer for sysfs access.
+      staging:iio:adc:ad7606 remove buffer access for sysfs interfaces.
+      staging:iio:adc:ad7606 remove buffer access to data from sysfs read.
+      staging:iio:adc:ad7993 stop reading from buffer for sysfs raw read.
+      staging:iio:adc:ad7887 stop reading from buffer for sysfs access.
+      staging:iio:adc:ad799x stop reading from buffer for sysfs accesses
+      staging:iio:adc:max1363 stop reading from buffer for sysfs access
+      staging:iio:ring_sw don't provide read last function.
+      staging:iio:buffer stop allowing for read_last callback.
+      staging:iio:buffer scrap to_iio_buffer as it no longer has meaning.
+      staging:iio:buffer struct iio_buffer doesn't need an indio_dev pointer.
+      staging:iio:buffer.h update struct buffer docs.
+      staging:iio: Make sure all triggers have a trigger_ops for the owner field.
+      staging:iio: iio_trigger contains defunct owner field. Remove it.
+
+Jorgyano Vieira (1):
+      staging: crystalhd: bc_dts_defs.h: Fix up coding style
+
+Julia Lawall (1):
+      drivers/staging/rtl8712/rtl871x_mlme.c: eliminate a null pointer dereference
+
+K. Y. Srinivasan (27):
+      Staging: hv: mousevsc: Make boolean states boolean
+      Staging: hv: mousevsc: Inline the code for mousevsc_on_device_add()
+      Staging: hv: mousevsc: Inline the code for reportdesc_callback()
+      Staging: hv: mousevsc: Cleanup mousevsc_on_channel_callback()
+      Staging: hv: mousevsc: Add a new line to a debug string
+      Staging: hv: mousevsc: Get rid of unnecessary include files
+      Staging: hv: mousevsc: Address some style issues
+      Staging: hv: mousevsc: Add a check to prevent memory corruption
+      Staging: hv: mousevsc: Use the KBUILD_MODNAME macro
+      Staging: hv: storvsc: Use mempools to allocate struct storvsc_cmd_request
+      Staging: hv: storvsc: Cleanup error handling in the probe function
+      Staging: hv: storvsc: Fixup the error when processing SET_WINDOW command
+      Staging: hv: storvsc: Fix error handling storvsc_host_reset()
+      Staging: hv: storvsc: Use the accessor function shost_priv()
+      Staging: hv: storvsc: Use the unlocked version queuecommand
+      Staging: hv: storvsc: use the macro KBUILD_MODNAME
+      Staging: hv: storvsc: Get rid of an unnecessary forward declaration
+      Staging: hv: storvsc: Upgrade the vmstor protocol version
+      Staging: hv: storvsc: Support hot add of scsi disks
+      Staging: hv: storvsc: Support hot-removing of scsi devices
+      Staging: hv: mousevsc: Properly add the hid device
+      Staging: hv: storvsc: Disable clustering
+      Staging: hv: storvsc: Cleanup storvsc_device_alloc()
+      Staging: hv: storvsc: Fix a bug in storvsc_command_completion()
+      Staging: hv: storvsc: Fix a bug in copy_from_bounce_buffer()
+      Staging: hv: storvsc: Implement per device memory pools
+      Staging: hv: storvsc: Fix a bug in create_bounce_buffer()
+
+Ken O'Brien (2):
+      Staging: asus_oled: Fixed use of obsolete function.
+      Staging: frontier: Removed use of obsolete function
+
+Kevin McKinney (13):
+      Staging: bcm: Fix information leak in ioctl: IOCTL_BCM_REGISTER_READ_PRIVATE, IOCTL_BCM_EEPROM_REGISTER_READ
+      Staging: bcm: Clean up code in ioctl: IOCTL_BCM_EEPROM_REGISTER_READ
+      Staging: bcm: Remove unnecessary "do while" statement in, IOCTL_BCM_BUFFER_DOWNLOAD
+      Staging: bcm: Fix semaphore locking bug in, IOCTL_BCM_BUFFER_DOWNLOAD
+      Staging: bcm: Fix semaphore locking error when downloading firmware.
+      Staging: bcm: Clean up patch that calls semaphore down_trylock directly.
+      Staging: bcm: Alter code to move error handling closer to the calls.
+      Staging: bcm: Reverse semaphore locking in IOCTL_BCM_BUFFER_DOWNLOAD_STOP.
+      Staging: bcm: Fix double free of 'pReadData' in IOCTL_BCM_NVM_WRITE.
+      Staging: bcm: Alter code to move error handling closer to the calls; and remove white space, IOCTL_BCM_NVM_WRITE.
+      Staging: bcm: Alter return value for copy_to/from_user() to "return -EFAULT" when an error occurs.
+      Staging: bcm: Fix information leak in IOCTL_BCM_GET_DRIVER_VERSION
+      Staging: bcm: Fix an invalid dereference to a kmalloc in IOCTL_BCM_BULK_WRM
+
+Lars-Peter Clausen (30):
+      staging:iio:events: Make sure userspace buffer is large enough
+      staging:iio:iio_utils.h: Add missing include
+      staging:iio: Use userspace types for iio_event_data
+      staging:iio: Add documentation for IIO_EVENT_CODE
+      staging:iio: Do not use bitmasks for channel info addresses
+      staging:iio: Make write_event_value callback optional
+      staging:iio: IIO_EVENT_CODE: Clamp channel numbers
+      staging:iio:dac: Add AD5421 driver
+      staging:iio:dac:ad5446: Add support for the AD5662
+      staging:iio:dac:ad5446: Convert to channel spec
+      staging:iio:dac:ad5504: Convert to channel spec
+      staging:iio:dac:ad5624r: Convert to channel spec
+      staging:iio: Add missing MODULE_DEVICE_TABLE and MODULE_ALIAS
+      staging:iio:dac: Add AD5764 driver
+      staging:iio:dac: Add AD5380 driver
+      staging:iio: Remove redundant spi driver bus initialization
+      staging:iio: Fix typo
+      staging:iio: Fix sw_ring memory corruption
+      staging:iio: Fix scan mask update
+      staging:iio:dac:ad5791: Add id entry for the ad5790
+      staging:iio:kfifo_buf: Fix potential buffer overflow in iio_read_first_n_kfifo
+      staging:iio: Remove unused variable
+      staging:iio: Use iio_buffer_enabled instead of open coding it
+      staging:iio: Disallow changing scan elements in all buffered modes
+      staging:iio: Disallow modifying buffer size when buffer is enabled
+      staging:iio: Make sure a device is only opened once at a time
+      staging:iio: Drop buffer busy flag
+      staging:iio: Drop the unused buffer enable() and is_enabled() callbacks
+      staging:iio: Drop buffer mark_param_change callback
+      staging:iio: Drop {mark,unmark}_in_use callbacks
+
+Manohar Vanga (4):
+      staging: vme: fix address cast warnings for 64 bit architectures
+      staging: vme: fix comment in __vme_register_driver()
+      staging: vme: remove vme_add_bus() and vme_remove_bus()
+      staging: vme: fix comment for struct vme_dev
+
+Marc Dietrich (1):
+      staging: nvec: add device tree support
+
+Marco Navarra (3):
+      Staging: android: fixed white spaces coding style issue in logger.c
+      Staging: android: fixed a space warning in binder.h
+      Staging: android: fixed 80 characters warnings in lowmemorykiller.c
+
+Marcos Paulo de Souza (9):
+      staging:vt6656: iwctl.c: Removed unneeded function
+      staging: vt6656: main_usb.c: Use kzalloc instead kmalloc
+      staging: vt6656: 80211mgr.c: Code cleanup, removed return of void funcs.
+      staging: vt6656: baseband.c: Removed dead code, and fix coding standards
+      staging: vt6656: baseband.c: Remove commented code
+      staging: vt6656: card.c: Change return of CARDbAddBasicRate to void
+      drivers: staging: vt6656: Remove not used returned data of function
+      drivers: staging: vt6656: card.c: Remove useless return statement
+      staging: vt6656: int.c, int.h: Change return of function to void
+
+Mark Einon (2):
+      staging: et131x: Remove section comments
+      staging: et131x: Revert changes from previous commit
+
+Markus Grabner (3):
+      staging/line6: Remove obsolete code
+      staging/line6: refactor device information and add POD HD 500
+      staging: line6: fixed ALSA/PCM interaction
+
+Martyn Welch (5):
+      Staging: VME: Update TODO file
+      Driver for GE PIO2 VME Card
+      Staging: VME: PIO2: Correct irq reset
+      Staging: VME: Remove typedefs
+      Staging: VME: PIO2: Add GPIOLIB dependancy
+
+Mathieu Desnoyers (28):
+      lttng lib: lttng priority heap
+      lttng lib: ring buffer
+      lttng lib: portable bitfield read/write header
+      lttng: BUILD_RUNTIME_BUG_ON
+      lttng: offset alignment header
+      lttng libs: add Makefile
+      lttng wrappers
+      lttng instrumentation: tracepoint events
+      lttng: syscall instrumentation
+      lttng: lib ring buffer clients
+      lttng: tracer control and core structures
+      lttng: dynamically selectable context information
+      lttng: timing calibration feature
+      lttng: debugfs and procfs ABI
+      lttng: Add documentation and TODO files
+      lttng: add system call instrumentation probe
+      lttng: probe callbacks
+      lttng: toplevel Makefile and Kconfig
+      staging: add LTTng to build
+      staging: Add LTTng entry to MAINTAINERS file
+      lttng lib: ring buffer: remove stale null-pointer
+      lttng lib: ring buffer remove duplicate null pointer
+      lttng lib: ring buffer move null pointer check to open
+      lttng wrapper: add missing include to kallsyms wrapper
+      staging: lttng: cleanup one-bit signed bitfields
+      staging: lttng: TODO update: lttng reported to work fine on -rt now
+      staging: lttng: Update max symbol length to 256
+      staging: Remove LTTng from MAINTAINERS file
+
+Maxin B. John (1):
+      staging:iio:light:tsl2563 missing setting of id in get id function.
+
+Michael Hennerich (5):
+      iio: introduce type casts to avoid __ucmpdi2 calls
+      iio: adc: ad7280a: Fix memory leak
+      iio: gyro: ADXRS450: Add missing scale attributes
+      iio: gyro: ADXRS450: Add missing read support for calibbias attribute
+      iio: gyro: ADXRS450: Add support for ADXRS453 Digital Gyroscope
+
+Mike Lockwood (2):
+      Staging: android: timed_gpio: Properly discard invalid timeout values.
+      staging: android: switch: switch class and GPIO drivers.
+
+Natalia Ovsyanikov (1):
+      staging/mei: fix failure for multiple mei clients connection
+
+Omar Ramirez Luna (2):
+      staging: tidspbridge: include module.h by default
+      staging: tidspbridge: request dmtimer clocks on init
+
+Oren Weil (2):
+      staging: mei: expose misc interface instead of char device
+      staging: mei: updating mei driver documentation
+
+Paul Bolle (1):
+      staging: iio: drop "select IIO_SIMPLE_DUMMY_EVGEN"
+
+Peter Huewe (14):
+      staging/xgifb: Convert pci_table entries to PCI_DEVICE (if PCI_ANY_ID is used)
+      staging/comedi/addi: Convert pci_table entries to PCI_DEVICE (if PCI_ANY_ID is used)
+      staging/comedi/jr3: Convert pci_table entries to PCI_DEVICE (if PCI_ANY_ID is used)
+      staging/comedi/ke_counter: Convert pci_table entries to PCI_DEVICE (if PCI_ANY_ID is used)
+      staging/comedi/contec: Convert pci_table entries to PCI_DEVICE (if PCI_ANY_ID is used)
+      staging/comedi/me_daq: Convert pci_table entries to PCI_DEVICE (if PCI_ANY_ID is used)
+      staging/comedi/das08: Convert pci_table entries to PCI_DEVICE (if PCI_ANY_ID is used)
+      staging/comedi/cb_pcimdda: Convert pci_table entries to PCI_DEVICE (if PCI_ANY_ID is used)
+      staging/comedi/adl: Convert pci_table entries to PCI_DEVICE (if PCI_ANY_ID is used)
+      staging/comedi/amplc: Convert pci_table entries to PCI_DEVICE (if PCI_ANY_ID is used)
+      staging/comedi/daqboard: Convert pci_table entries to PCI_DEVICE (if PCI_ANY_ID is used)
+      staging/phison: Convert pci_table entries to PCI_DEVICE (if PCI_ANY_ID is used)
+      staging/wlags49_h2: Convert pci_table entries to PCI_DEVICE (if PCI_ANY_ID is used)
+      staging/sm7xx: Convert pci_table entries to PCI_DEVICE (if PCI_ANY_ID is used)
+
+Rakib Mullick (1):
+      staging: gma500: Fix warning in power.c
+
+Ravishankar karkala Mallikarjunayya (60):
+      Staging: comedi: fix printk issue in das6402.c
+      Staging: comedi: fix printk issue in serial2002.c
+      Staging: comedi: fix printk issue in cb_das16_cs.c
+      Staging: comedi: fix brace coding style issue in pcl818.c
+      Staging: comedi: fix NULL initilization issue in pcl818.c
+      Staging: comedi: fix brace coding style issue in das16m1.c
+      Staging: comedi: fix printk issue in adv_pci1710.c
+      Staging: comedi: fix printk issue in cb_pcidas.c
+      Staging: comedi: fix printk issue in cb_pcidda.c
+      Staging: comedi: fix printk issue in cb_pcidio.c
+      Staging: comedi: fix printk issue in cb_pcimdas.c
+      Staging: comedi: fix printk issue in cb_pcimdas.c
+      Staging: comedi: fix printk issue in cb_pcimdas.c
+      Staging: comedi: fix printk issue in das800.c
+      Staging: comedi: fix printk issue in das800.c
+      Staging: comedi: fix printk issue in adv_pci_dio.c
+      Staging: comedi: fix printk issue in das08_cs.c
+      Staging: comedi: fix brace coding style issue in daqboard2000.c
+      Staging: comedi: fix initialise statics to 0 or NULL issue in pcl816.c
+      Staging: comedi: fix printk issue in das16m1.c
+      Staging: comedi: fix printk issue in pcl818.c
+      Staging: comedi: fix printk issue in pcl818.c
+      Staging: comedi: fix printk issue in pcl818.c
+      Staging: comedi: fix initialise statics to 0 or NULL issue in ni_daq_dio24.c
+      Staging: comedi: fix brace coding style issue in ni_daq_dio24.c
+      Staging: comedi: fix printk issue in ni_daq_dio24.c
+      Staging: comedi: fix printk issue in ni_labpc_cs.c
+      Staging: comedi: fix brace coding style issue in ni_pcimio.c
+      Staging: comedi: fix printk issue in ni_pcimio.c
+      Staging: comedi: fix printk issue in ni_pcimio.c
+      Staging: comedi: fix brace coding style issue in pcmuio.c
+      Staging: comedi: fix brace coding style issue in daqboard2000.c
+      Staging: comedi: fix line over 80 character issue in cb_pcimdda.c
+      Staging: comedi: fix initialise statics to 0 or NULL issue in dt3000.c
+      Staging: comedi: fix initialise statics to 0 or NULL issue in cb_das16_cs.c
+      Staging: comedi: fix printk issue in jr3_pci.c
+      Staging: comedi: fix printk issue in dt3000.c
+      Staging: comedi: fix printk issue in dt3000.c
+      Staging: comedi: fix printk issue in dt3000.c
+      Staging: comedi: fix printk issue in dt3000.c
+      Staging: comedi: fix printk issue in dt3000.c
+      Staging: comedi: fix printk issue in pcmuio.c
+      Staging: comedi: fix printk issue in pcmuio.c
+      Staging: comedi: fix printk issue in pcmuio.c
+      Staging: comedi: fix printk issue in daqboard2000.c
+      Staging: comedi: fix printk issue in daqboard2000.c
+      Staging: comedi: fix printk issue in jr3_pci.c
+      Staging: comedi: fix printk issue in jr3_pci.c
+      Staging: comedi: fix brace coding style issue in ni_at_a2150.c
+      Staging: comedi: fix printk issue in das1800.c
+      Staging: comedi: fix printk issue in daqboard2000.c
+      Staging: comedi: fix printk issue in das1800.c
+      Staging: comedi: fix printk issue in das1800.c
+      Staging: comedi: fix printk issue in cb_pcidas.c
+      Staging: comedi: fix printk issue in cb_pcidas.c
+      Staging: comedi: fix printk issue in cb_pcidas64.c
+      Staging: comedi: fix printk issue in cb_pcidas64.c
+      Staging: comedi: fix printk issue in das1800.c
+      Staging: comedi: fix printk issue in das1800.c
+      Staging: comedi: fix printk issue in contec_pci_dio.c
+
+Rebecca Schultz (1):
+      staging: android: add pmem driver
+
+Rob Clark (8):
+      staging: add omapdrm DRM/KMS driver for TI OMAP platforms
+      drm/omap: add GEM support for tiled/dmm buffers
+      staging: drm/omap: allocation fail check
+      staging: drm/omap: crtc/encoder/fb destroy cleanups
+      staging: drm/omap: DMM based hardware scrolling console
+      staging: drm/omap: add ywrap module param
+      staging: drm/omap: avoid aquiring mutex in atomic context (v2)
+      drm/omap: GEM, deal with cache
+
+Robert Love (1):
+      ashmem: Anonymous shared memory subsystem
+
+San Mehat (5):
+      staging: android: ramconsole: Ensure ramconsole does not get cluttered by apanic threads
+      android: logger: Add new system log for framework/system log messages
+      staging: android: lowmemorykiller: Don't try to kill the same pid over and over
+      staging: android: lowmemkiller: Substantially reduce overhead during reclaim
+      staging: android: lowmemorykiller: Remove bitrotted codepath
+
+Sasha Levin (1):
+      iio: Don't OOPS if dummy evgen failed init
+
+Sean MacLennan (12):
+      rtl8192e: cleanup rtl_debug.h
+      rtl8192e: move RTL_DEBUG and proc prototypes
+      rtl8192e: create generic rtllib_debug.h
+      rtl8192e: Export symbols
+      rtl8192e: Split the driver up
+      rtl8192e: Split into two directories
+      rtl8192e: Rename clashing symbols
+      staging: fix build problem with staging/rtl8192e
+      staging/rtl8192e: Add lib80211.h to rtllib.h
+      staging/rtl8192e: Convert to lib80211_crypt_data and lib80211_crypt_ops
+      staging/rtl8192e: Convert to lib80211_crypt_info
+      staging/rtl8192e: Register against lib80211
+
+Sergey Datsevich (1):
+      Staging: zram/zram_sysfs.c: Fixed call of obsolete function strict_strtoX
+
+Stefan Hajnoczi (9):
+      staging: line6: add Pod HD300 support
+      staging: line6: add missing MIDI postprocessing case for POD HD300
+      staging: line6: use smallest iso ep packet size
+      staging: line6: alloc/free buffers in hw_params/hw_free
+      staging: line6: fix memory leak in .hw_params()
+      staging: line6: fix playback urb transfer buffer calculation
+      staging: line6: eliminate useless index_out variable
+      staging: line6: eliminate useless NULL checks
+      staging: line6: wait for urbs in snd_line6_prepare()
+
+Stefan Lippers-Hollmann (3):
+      rtl8192e: remove stale defines from ccflags-y
+      rtl8192e: use HAVE_NET_DEVICE_OPS unconditionally
+      rtl8192e: drop alternate code paths for CONFIG_PM_RTL
+
+Thomas Meyer (7):
+      Staging: line6: Use kmemdup rather than duplicating its implementation
+      staging: hv: Use kmemdup rather than duplicating its implementation
+      staging: rtl8192e: Use kzalloc rather than kmalloc v2
+      staging: rtl8192e: Use kmemdup rather than duplicating its implementation
+      staging: rtl8192e: Use kmemdup rather than duplicating its implementation
+      Staging: speakup: Use kmemdup rather than duplicating its implementation
+      staging: iio: Use kcalloc instead of kzalloc to allocate array
+
+Tomas Winkler (9):
+      staging:mei: wd_ops and wd_info should be static
+      staging/mei: fix check for allocating host client id
+      staging/mei: remove BUG_ON for testing of the response buffer size overflow
+      staging/mei: remove status member of mei_io_list
+      staging/mei: don't check if list is empty before looping
+      staging/mei: Don't check if loop cursor is null
+      staging/mei: remove outdated comment about setting iamthif_mtu
+      staging/mei: code style - cleanup blanks
+      staging/mei: add watchdog device registration wrappers
+
+Valentin Rothberg (2):
+      Staging: olpc_dcon.c: obsolete use of strict_strtoul
+      Staging: olpc_dcon.c: obsolete use of strict_stroul
+
+Xi Wang (3):
+      staging: vt6655: integer overflows in private_ioctl()
+      staging: vt6656: integer overflows in private_ioctl()
+      staging: olpc_dcon: ->read_status() API change
+
+Yannick Brosseau (1):
+      staging: lttng: Fix recent modifications to string_from_user operation
 
