@@ -17,7 +17,7 @@ git ls-files -o | grep queue-2\.6\.$VERSION | xargs -i  cp {} -v ../tmp/
 
 # create a commit message
 # FIXME, use a "real" temporary file name, not just 'commit.msg'
-echo "$VERSION patches" > commit.msg
+echo "2.6.${VERSION}-stable patches" > commit.msg
 echo "" >> commit.msg
 echo "added patches:" >> commit.msg
 for file in `ls ../tmp/`
