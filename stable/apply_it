@@ -41,6 +41,7 @@ apply_it ()
 }
 
 
+apply_it 3.2
 apply_it 3.1
 apply_it 3.0
 #apply_it 2.6.39
