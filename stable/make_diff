@@ -25,10 +25,10 @@ if [ ${REL_ARRAY[0]} == "3" ] ; then
 	THREE=1
 fi
 
-git diff --stat > diffstat
+git diff HEAD --stat > diffstat
 echo "# diffstat created"
 
-git diff > patch-$VERSION
+git diff HEAD > patch-$VERSION
 echo "# $VERSION patch created"
 
 gpg -a -b patch-${VERSION}
@@ -44,7 +44,7 @@ if [ $THREE -eq 1 ]; then
 else
 	VER="2.6"
 fi
-echo "scp patch-$VERSION gregkh@master.kernel.org:v$VER/$DIR/"
+#echo "scp patch-$VERSION gregkh@master.kernel.org:v$VER/$DIR/"
 
 echo "kup --host=${HOST} put patch-${VERSION} patch-${VERSION}.asc /pub/linux/kernel/v${VER}/${DIR}/patch-${VERSION}.gz"
 
