@@ -1,691 +1,78 @@
 From: Greg KH <gregkh@suse.de>
 To: Linus Torvalds <torvalds@linux-foundation.org>, Andrew Morton <akpm@linux-foundation.org>
-Cc: linux-kernel@vger.kernel.org
-Subject: [GIT PATCH] driver core merge for 3.3
+Cc: linux-kernel@vger.kernel.org, Junio C Hamano <gitster@pobox.com>
+Subject: [GIT PATCH] driver core patches for 3.3-rc1
 
-Here's the big driver core merge for 3.3.
+I tried to create a signed tag for this pull request.  It's call
+"driver-core-3.3-rc1-bugfixes" in the repo below, but when I did:
+    git request-pull master git://git.kernel.org/pub/scm/linux/kernel/git/gregkh/driver-core.git/ driver-core-3.3-rc1-bugfixes > msg.txt
 
-It's based off of 3.2, as I needed to fix up a merge issue and most
-importantly, a build issue with the merge that had to be done by hand,
-keeping the tree bisectable.
+I got the text below, no signed tag with the wording that I added to it
+that I could see.  Now I am still using git 1.7.8.3, is that why?  If
+so, I'll go build 1.7.9 as I see that is now out today.
 
-Note, when you merge this with your tree right now, you will get a
-conflict in include/linux/cpu.h, which should be pretty obvious and
-trivial to resolve, and a build error in drivers/base/cpu.c that you can
-fix by changing the cpu_is_hotpluggable function to look like this:
+Did I mess something up?  I created the tag with:
+    git tag -u kroah.com -s driver-core-3.3-rc1-bugfixes driver-core-linus
 
-bool cpu_is_hotpluggable(unsigned cpu)
-{
-	struct device *dev = get_cpu_device(cpu);
-	return dev && container_of(dev, struct cpu, dev)->hotpluggable;
-}
+Could it be that the tag and the branch are at the same point in the
+tree right now?  Or something else?
 
-If you want me to do this merge, just let me know, I will be glad to do
-so, but I know how much you like doing these types of merges :)
+The wording I put in the tag is:
+	Here are some patches for the 3.3-rc1 tree.
 
-Big thing here, that caused all of the merge issues, is the removal of
-the sysdev code.  It has been long needed to be removed, Kay finally
-just did it, thankfully.  There are patches pending that take advantage
-of this, providing properly CPU hotplug driver loading support, that
-will have to wait until 3.4, as they didn't make the merge window in
-time.  Note, the sysdev code isn't removed from the tree just yet, to
-help catch any other tree that might not have noticed this in the
-linux-next merge process.  I'll send a follow-on patch after 3.3-rc1 is
-out that removes this code, after ensuring that no other in-tree code is
-using the sysdev structures.
+	It contains the removal of the sysdev code, now that all users
+	of it are gone, as well as some sysfs bugfixes that have been
+	reported by users.  There are also some documentation updates
+	here as well.
 
-Those changes touched a lot of the kernel.
 
-So did the module_usb_driver() changes, which had to go through this
-tree instead of the USB one, as they depended on some driver.h changes.
-
-All of the fun details are in the shortlog below.
-
-Please pull from:
-	git.kernel.org:/pub/scm/linux/kernel/git/gregkh/driver-core.git/ driver-core-next
-
-All of these patches have been in the linux-next and mm trees for a
-while now.
+All of these have been in the linux-next tree for the past week.
 
 thanks,
 
 greg k-h
 
-------------
+-------------------
 
- Documentation/HOWTO                               |    4 +-
- Documentation/development-process/5.Posting       |    8 +-
- Documentation/driver-model/devres.txt             |    1 +
- Documentation/filesystems/debugfs.txt             |   32 +++-
- MAINTAINERS                                       |    2 +-
- arch/arm/include/asm/mach/time.h                  |    2 -
- arch/arm/kernel/leds.c                            |   21 +-
- arch/arm/mach-bcmring/core.c                      |    1 -
- arch/arm/mach-exynos/cpu.c                        |   15 +-
- arch/arm/mach-exynos/irq-eint.c                   |    2 +-
- arch/arm/mach-exynos/pm.c                         |   10 +-
- arch/arm/mach-integrator/integrator_cp.c          |    2 +-
- arch/arm/mach-ks8695/irq.c                        |    2 +-
- arch/arm/mach-lpc32xx/phy3250.c                   |    2 +-
- arch/arm/mach-msm/board-sapphire.c                |    2 +-
- arch/arm/mach-realview/core.c                     |    2 +-
- arch/arm/mach-realview/realview_eb.c              |    2 +-
- arch/arm/mach-realview/realview_pb1176.c          |    2 +-
- arch/arm/mach-realview/realview_pb11mp.c          |    2 +-
- arch/arm/mach-realview/realview_pba8.c            |    2 +-
- arch/arm/mach-realview/realview_pbx.c             |    2 +-
- arch/arm/mach-s3c2410/bast-irq.c                  |    2 +-
- arch/arm/mach-s3c2410/cpu-freq.c                  |   26 +-
- arch/arm/mach-s3c2410/dma.c                       |   28 ++-
- arch/arm/mach-s3c2410/include/mach/dma.h          |    4 +-
- arch/arm/mach-s3c2410/mach-h1940.c                |    2 +-
- arch/arm/mach-s3c2410/mach-qt2410.c               |    2 +-
- arch/arm/mach-s3c2410/pll.c                       |   20 +-
- arch/arm/mach-s3c2410/pm.c                        |   36 ++-
- arch/arm/mach-s3c2410/s3c2410.c                   |   24 +-
- arch/arm/mach-s3c2412/clock.c                     |    2 +-
- arch/arm/mach-s3c2412/cpu-freq.c                  |   13 +-
- arch/arm/mach-s3c2412/dma.c                       |   12 +-
- arch/arm/mach-s3c2412/irq.c                       |   12 +-
- arch/arm/mach-s3c2412/pm.c                        |   12 +-
- arch/arm/mach-s3c2412/s3c2412.c                   |   15 +-
- arch/arm/mach-s3c2416/irq.c                       |   12 +-
- arch/arm/mach-s3c2416/pm.c                        |   12 +-
- arch/arm/mach-s3c2416/s3c2416.c                   |   15 +-
- arch/arm/mach-s3c2440/clock.c                     |   15 +-
- arch/arm/mach-s3c2440/dma.c                       |   12 +-
- arch/arm/mach-s3c2440/irq.c                       |   12 +-
- arch/arm/mach-s3c2440/mach-rx1950.c               |    2 +-
- arch/arm/mach-s3c2440/mach-rx3715.c               |    2 +-
- arch/arm/mach-s3c2440/s3c2440-cpufreq.c           |   22 +-
- arch/arm/mach-s3c2440/s3c2440-pll-12000000.c      |   20 +-
- arch/arm/mach-s3c2440/s3c2440-pll-16934400.c      |   24 +-
- arch/arm/mach-s3c2440/s3c2440.c                   |    8 +-
- arch/arm/mach-s3c2440/s3c2442.c                   |   17 +-
- arch/arm/mach-s3c2440/s3c244x-clock.c             |   19 +-
- arch/arm/mach-s3c2440/s3c244x-irq.c               |   20 +-
- arch/arm/mach-s3c2440/s3c244x.c                   |   16 +-
- arch/arm/mach-s3c2443/clock.c                     |    2 +-
- arch/arm/mach-s3c2443/dma.c                       |   12 +-
- arch/arm/mach-s3c2443/irq.c                       |   12 +-
- arch/arm/mach-s3c2443/s3c2443.c                   |   15 +-
- arch/arm/mach-s3c64xx/cpu.c                       |   19 +-
- arch/arm/mach-s3c64xx/dma.c                       |   23 +-
- arch/arm/mach-s3c64xx/irq-eint.c                  |    2 +-
- arch/arm/mach-s3c64xx/s3c6400.c                   |   15 +-
- arch/arm/mach-s3c64xx/s3c6410.c                   |   15 +-
- arch/arm/mach-s5p64x0/clock-s5p6440.c             |    2 +-
- arch/arm/mach-s5p64x0/clock-s5p6450.c             |    2 +-
- arch/arm/mach-s5p64x0/clock.c                     |    2 +-
- arch/arm/mach-s5p64x0/cpu.c                       |   15 +-
- arch/arm/mach-s5p64x0/pm.c                        |   10 +-
- arch/arm/mach-s5pc100/cpu.c                       |   15 +-
- arch/arm/mach-s5pv210/clock.c                     |    2 +-
- arch/arm/mach-s5pv210/cpu.c                       |   15 +-
- arch/arm/mach-s5pv210/mach-smdkc110.c             |    2 +-
- arch/arm/mach-s5pv210/mach-smdkv210.c             |    2 +-
- arch/arm/mach-s5pv210/pm.c                        |   10 +-
- arch/arm/mach-versatile/core.c                    |    1 -
- arch/arm/mach-versatile/versatile_ab.c            |    1 -
- arch/arm/mach-versatile/versatile_pb.c            |    1 -
- arch/arm/mach-vexpress/v2m.c                      |    2 +-
- arch/arm/mach-w90x900/irq.c                       |    2 +-
- arch/arm/plat-s3c24xx/common-smdk.c               |    2 +-
- arch/arm/plat-s3c24xx/cpu-freq.c                  |    2 +-
- arch/arm/plat-s3c24xx/irq.c                       |    2 +-
- arch/arm/plat-s3c24xx/pm-simtec.c                 |    1 -
- arch/arm/plat-s3c24xx/s3c2410-clock.c             |    2 +-
- arch/arm/plat-s3c24xx/s3c2412-iotiming.c          |    2 +-
- arch/arm/plat-s5p/clock.c                         |    2 +-
- arch/arm/plat-s5p/irq-eint.c                      |    2 +-
- arch/arm/plat-samsung/clock-clksrc.c              |    2 +-
- arch/arm/plat-samsung/clock.c                     |    2 +-
- arch/arm/plat-samsung/include/plat/cpu.h          |   28 +-
- arch/arm/plat-samsung/include/plat/dma-s3c24xx.h  |    2 +-
- arch/arm/plat-samsung/include/plat/pm.h           |    2 +-
- arch/arm/plat-samsung/pm-gpio.c                   |    2 +-
- arch/arm/plat-samsung/wakeup-mask.c               |    2 +-
- arch/avr32/boards/merisc/merisc_sysfs.c           |    1 -
- arch/avr32/kernel/cpu.c                           |   74 +++---
- arch/avr32/kernel/irq.c                           |    2 +-
- arch/ia64/kernel/err_inject.c                     |   52 ++--
- arch/ia64/kernel/topology.c                       |   10 +-
- arch/m68k/platform/coldfire/gpio.c                |    9 +-
- arch/mips/txx9/generic/7segled.c                  |   44 ++--
- arch/mips/txx9/generic/setup.c                    |   34 ++--
- arch/mips/txx9/generic/setup_tx4939.c             |    2 +-
- arch/powerpc/include/asm/spu.h                    |   12 +-
- arch/powerpc/include/asm/topology.h               |   10 +-
- arch/powerpc/kernel/cacheinfo.c                   |   10 +-
- arch/powerpc/kernel/smp.c                         |    2 +-
- arch/powerpc/kernel/sysfs.c                       |  261 +++++++++---------
- arch/powerpc/mm/numa.c                            |    8 +-
- arch/powerpc/platforms/cell/cbe_thermal.c         |  144 +++++-----
- arch/powerpc/platforms/cell/smp.c                 |    2 +-
- arch/powerpc/platforms/cell/spu_base.c            |   61 +++--
- arch/powerpc/platforms/iseries/smp.c              |    2 +-
- arch/powerpc/platforms/powermac/cpufreq_32.c      |    2 +-
- arch/powerpc/platforms/pseries/cmm.c              |   67 +++---
- arch/powerpc/platforms/pseries/pseries_energy.c   |   71 +++---
- arch/powerpc/platforms/pseries/smp.c              |    2 +-
- arch/powerpc/platforms/pseries/suspend.c          |   33 ++--
- arch/powerpc/sysdev/ppc4xx_cpm.c                  |    6 +-
- arch/powerpc/sysdev/qe_lib/qe_ic.c                |   12 +-
- arch/powerpc/sysdev/uic.c                         |    1 -
- arch/s390/kernel/smp.c                            |   76 +++---
- arch/s390/kernel/time.c                           |  260 +++++++++---------
- arch/s390/kernel/topology.c                       |    6 +-
- arch/sh/drivers/dma/dma-sysfs.c                   |   81 +++---
- arch/sh/include/asm/dma.h                         |    4 +-
- arch/sh/kernel/cpu/sh4/sq.c                       |   24 +-
- arch/sparc/kernel/sysfs.c                         |  122 +++++-----
- arch/tile/kernel/sysfs.c                          |   61 ++---
- arch/unicore32/kernel/puv3-core.c                 |    1 -
- arch/unicore32/kernel/puv3-nb0916.c               |    1 -
- arch/x86/include/asm/mce.h                        |    2 +-
- arch/x86/kernel/cpu/intel_cacheinfo.c             |   25 +-
- arch/x86/kernel/cpu/mcheck/mce-internal.h         |    4 +-
- arch/x86/kernel/cpu/mcheck/mce.c                  |  128 +++++-----
- arch/x86/kernel/cpu/mcheck/mce_amd.c              |   11 +-
- arch/x86/kernel/cpu/mcheck/therm_throt.c          |   63 +++---
- arch/x86/kernel/hpet.c                            |    1 -
- arch/x86/kernel/irqinit.c                         |    2 +-
- arch/x86/kernel/microcode_core.c                  |   64 +++---
- arch/x86/platform/uv/uv_sysfs.c                   |    2 +-
- drivers/Kconfig                                   |    4 +-
- drivers/acpi/processor_driver.c                   |    6 +-
- drivers/acpi/processor_thermal.c                  |    1 -
- drivers/base/Makefile                             |    4 +-
- drivers/base/base.h                               |   12 +-
- drivers/base/bus.c                                |  293 +++++++++++++++++++--
- drivers/base/class.c                              |   14 +-
- drivers/base/core.c                               |   85 +++++--
- drivers/base/cpu.c                                |  146 ++++++-----
- drivers/base/devtmpfs.c                           |    3 +-
- drivers/base/firmware_class.c                     |   14 +-
- drivers/base/init.c                               |    1 -
- drivers/base/memory.c                             |  160 +++++-------
- drivers/base/node.c                               |  154 ++++++------
- drivers/base/platform.c                           |    2 +-
- drivers/base/sys.c                                |   10 +-
- drivers/base/topology.c                           |   51 ++--
- drivers/bluetooth/ath3k.c                         |   14 +-
- drivers/bluetooth/bcm203x.c                       |   21 +--
- drivers/bluetooth/bfusb.c                         |   21 +--
- drivers/bluetooth/bpa10x.c                        |   15 +-
- drivers/bluetooth/btusb.c                         |   15 +-
- drivers/cpufreq/cpufreq.c                         |   79 +++---
- drivers/cpufreq/cpufreq_stats.c                   |    1 -
- drivers/cpuidle/cpuidle.c                         |   12 +-
- drivers/cpuidle/cpuidle.h                         |   10 +-
- drivers/cpuidle/sysfs.c                           |   74 +++---
- drivers/edac/edac_core.h                          |    7 +-
- drivers/edac/edac_device.c                        |    1 -
- drivers/edac/edac_device_sysfs.c                  |   20 +-
- drivers/edac/edac_mc.c                            |    1 -
- drivers/edac/edac_mc_sysfs.c                      |   16 +-
- drivers/edac/edac_module.h                        |    2 -
- drivers/edac/edac_pci.c                           |    1 -
- drivers/edac/edac_pci_sysfs.c                     |   16 +-
- drivers/edac/edac_stub.c                          |   27 +-
- drivers/edac/mce_amd_inj.c                        |   13 +-
- drivers/firmware/google/gsmi.c                    |    3 +-
- drivers/gpio/gpio-samsung.c                       |    2 +-
- drivers/hid/usbhid/usbkbd.c                       |   17 +--
- drivers/hid/usbhid/usbmouse.c                     |   17 +--
- drivers/hv/Kconfig                                |    4 +-
- drivers/hv/channel_mgmt.c                         |   12 +
- drivers/hv/hv.c                                   |    8 +-
- drivers/hv/hyperv_vmbus.h                         |    1 +
- drivers/hv/vmbus_drv.c                            |   30 ++-
- drivers/i2c/busses/i2c-diolan-u2c.c               |   15 +-
- drivers/i2c/busses/i2c-tiny-usb.c                 |   15 +-
- drivers/input/joystick/xpad.c                     |   13 +-
- drivers/input/misc/ati_remote2.c                  |   21 +--
- drivers/input/misc/keyspan_remote.c               |   21 +--
- drivers/input/misc/powermate.c                    |   13 +-
- drivers/input/misc/yealink.c                      |   17 +--
- drivers/input/mouse/appletouch.c                  |   13 +-
- drivers/input/mouse/bcm5974.c                     |   14 +-
- drivers/input/tablet/acecad.c                     |   17 +--
- drivers/input/tablet/aiptek.c                     |   19 +--
- drivers/input/tablet/gtco.c                       |   28 +--
- drivers/input/tablet/hanwang.c                    |   13 +-
- drivers/input/tablet/kbtab.c                      |   20 +--
- drivers/input/tablet/wacom_sys.c                  |   19 +--
- drivers/input/touchscreen/usbtouchscreen.c        |   13 +-
- drivers/isdn/hardware/mISDN/hfcsusb.c             |   28 +--
- drivers/leds/led-class.c                          |    1 -
- drivers/leds/led-triggers.c                       |    1 -
- drivers/macintosh/smu.c                           |    4 -
- drivers/media/dvb/b2c2/flexcop-usb.c              |   20 +--
- drivers/media/dvb/dvb-usb/a800.c                  |   21 +--
- drivers/media/dvb/dvb-usb/af9015.c                |   20 +--
- drivers/media/dvb/dvb-usb/anysee.c                |   21 +--
- drivers/media/dvb/dvb-usb/au6610.c                |   21 +--
- drivers/media/dvb/dvb-usb/az6027.c                |   23 +--
- drivers/media/dvb/dvb-usb/ce6230.c                |   22 +--
- drivers/media/dvb/dvb-usb/cinergyT2-core.c        |   20 +--
- drivers/media/dvb/dvb-usb/cxusb.c                 |   21 +--
- drivers/media/dvb/dvb-usb/dib0700_core.c          |   22 +--
- drivers/media/dvb/dvb-usb/dibusb-mb.c             |   21 +--
- drivers/media/dvb/dvb-usb/dibusb-mc.c             |   21 +--
- drivers/media/dvb/dvb-usb/digitv.c                |   21 +--
- drivers/media/dvb/dvb-usb/dtt200u.c               |   21 +--
- drivers/media/dvb/dvb-usb/dtv5100.c               |   21 +--
- drivers/media/dvb/dvb-usb/dw2102.c                |   17 +--
- drivers/media/dvb/dvb-usb/ec168.c                 |   22 +--
- drivers/media/dvb/dvb-usb/friio.c                 |   23 +--
- drivers/media/dvb/dvb-usb/gl861.c                 |   21 +--
- drivers/media/dvb/dvb-usb/gp8psk.c                |   21 +--
- drivers/media/dvb/dvb-usb/it913x.c                |   21 +--
- drivers/media/dvb/dvb-usb/lmedm04.c               |   21 +--
- drivers/media/dvb/dvb-usb/m920x.c                 |   22 +--
- drivers/media/dvb/dvb-usb/mxl111sf.c              |   19 +--
- drivers/media/dvb/dvb-usb/nova-t-usb2.c           |   21 +--
- drivers/media/dvb/dvb-usb/opera1.c                |   17 +--
- drivers/media/dvb/dvb-usb/pctv452e.c              |   17 +--
- drivers/media/dvb/dvb-usb/technisat-usb2.c        |   20 +--
- drivers/media/dvb/dvb-usb/ttusb2.c                |   21 +--
- drivers/media/dvb/dvb-usb/umt-010.c               |   21 +--
- drivers/media/dvb/dvb-usb/vp702x.c                |   21 +--
- drivers/media/dvb/dvb-usb/vp7045.c                |   21 +--
- drivers/media/dvb/siano/smsusb.c                  |   21 +--
- drivers/media/dvb/ttusb-budget/dvb-ttusb-budget.c |   21 +--
- drivers/media/dvb/ttusb-dec/ttusb_dec.c           |   21 +--
- drivers/media/radio/dsbr100.c                     |   16 +-
- drivers/media/radio/radio-mr800.c                 |   23 +--
- drivers/media/radio/si470x/radio-si470x-usb.c     |   28 +--
- drivers/media/rc/ati_remote.c                     |   33 +---
- drivers/media/rc/imon.c                           |   21 +--
- drivers/media/rc/mceusb.c                         |   20 +--
- drivers/media/rc/redrat3.c                        |   20 +--
- drivers/media/rc/streamzap.c                      |   28 +--
- drivers/media/video/cx231xx/cx231xx-cards.c       |   24 +--
- drivers/media/video/em28xx/em28xx-cards.c         |   24 +--
- drivers/media/video/et61x251/et61x251_core.c      |   25 +--
- drivers/media/video/gspca/benq.c                  |   13 +-
- drivers/media/video/gspca/conex.c                 |   13 +-
- drivers/media/video/gspca/cpia1.c                 |   13 +-
- drivers/media/video/gspca/etoms.c                 |   14 +-
- drivers/media/video/gspca/finepix.c               |   14 +-
- drivers/media/video/gspca/gl860/gl860.c           |   17 +--
- drivers/media/video/gspca/jeilinj.c               |   14 +-
- drivers/media/video/gspca/kinect.c                |   14 +-
- drivers/media/video/gspca/konica.c                |   13 +-
- drivers/media/video/gspca/m5602/m5602_core.c      |   14 +-
- drivers/media/video/gspca/mars.c                  |   13 +-
- drivers/media/video/gspca/mr97310a.c              |   13 +-
- drivers/media/video/gspca/nw80x.c                 |   13 +-
- drivers/media/video/gspca/ov519.c                 |   13 +-
- drivers/media/video/gspca/ov534.c                 |   14 +-
- drivers/media/video/gspca/ov534_9.c               |   14 +-
- drivers/media/video/gspca/pac207.c                |   13 +-
- drivers/media/video/gspca/pac7302.c               |   13 +-
- drivers/media/video/gspca/pac7311.c               |   13 +-
- drivers/media/video/gspca/se401.c                 |   13 +-
- drivers/media/video/gspca/sn9c2028.c              |   14 +-
- drivers/media/video/gspca/sn9c20x.c               |   13 +-
- drivers/media/video/gspca/sonixb.c                |   13 +-
- drivers/media/video/gspca/sonixj.c                |   13 +-
- drivers/media/video/gspca/spca1528.c              |   13 +-
- drivers/media/video/gspca/spca500.c               |   13 +-
- drivers/media/video/gspca/spca501.c               |   13 +-
- drivers/media/video/gspca/spca505.c               |   13 +-
- drivers/media/video/gspca/spca506.c               |   19 +--
- drivers/media/video/gspca/spca508.c               |   13 +-
- drivers/media/video/gspca/spca561.c               |   13 +-
- drivers/media/video/gspca/sq905.c                 |   14 +-
- drivers/media/video/gspca/sq905c.c                |   14 +-
- drivers/media/video/gspca/sq930x.c                |   13 +-
- drivers/media/video/gspca/stk014.c                |   13 +-
- drivers/media/video/gspca/stv0680.c               |   13 +-
- drivers/media/video/gspca/stv06xx/stv06xx.c       |   13 +-
- drivers/media/video/gspca/sunplus.c               |   13 +-
- drivers/media/video/gspca/t613.c                  |   13 +-
- drivers/media/video/gspca/topro.c                 |   13 +-
- drivers/media/video/gspca/tv8532.c                |   14 +-
- drivers/media/video/gspca/vc032x.c                |   13 +-
- drivers/media/video/gspca/vicam.c                 |   14 +-
- drivers/media/video/gspca/xirlink_cit.c           |   13 +-
- drivers/media/video/gspca/zc3xx.c                 |   13 +-
- drivers/media/video/hdpvr/hdpvr-core.c            |   21 +--
- drivers/media/video/s2255drv.c                    |   20 +--
- drivers/media/video/sn9c102/sn9c102_core.c        |   25 +--
- drivers/media/video/stk-webcam.c                  |   23 +--
- drivers/media/video/tm6000/tm6000-cards.c         |   26 +--
- drivers/media/video/zr364xx.c                     |   23 +--
- drivers/mmc/host/ushc.c                           |   12 +-
- drivers/mtd/nand/alauda.c                         |   13 +-
- drivers/net/bonding/bond_sysfs.c                  |    1 -
- drivers/net/can/usb/ems_usb.c                     |   26 +--
- drivers/net/can/usb/esd_usb2.c                    |   23 +--
- drivers/net/irda/irda-usb.c                       |   35 +---
- drivers/net/irda/kingsun-sir.c                    |   19 +--
- drivers/net/irda/ks959-sir.c                      |   21 +--
- drivers/net/irda/ksdazzle-sir.c                   |   21 +--
- drivers/net/irda/mcs7780.c                        |   23 +--
- drivers/net/irda/stir4200.c                       |   19 +--
- drivers/net/usb/asix.c                            |   12 +-
- drivers/net/usb/catc.c                            |   17 +--
- drivers/net/usb/cdc-phonet.c                      |   13 +-
- drivers/net/usb/cdc_eem.c                         |   13 +-
- drivers/net/usb/cdc_ether.c                       |   19 +-
- drivers/net/usb/cdc_ncm.c                         |   15 +-
- drivers/net/usb/cdc_subset.c                      |   12 +-
- drivers/net/usb/cx82310_eth.c                     |   12 +-
- drivers/net/usb/dm9601.c                          |   13 +-
- drivers/net/usb/gl620a.c                          |   12 +-
- drivers/net/usb/int51x1.c                         |   12 +-
- drivers/net/usb/ipheth.c                          |   20 +--
- drivers/net/usb/kalmia.c                          |   12 +-
- drivers/net/usb/kaweth.c                          |   30 +--
- drivers/net/usb/lg-vl600.c                        |   12 +-
- drivers/net/usb/mcs7830.c                         |   12 +-
- drivers/net/usb/net1080.c                         |   12 +-
- drivers/net/usb/plusb.c                           |   12 +-
- drivers/net/usb/rndis_host.c                      |   12 +-
- drivers/net/usb/rtl8150.c                         |   15 +-
- drivers/net/usb/sierra_net.c                      |   19 +-
- drivers/net/usb/smsc75xx.c                        |   12 +-
- drivers/net/usb/smsc95xx.c                        |   12 +-
- drivers/net/usb/zaurus.c                          |   12 +-
- drivers/net/wireless/ath/carl9170/usb.c           |   13 +-
- drivers/net/wireless/libertas/if_usb.c            |   24 +--
- drivers/net/wireless/libertas_tf/if_usb.c         |   22 +--
- drivers/net/wireless/orinoco/orinoco_usb.c        |   27 +--
- drivers/net/wireless/p54/p54usb.c                 |   13 +-
- drivers/net/wireless/rndis_wlan.c                 |   12 +-
- drivers/net/wireless/rt2x00/rt2500usb.c           |   13 +-
- drivers/net/wireless/rt2x00/rt2800usb.c           |   13 +-
- drivers/net/wireless/rt2x00/rt73usb.c             |   13 +-
- drivers/net/wireless/rtl818x/rtl8187/dev.c        |   13 +-
- drivers/net/wireless/rtlwifi/rtl8192cu/sw.c       |   13 +-
- drivers/net/wireless/zd1201.c                     |   13 +-
- drivers/nfc/pn533.c                               |   19 +--
- drivers/platform/x86/ibm_rtl.c                    |   34 ++--
- drivers/platform/x86/intel_scu_ipc.c              |    2 +-
- drivers/s390/block/xpram.c                        |    2 +-
- drivers/s390/char/sclp_config.c                   |    8 +-
- drivers/sh/intc/core.c                            |   29 +-
- drivers/sh/intc/internals.h                       |    6 +-
- drivers/sh/intc/userimask.c                       |   16 +-
- drivers/staging/frontier/alphatrack.c             |   28 +--
- drivers/staging/frontier/tranzport.c              |   27 +--
- drivers/staging/ft1000/ft1000-usb/ft1000_usb.c    |   22 +--
- drivers/staging/iio/accel/adis16201_core.c        |   13 +-
- drivers/staging/iio/accel/adis16203_core.c        |   13 +-
- drivers/staging/iio/accel/adis16204_core.c        |   13 +-
- drivers/staging/iio/accel/adis16209_core.c        |   13 +-
- drivers/staging/iio/accel/adis16220_core.c        |   13 +-
- drivers/staging/iio/accel/adis16240_core.c        |   13 +-
- drivers/staging/iio/accel/kxsd9.c                 |   13 +-
- drivers/staging/iio/accel/lis3l02dq_core.c        |   13 +-
- drivers/staging/iio/accel/sca3000_core.c          |   13 +-
- drivers/staging/iio/adc/ad7192.c                  |   13 +-
- drivers/staging/iio/adc/ad7280a.c                 |   13 +-
- drivers/staging/iio/adc/ad7291.c                  |   14 +-
- drivers/staging/iio/adc/ad7298_core.c             |   13 +-
- drivers/staging/iio/adc/ad7476_core.c             |   13 +-
- drivers/staging/iio/adc/ad7606_spi.c              |   13 +-
- drivers/staging/iio/adc/ad7780.c                  |   13 +-
- drivers/staging/iio/adc/ad7793.c                  |   13 +-
- drivers/staging/iio/adc/ad7816.c                  |   14 +-
- drivers/staging/iio/adc/ad7887_core.c             |   13 +-
- drivers/staging/iio/adc/ad799x_core.c             |   14 +-
- drivers/staging/iio/adc/adt7310.c                 |   14 +-
- drivers/staging/iio/adc/adt7410.c                 |   14 +-
- drivers/staging/iio/adc/max1363_core.c            |   14 +-
- drivers/staging/iio/addac/adt7316-i2c.c           |   14 +-
- drivers/staging/iio/addac/adt7316-spi.c           |   14 +-
- drivers/staging/iio/cdc/ad7150.c                  |   14 +-
- drivers/staging/iio/cdc/ad7152.c                  |   14 +-
- drivers/staging/iio/cdc/ad7746.c                  |   14 +-
- drivers/staging/iio/dac/ad5064.c                  |   13 +-
- drivers/staging/iio/dac/ad5360.c                  |   13 +-
- drivers/staging/iio/dac/ad5446.c                  |   13 +-
- drivers/staging/iio/dac/ad5504.c                  |   13 +-
- drivers/staging/iio/dac/ad5624r_spi.c             |   13 +-
- drivers/staging/iio/dac/ad5686.c                  |   13 +-
- drivers/staging/iio/dac/ad5791.c                  |   13 +-
- drivers/staging/iio/dac/max517.c                  |   14 +-
- drivers/staging/iio/dds/ad5930.c                  |   13 +-
- drivers/staging/iio/dds/ad9832.c                  |   13 +-
- drivers/staging/iio/dds/ad9834.c                  |   13 +-
- drivers/staging/iio/dds/ad9850.c                  |   13 +-
- drivers/staging/iio/dds/ad9852.c                  |   13 +-
- drivers/staging/iio/dds/ad9910.c                  |   13 +-
- drivers/staging/iio/dds/ad9951.c                  |   13 +-
- drivers/staging/iio/gyro/adis16080_core.c         |   13 +-
- drivers/staging/iio/gyro/adis16130_core.c         |   13 +-
- drivers/staging/iio/gyro/adis16260_core.c         |   13 +-
- drivers/staging/iio/gyro/adxrs450_core.c          |   13 +-
- drivers/staging/iio/impedance-analyzer/ad5933.c   |   13 +-
- drivers/staging/iio/imu/adis16400_core.c          |   13 +-
- drivers/staging/iio/light/isl29018.c              |   14 +-
- drivers/staging/iio/light/tsl2563.c               |   14 +-
- drivers/staging/iio/light/tsl2583.c               |   14 +-
- drivers/staging/iio/magnetometer/ak8975.c         |   14 +-
- drivers/staging/iio/magnetometer/hmc5843.c        |   14 +-
- drivers/staging/iio/meter/ade7753.c               |   13 +-
- drivers/staging/iio/meter/ade7754.c               |   13 +-
- drivers/staging/iio/meter/ade7758_core.c          |   13 +-
- drivers/staging/iio/meter/ade7759.c               |   13 +-
- drivers/staging/iio/meter/ade7854-i2c.c           |   14 +-
- drivers/staging/iio/meter/ade7854-spi.c           |   13 +-
- drivers/staging/iio/resolver/ad2s1200.c           |   13 +-
- drivers/staging/iio/resolver/ad2s1210.c           |   13 +-
- drivers/staging/iio/resolver/ad2s90.c             |   13 +-
- drivers/staging/keucr/usb.c                       |   24 +--
- drivers/staging/media/go7007/go7007-usb.c         |   15 +-
- drivers/staging/media/lirc/lirc_igorplugusb.c     |   21 +--
- drivers/staging/media/lirc/lirc_imon.c            |   24 +--
- drivers/staging/media/lirc/lirc_sasem.c           |   25 +--
- drivers/staging/media/lirc/lirc_ttusbir.c         |   22 +--
- drivers/staging/rts5139/rts51x.c                  |   32 +---
- drivers/staging/vt6656/main_usb.c                 |   14 +-
- drivers/staging/winbond/wbusb.c                   |   13 +-
- drivers/staging/wlan-ng/prism2usb.c               |   14 +-
- drivers/uio/uio_pdrv.c                            |   12 +-
- drivers/uio/uio_pdrv_genirq.c                     |   13 +-
- drivers/uio/uio_pruss.c                           |   14 +-
- drivers/usb/atm/cxacru.c                          |   13 +-
- drivers/usb/atm/speedtch.c                        |   17 +--
- drivers/usb/atm/ueagle-atm.c                      |   31 +--
- drivers/usb/class/cdc-wdm.c                       |   19 +--
- drivers/usb/class/usblp.c                         |   13 +-
- drivers/usb/class/usbtmc.c                        |   17 +--
- drivers/usb/dwc3/debugfs.c                        |   16 +-
- drivers/usb/host/hwa-hc.c                         |   13 +-
- drivers/usb/image/microtek.c                      |   14 +-
- drivers/usb/misc/adutux.c                         |   35 +---
- drivers/usb/misc/cypress_cy7c63.c                 |   22 +--
- drivers/usb/misc/cytherm.c                        |   26 +--
- drivers/usb/misc/emi26.c                          |   13 +-
- drivers/usb/misc/emi62.c                          |   17 +--
- drivers/usb/misc/idmouse.c                        |   24 +--
- drivers/usb/misc/iowarrior.c                      |   13 +-
- drivers/usb/misc/isight_firmware.c                |   13 +-
- drivers/usb/misc/ldusb.c                          |   27 +--
- drivers/usb/misc/legousbtower.c                   |   46 +----
- drivers/usb/misc/rio500.c                         |   28 +--
- drivers/usb/misc/trancevibrator.c                 |   21 +--
- drivers/usb/misc/usblcd.c                         |   20 +--
- drivers/usb/misc/usbled.c                         |   18 +--
- drivers/usb/misc/usbsevseg.c                      |   18 +--
- drivers/usb/misc/yurex.c                          |   22 +--
- drivers/usb/storage/alauda.c                      |   13 +-
- drivers/usb/storage/cypress_atacb.c               |   13 +-
- drivers/usb/storage/datafab.c                     |   13 +-
- drivers/usb/storage/ene_ub6250.c                  |   13 +-
- drivers/usb/storage/freecom.c                     |   13 +-
- drivers/usb/storage/isd200.c                      |   13 +-
- drivers/usb/storage/jumpshot.c                    |   13 +-
- drivers/usb/storage/karma.c                       |   13 +-
- drivers/usb/storage/onetouch.c                    |   13 +-
- drivers/usb/storage/realtek_cr.c                  |   13 +-
- drivers/usb/storage/sddr09.c                      |   13 +-
- drivers/usb/storage/sddr55.c                      |   13 +-
- drivers/usb/storage/shuttle_usbat.c               |   13 +-
- drivers/usb/storage/uas.c                         |   13 +-
- drivers/usb/usb-skeleton.c                        |   21 +--
- drivers/usb/wusbcore/cbaf.c                       |   12 +-
- drivers/uwb/hwa-rc.c                              |   12 +-
- drivers/uwb/i1480/dfu/usb.c                       |   20 +--
- drivers/video/smscufx.c                           |   19 +--
- drivers/video/udlfb.c                             |   19 +--
- drivers/w1/masters/ds2490.c                       |   21 +--
- drivers/w1/slaves/w1_therm.c                      |   36 +++-
- drivers/w1/w1.c                                   |   10 +
- drivers/watchdog/pcwd_usb.c                       |   35 +---
- drivers/xen/xen-balloon.c                         |   86 +++---
- drivers/xen/xen-selfballoon.c                     |   76 +++---
- fs/debugfs/file.c                                 |   95 +++++++
- include/linux/cpu.h                               |   18 +-
- include/linux/debugfs.h                           |   26 ++
- include/linux/device.h                            |  108 +++++++-
- include/linux/edac.h                              |    8 +-
- include/linux/i2c.h                               |   13 +
- include/linux/kobject.h                           |    2 -
- include/linux/kref.h                              |   77 +++++-
- include/linux/memory.h                            |    3 +-
- include/linux/node.h                              |    6 +-
- include/linux/platform_device.h                   |   14 +-
- include/linux/spi/spi.h                           |   11 +
- include/linux/usb.h                               |   12 +
- include/xen/balloon.h                             |    6 +-
- kernel/rtmutex-tester.c                           |   37 ++--
- kernel/sched.c                                    |   40 ++--
- kernel/time/clockevents.c                         |    1 -
- kernel/time/clocksource.c                         |   37 ++--
- lib/Makefile                                      |    2 +-
- lib/devres.c                                      |   55 ++++-
- lib/kobject.c                                     |   37 ---
- lib/kobject_uevent.c                              |    3 +
- lib/kref.c                                        |   97 -------
- mm/compaction.c                                   |   10 +-
- mm/hugetlb.c                                      |   34 ++--
- mm/vmscan.c                                       |   14 +-
- sound/usb/6fire/chip.c                            |   15 +-
- sound/usb/caiaq/device.c                          |   13 +-
- sound/usb/misc/ua101.c                            |   14 +-
- sound/usb/usx2y/us122l.c                          |   14 +-
- sound/usb/usx2y/usbusx2y.c                        |   13 +-
- 518 files changed, 3168 insertions(+), 6888 deletions(-)
- delete mode 100644 lib/kref.c
+The following changes since commit dcd6c92267155e70a94b3927bce681ce74b80d1f:
 
----------------
+  Linux 3.3-rc1 (2012-01-19 15:04:48 -0800)
 
-Alessandro Rubini (5):
-      debugfs: add tools to printk 32-bit registers
-      usb: dwc3: use debugfs_print_regs32()
-      debugfs: print_regs32: make regs array a const pointer
-      usb: dwc3: fix a warning
-      debugfs: bugfix: include <linux/io.h> in file.c
+are available in the git repository at:
+  git://git.kernel.org/pub/scm/linux/kernel/git/gregkh/driver-core.git/ driver-core-linus
 
-Axel Lin (1):
-      uio: convert drivers/uio/* to use module_platform_driver()
+Alan Stern (1):
+      Documentation update for the driver model core
 
-Bart Van Assche (2):
-      hv: Move Kconfig menu entry
-      hv: Add Kconfig menu entry
+Eric W. Biederman (1):
+      sysfs: Complain bitterly about attempts to remove files from nonexistent directories.
 
-Ben Hutchings (1):
-      topology: Provide CPU topology in sysfs in !SMP configurations
+Greg Kroah-Hartman (2):
+      driver core: remove drivers/base/sys.c and include/linux/sysdev.h
+      stable: update documentation to ask for kernel version
 
-Dan Carpenter (1):
-      debugfs: remove unneeded cast in debugfs_print_regs32()
+Randy Dunlap (3):
+      kernel-doc: fix new warnings in device.h
+      kernel-doc: fix new warnings in debugfs
+      kernel-doc: fix new warnings in driver-core
 
-Evgeniy Polyakov (1):
-      w1: add fast search for single slave bus
+Wolfram Sang (1):
+      Documentation: devres: add allocation functions to list of supported calls
 
-Greg Kroah-Hartman (14):
-      USB: Add helper macro for usb_driver boilerplate
-      USB: convert drivers/usb/* to use module_usb_driver()
-      USB: convert drivers/staging/* to use module_usb_driver()
-      USB: convert drivers/net/* to use module_usb_driver()
-      USB: convert drivers/media/* to use module_usb_driver()
-      USB: convert drivers/bluetooth/* to use module_usb_driver()
-      USB: convert drivers/input/* to use module_usb_driver()
-      USB: convert drivers/hid/* to use module_usb_driver()
-      USB: convert sound/* to use module_usb_driver()
-      USB: convert some miscellanies drivers to use module_usb_driver()
-      kref: fix up the kfree build problems
-      xen: fix build breakage in xen-selfballoon.c caused by sysdev conversion
-      arm: time.h: remove device.h #include
-      driver core: remove __must_check from device_create_file
+majianpeng (1):
+      base/core.c:fix typo in comment in function device_add
 
-Heiko Carstens (1):
-      debugfs: add missing #ifdef HAS_IOMEM
-
-Joe Perches (2):
-      MAINTAINERS: stable: Update address
-      Documentation: Update stable address
-
-K. Y. Srinivasan (6):
-      Staging: hv: vmbus: Support building the vmbus driver as part of the kernel
-      drivers: hv: Don't OOPS when you cannot init vmbus
-      Drivers: hv: Fix a memory leak
-      Drivers: hv: Make the vmbus driver unloadable
-      Drivers: hv: Get rid of an unnecessary check in hv.c
-      Drivers:hv: Fix a bug in vmbus_driver_unregister()
-
-Kautuk Consul (1):
-      devtmpfsd: fix task state handling
-
-Kay Sievers (23):
-      driver-core: skip uevent generation when nobody is listening
-      driver-core: implement 'sysdev' functionality for regular devices and buses
-      rtmutex-tester: convert sysdev_class to a regular subsystem
-      edac: convert sysdev_class to a regular subsystem
-      ibm_rtl: convert sysdev_class to a regular subsystem
-      clocksource: convert sysdev_class to a regular subsystem
-      xen-balloon: convert sysdev_class to a regular subsystem
-      cpu: convert 'cpu' and 'machinecheck' sysdev_class to a regular subsystem
-      convert 'memory' sysdev_class to a regular subsystem
-      s390: time - convert sysdev_class to a regular subsystem
-      power: cmm - convert sysdev_class to a regular subsystem
-      power: qe_ic - convert sysdev_class to a regular subsystem
-      power: suspend - convert sysdev_class to a regular subsystem
-      sh: intc - convert sysdev_class to a regular subsystem
-      sh: dma - convert sysdev_class to a regular subsystem
-      mips: 7segled - convert sysdev_class to a regular subsystem
-      mips: txx9_sram - convert sysdev_class to a regular subsystem
-      m86k: gpio - convert sysdev_class to a regular subsystem
-      kobject: remove kset_find_obj_hinted()
-      arm: leds: convert sysdev_class to a regular subsystem
-      arm: convert sysdev_class to a regular subsystem
-      clockevents: remove sysdev.h
-      driver-core: remove sysdev.h usage.
-
-Kukjin Kim (1):
-      arm: fix up some samsung merge sysdev conversion problems
-
-Lars-Peter Clausen (5):
-      drivercore: Generalize module_platform_driver
-      I2C: Add helper macro for i2c_driver boilerplate
-      SPI: Add helper macro for spi_driver boilerplate
-      staging:iio: Use module_i2c_driver to register I2C drivers
-      staging:iio: Use module_spi_driver to register SPI driver
-
-Maciej Szmigiero (1):
-      W1: w1_therm: release the bus during conversion on externally powered devices
-
-Maxin B. John (1):
-      firmware: google: fix gsmi.c build warning
-
-Neil Horman (1):
-      firmware: Fix an oops on reading fw_priv->fw in sysfs loading file
-
-Peter Zijlstra (3):
-      kref: Inline all functions
-      kref: Implement kref_put in terms of kref_sub
-      kref: Remove the memory barriers
-
-Uwe Kleine-König (1):
-      drivers_base: make argument to platform_device_register_full const
-
-Wolfram Sang (2):
-      lib: devres: add annotations for #endif
-      lib: devres: add convenience function to remap a resource
-
+ Documentation/driver-model/devres.txt |    4 +
+ Documentation/stable_kernel_rules.txt |    3 +-
+ drivers/base/Makefile                 |    2 +-
+ drivers/base/bus.c                    |    9 +-
+ drivers/base/core.c                   |   17 ++-
+ drivers/base/sys.c                    |  383 ---------------------------------
+ fs/debugfs/file.c                     |    2 +-
+ fs/sysfs/file.c                       |    6 +
+ fs/sysfs/inode.c                      |    5 +-
+ include/linux/device.h                |   15 +-
+ include/linux/sysdev.h                |  164 --------------
+ 11 files changed, 49 insertions(+), 561 deletions(-)
+ delete mode 100644 drivers/base/sys.c
+ delete mode 100644 include/linux/sysdev.h

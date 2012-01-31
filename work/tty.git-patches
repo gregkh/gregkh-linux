@@ -1,16 +1,19 @@
 From: Greg KH <gregkh@suse.de>
 To: Linus Torvalds <torvalds@linux-foundation.org>, Andrew Morton <akpm@linux-foundation.org>
 Cc: linux-kernel@vger.kernel.org, linux-serial@vger.kernel.org
-Subject: [GIT PATCH] TTY/serial driver mere for 3.3
+Subject: [GIT PATCH] TTY/serial patches for 3.3-rc1
 
-Here is the big tty/serial merge for 3.3.
+Here are some tty/serial patches for 3.3-rc1
 
-Lots of good fixes and reworks by Jiri on the tty and serial drivers,
-resolving some nasty issues, and a number of driver updates as well.
-Full details are in the shortlog below.
+Big thing here is the movement of the 8250 serial drivers to their own
+directory, now that the patch churn has calmed down.
+
+Other than that, only minor stuff (omap patches were reverted as they
+were found to be wrong), and another broken driver removed from the
+system.
 
 Please pull from:
-	git://git.kernel.org/pub/scm/linux/kernel/git/gregkh/tty.git tty-next
+	git://git.kernel.org/pub/scm/linux/kernel/git/gregkh/tty.git tty-3.1-rc1
 
 All of these patches have been in the -mm and -next trees for a while.
 
@@ -23,168 +26,99 @@ greg k-h
 
 ------------
 
- Documentation/serial/driver                |    2 +-
- arch/powerpc/kernel/legacy_serial.c        |    3 +
- arch/x86/include/asm/mrst.h                |    2 +-
- arch/x86/kernel/early_printk.c             |    2 +-
- arch/x86/platform/mrst/early_printk_mrst.c |   16 +-
- drivers/parport/parport_ax88796.c          |   13 +-
- drivers/parport/parport_sunbpp.c           |   13 +-
- drivers/tty/n_hdlc.c                       |    6 +-
- drivers/tty/n_tty.c                        |    8 +-
- drivers/tty/pty.c                          |   26 +-
- drivers/tty/serial/8250.c                  |   98 ++---
- drivers/tty/serial/8250.h                  |   26 +
- drivers/tty/serial/8250_dw.c               |   12 +-
- drivers/tty/serial/8250_fsl.c              |   63 +++
- drivers/tty/serial/8250_pci.c              |   47 ++-
- drivers/tty/serial/Kconfig                 |   37 ++-
- drivers/tty/serial/Makefile                |    2 +
- drivers/tty/serial/atmel_serial.c          |   12 +-
- drivers/tty/serial/bfin_sport_uart.c       |   22 +-
- drivers/tty/serial/bfin_sport_uart.h       |    5 +-
- drivers/tty/serial/bfin_uart.c             |   83 ++--
- drivers/tty/serial/ifx6x60.c               |    1 -
- drivers/tty/serial/imx.c                   |  148 +++++-
- drivers/tty/serial/m32r_sio.c              |    7 +-
- drivers/tty/serial/max3100.c               |    1 -
- drivers/tty/serial/max3107-aava.c          |    1 -
- drivers/tty/serial/max3107.c               |    1 -
- drivers/tty/serial/mfd.c                   |   18 +-
- drivers/tty/serial/mrst_max3110.c          |    1 -
- drivers/tty/serial/msm_serial_hs.c         |   23 +-
- drivers/tty/serial/mxs-auart.c             |    5 +-
- drivers/tty/serial/omap-serial.c           |    2 +-
- drivers/tty/serial/pch_uart.c              |  160 ++++++-
- drivers/tty/serial/sc26xx.c                |   14 +-
- drivers/tty/serial/serial_core.c           |  325 +++++++-----
- drivers/tty/serial/serial_cs.c             |    8 +-
- drivers/tty/serial/sirfsoc_uart.c          |  783 ++++++++++++++++++++++++++++
- drivers/tty/serial/sirfsoc_uart.h          |  185 +++++++
- drivers/tty/serial/timbuart.c              |   15 +-
- drivers/tty/serial/vr41xx_siu.c            |   13 +-
- drivers/tty/tty_io.c                       |  309 +++++++-----
- drivers/tty/tty_ldisc.c                    |   22 +-
- drivers/tty/vt/consolemap.c                |    2 +-
- include/linux/serial_8250.h                |    5 +
- include/linux/serial_core.h                |  100 +---
- 45 files changed, 1989 insertions(+), 658 deletions(-)
- create mode 100644 drivers/tty/serial/8250_fsl.c
- create mode 100644 drivers/tty/serial/sirfsoc_uart.c
- create mode 100644 drivers/tty/serial/sirfsoc_uart.h
+ Documentation/DocBook/device-drivers.tmpl          |    1 -
+ MAINTAINERS                                        |    2 +-
+ drivers/tty/serial/{ => 8250}/8250.c               |    0
+ drivers/tty/serial/{ => 8250}/8250.h               |    0
+ drivers/tty/serial/{ => 8250}/8250_accent.c        |    0
+ drivers/tty/serial/{ => 8250}/8250_acorn.c         |    0
+ drivers/tty/serial/{ => 8250}/8250_boca.c          |    0
+ drivers/tty/serial/{ => 8250}/8250_dw.c            |    0
+ drivers/tty/serial/{ => 8250}/8250_early.c         |    0
+ drivers/tty/serial/{ => 8250}/8250_exar_st16c554.c |    0
+ drivers/tty/serial/{ => 8250}/8250_fourport.c      |    0
+ drivers/tty/serial/{ => 8250}/8250_fsl.c           |    0
+ drivers/tty/serial/{ => 8250}/8250_gsc.c           |    0
+ drivers/tty/serial/{ => 8250}/8250_hp300.c         |    0
+ drivers/tty/serial/{ => 8250}/8250_hub6.c          |    0
+ drivers/tty/serial/{ => 8250}/8250_mca.c           |    0
+ drivers/tty/serial/{ => 8250}/8250_pci.c           |    0
+ drivers/tty/serial/{ => 8250}/8250_pnp.c           |    0
+ drivers/tty/serial/8250/Kconfig                    |  280 ++++++++++++++++
+ drivers/tty/serial/8250/Makefile                   |   20 ++
+ drivers/tty/serial/{ => 8250}/m32r_sio.c           |    0
+ drivers/tty/serial/{ => 8250}/m32r_sio.h           |    0
+ drivers/tty/serial/{ => 8250}/m32r_sio_reg.h       |    0
+ drivers/tty/serial/{ => 8250}/serial_cs.c          |    0
+ drivers/tty/serial/Kconfig                         |  283 +----------------
+ drivers/tty/serial/Makefile                        |   20 +-
+ drivers/tty/serial/amba-pl011.c                    |   30 ++-
+ drivers/tty/serial/jsm/jsm_driver.c                |    1 +
+ drivers/tty/serial/max3107-aava.c                  |  344 --------------------
+ drivers/tty/serial/omap-serial.c                   |    4 +-
+ drivers/tty/serial/serial_core.c                   |    6 +-
+ drivers/tty/tty_port.c                             |   12 +-
+ 32 files changed, 346 insertions(+), 657 deletions(-)
+ rename drivers/tty/serial/{ => 8250}/8250.c (100%)
+ rename drivers/tty/serial/{ => 8250}/8250.h (100%)
+ rename drivers/tty/serial/{ => 8250}/8250_accent.c (100%)
+ rename drivers/tty/serial/{ => 8250}/8250_acorn.c (100%)
+ rename drivers/tty/serial/{ => 8250}/8250_boca.c (100%)
+ rename drivers/tty/serial/{ => 8250}/8250_dw.c (100%)
+ rename drivers/tty/serial/{ => 8250}/8250_early.c (100%)
+ rename drivers/tty/serial/{ => 8250}/8250_exar_st16c554.c (100%)
+ rename drivers/tty/serial/{ => 8250}/8250_fourport.c (100%)
+ rename drivers/tty/serial/{ => 8250}/8250_fsl.c (100%)
+ rename drivers/tty/serial/{ => 8250}/8250_gsc.c (100%)
+ rename drivers/tty/serial/{ => 8250}/8250_hp300.c (100%)
+ rename drivers/tty/serial/{ => 8250}/8250_hub6.c (100%)
+ rename drivers/tty/serial/{ => 8250}/8250_mca.c (100%)
+ rename drivers/tty/serial/{ => 8250}/8250_pci.c (100%)
+ rename drivers/tty/serial/{ => 8250}/8250_pnp.c (100%)
+ create mode 100644 drivers/tty/serial/8250/Kconfig
+ create mode 100644 drivers/tty/serial/8250/Makefile
+ rename drivers/tty/serial/{ => 8250}/m32r_sio.c (100%)
+ rename drivers/tty/serial/{ => 8250}/m32r_sio.h (100%)
+ rename drivers/tty/serial/{ => 8250}/m32r_sio_reg.h (100%)
+ rename drivers/tty/serial/{ => 8250}/serial_cs.c (100%)
+ delete mode 100644 drivers/tty/serial/max3107-aava.c
 
 ---------------
 
-Alexander Stein (1):
-      drivers/tty/serial/pch_uart.c: add console support
+Alan Cox (1):
+      serial: Kill off Moorestown code
 
-Axel Lin (2):
-      parport: convert drivers/parport/* to use module_platform_driver()
-      TTY: serial: convert drivers/tty/serial/* to use module_platform_driver()
+Greg Kroah-Hartman (2):
+      Revert "tty: serial: OMAP: transmit FIFO threshold interrupts don't wake the chip"
+      Revert "tty: serial: OMAP: ensure FIFO levels are set correctly in non-DMA mode"
 
-Claudio Scordino (1):
-      atmel_serial: fix spinlock lockup in RS485 code
+Jiri Slaby (1):
+      TTY: fix UV serial console regression
 
-Dan Williams (2):
-      serial/8250_pci: setup-quirk workaround for the kt serial controller
-      serial/8250_pci: init-quirk msi support for kt serial controller
+Lucas Kannebley Tavares (2):
+      Updated TTY MAINTAINERS info
+      jsm: Fixed EEH recovery error
 
-Dave Young (1):
-      tty_ldisc: remove unnecessary negative return check for wait_event_timeout
+Paul Gortmaker (1):
+      serial: group all the 8250 related code together
 
-Dirk Behme (1):
-      imx: Add save/restore functions for UART control regs
+Paul Walmsley (2):
+      tty: serial: OMAP: ensure FIFO levels are set correctly in non-DMA mode
+      tty: serial: OMAP: transmit FIFO threshold interrupts don't wake the chip
 
-Eric Miao (1):
-      tty: serial: imx: move del_timer_sync() to avoid potential deadlock
+Rabin Vincent (1):
+      serial: amba-pl011: lock console writes against interrupts
 
-Fabio Estevam (1):
-      tty: serial: imx: Allow UART to be a source for wakeup
+Randy Dunlap (1):
+      docbook: don't use serial_core.h in device-drivers book
 
-Ilya Zykov (1):
-      tty: n_hdlc not atomic use tty->flags.
-
-Jiri Slaby (19):
-      TTY: move pgrp killing
-      TTY: extract /dev/tty handling from tty_open
-      TTY: extract driver lookup from tty_open
-      TTY: coalesce fail paths in tty_open
-      TTY: move tty_lookup_driver to switch-cases
-      TTY: move debug checking out of tty_release
-      TTY: open/release, cleanup printks
-      TTY: serial, cleanup include file
-      TTY: serial, cleanup atmel_set_ldisc
-      TTY: serial, switch closing_wait and close_delay to jiffies
-      TTY: serial, use tty_port_close_start helper
-      TTY: serial, document few functions
-      TTY: serial, do not touch tty->alt_speed
-      TTY: serial, inline uart_get
-      TTY: serial, define uart_port_activate/shutdown
-      TTY: serial, fill uart_port_shutdown
-      TTY: serial, extract uart_port_startup
-      TTY: pty, cleanup the pty counting
-      TTY: ldisc, remove some unneeded includes
-
-Lars-Peter Clausen (1):
-      TTY: Remove redundant spi driver bus initialization
-
-Maciej Szmigiero (1):
-      serial: fix serial_cs I/O windows for Argosy RS-COM 2P
-
-Mayank Rana (2):
-      msm_serial_hs: Fix type inconsistency for tx and rx command_ptr_ptr
-      msm_serial_hs: Fix spinlock recursion in handling CTS
-
-Mika Westerberg (1):
-      serial, mfd: don't hardcode the console
-
-Paul Gortmaker (8):
-      serial: move struct uart_8250_port from 8250.c to 8250.h
-      serial: clean up parameter passing for 8250 Rx IRQ handling
-      serial: export the key functions for an 8250 IRQ handler
-      serial: make 8250 timeout use the specified IRQ handler
-      serial: manually inline serial8250_handle_port
-      serial: add irq handler for Freescale 16550 errata.
-      serial: make FSL errata depend on 8250_CONSOLE, not just 8250
-      serial: driver for m32 arch should not have DEC alpha errata
-
-Rong Wang (1):
-      UART: add CSR SiRFprimaII SoC on-chip uart drivers
-
-Saleem Abdulrasool (1):
-      imx: add polled io uart methods
+Shreshtha Kumar Sahu (1):
+      amba-pl011: do not disable RTS during shutdown
 
 Shubhrajyoti D (2):
-      serial: OMAP2+: UART: Make the SERIAL_OMAP depend on ARCH_OMAP2PLUS
-      OMAP: UART: fix the return type of check_modem_status
+      omap-serial :Make the suspend/resume functions depend on CONFIG_PM_SLEEP.
+      omap-serial: make serial_omap_restore_context depend on CONFIG_PM_RUNTIME
 
-Sonic Zhang (8):
-      serial: bfin-uart: Request CTS GPIO PIN when the serial device starts up.
-      serial: bfin-uart: Add tty ASYNC_CTS_FLOW flag to do CTS flow control.
-      serial: bfin-uart: remove redundant CTS check for hardware CTS control.
-      tty: bfin-sport-uart: Rx interrupt is not called always with irq disabled.
-      serial: bfin-sport-uart: Request CTS GPIO PIN when the sport emulated serial device starts up.
-      serial: bfin-sport-uart: Add tty ASYNC_CTS_FLOW flag to do CTS flow control.
-      serial: bfin-uart: Enable hardware automatic CTS only when CTS pin is available.
-      serial: bfin-uart: Remove ASYNC_CTS_FLOW flag for hardware automatic CTS.
-
-Thorsten Wißmann (1):
-      drivers/tty: Remove unneeded spaces
-
-Uwe Kleine-König (6):
-      serial/imx: propagate error of platform_driver_register in init routine
-      serial/mxs-auart: only wake up tty layer once
-      serial: use DIV_ROUND_CLOSEST instead of open coding it
-      serial/documentation: fix documented name of DCD cpp symbol
-      serial/imx: propagate error from of_alias_get_id instead of using -ENODEV
-      serial/imx: let probing fail for the dt case without a valid alias
-
-Wolfram Sang (1):
-      serial: 8250: replace hardcoded 0xbf with #define
-
-Yegor Yefremov (1):
-      serial: add support for 400 and 800 v3 series Titan cards
-
-Zeng Zhaoming (1):
-      tty: Fix memory leak in virtual console when enable unicode translation
+Simon Glass (1):
+      serial: Fix wakeup init logic to speed up startup
 

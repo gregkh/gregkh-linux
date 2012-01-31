@@ -4,24 +4,6 @@
 # applied them, merge to the branch, and push the branch to the servers if we
 # are online.
 
-# determine if we are online or not, depending on the machine
-online()
-{
-	ONLINE=0
-
-	# some machines I don't use network manager, so handle them
-	HOSTNAME=`hostname -s`
-	if [ "$HOSTNAME" = "clark" ] ; then
-		ONLINE=1
-	fi
-
-	# check network manager to see if we are online
-	NM_STATUS=`nmcli -terse -f state nm`
-	if [ "$NM_STATUS" = "connected" ] ; then
-		ONLINE=1
-	fi
-}
-
 
 # we need to be either on the 'work-next' branch, or the 'work-linus' branch in
 # order to work properly, error out if we are on something else.
@@ -78,7 +60,7 @@ if [ $? -ne 0 ] ; then
 	exit
 fi
 
-online
+ONLINE=`gregkh_machine_online`
 # Only push if we have a network connection
 if [ "$ONLINE" = "1" ] ; then
 	git push kroah.com && git push
