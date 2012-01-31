@@ -38,3 +38,9 @@ done
 
 rm -rf ../tmp/
 
+ONLINE=`gregkh_machine_online`
+# Only push if we have a network connection
+if [ "$ONLINE" = "1" ] ; then
+	git push kroah.com && git push
+fi
+
