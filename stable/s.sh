@@ -4,7 +4,7 @@ USER=`whoami`
 
 DIR=/home/$USER/linux/stable
 SCRIPT_DIR=/home/$USER/linux
-KERNEL_DIR=$DIR/linux-3.1.y
+KERNEL_DIR=$DIR/linux-3.2.y
 
 cd $DIR
 cat - > $DIR/foo.patch
