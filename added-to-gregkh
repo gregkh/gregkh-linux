@@ -9,7 +9,7 @@
 #	exit 1
 #}
 
-EMAIL_ADDRESS='<gregkh@suse.de>'
+EMAIL_ADDRESS='<gregkh@linuxfoundation.org>'
 
 extract_addr()
 {
@@ -184,10 +184,6 @@ reply()
 		-reply_to="$MESSAGE_ID" \
 		-message_id="$ID" \
 		"$CHARCMD" | \
-	# talk to the suse network instead of localhost (due to the way suse.de now handles email...)
-	#smtpsend -server=$SMTP_SERVER $to -from=$FROM
-	#msmtp $to
-#	~/bin/msmtp-enqueue.sh -a suse $to
 	~/bin/msmtp-enqueue.sh -a coco $to
 }
 

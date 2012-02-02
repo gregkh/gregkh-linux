@@ -1,4 +1,4 @@
-From: Greg KH <gregkh@suse.de>
+From: Greg KH <gregkh@linuxfoundation.org>
 To: Linus Torvalds <torvalds@linux-foundation.org>, Andrew Morton <akpm@linux-foundation.org>, Arnd Bergmann <arnd@arndb.de>
 Cc: linux-kernel@vger.kernel.org
 Subject: [GIT PATCH] char and misc patches for 3.3

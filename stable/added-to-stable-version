@@ -6,7 +6,7 @@ echo "VERSION=$KERNEL"
 
 #KERNEL="2.6.$KERNEL_MINOR_VERSION"
 
-EMAIL_ADDRESS='<gregkh@suse.de>'
+EMAIL_ADDRESS='<gregkh@linuxfoundation.org>'
 
 STABLE='<stable@vger.kernel.org>'
 STABLE_COMMITS='<stable-commits@vger.kernel.org>'
@@ -178,9 +178,6 @@ reply()
 		-message_id="$ID" \
 		"$CHARCMD" \
 		| \
-	# talk to the suse network instead of localhost (due to the way suse.de now handles email...)
-	# smtpsend -server=$SMTP_SERVER $to -from=$FROM
-#	~/bin/msmtp-enqueue.sh -a suse "$to"
 	~/bin/msmtp-enqueue.sh -a coco "$to"
 	#msmtp $to
 }

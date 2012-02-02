@@ -1,4 +1,4 @@
-From: Greg KH <gregkh@suse.de>
+From: Greg KH <gregkh@linuxfoundation.org>
 To: Linus Torvalds <torvalds@linux-foundation.org>, Andrew Morton <akpm@linux-foundation.org>
 Cc: linux-kernel@vger.kernel.org, linux-usb@vger.kernel.org
 Subject: [GIT PATCH] USB bug fixes for 3.3-rc1
