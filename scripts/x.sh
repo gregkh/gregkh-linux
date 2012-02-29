@@ -1,12 +1,13 @@
 #!/bin/bash
 
 DIR=~/linux
+SCRIPTS=${DIR}/scripts
 KERNEL_DIR=$DIR/gregkh-2.6
 
 cd $DIR
 cat - > $DIR/foo.patch
 #perl $DIR/x.pl
-$DIR/fix_patch $DIR/foo.patch
+${SCRIPTS}/fix_patch $DIR/foo.patch
 dos2unix $DIR/foo.patch
 
 #perl $DIR/mime_decode -f $DIR/foo.patch

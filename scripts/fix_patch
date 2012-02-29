@@ -5,7 +5,7 @@ do
 	TMPFILE=`mktemp example.XXXXXX` || exit 1
 
 	echo "TMPFILE=$TMPFILE"
-	perl ~/linux/mime_dump --headers From,Date,Subject,To,Cc,Message-ID,Content-Disposition -F -f $PATCH > $TMPFILE
+	perl ~/linux/scripts/mime_dump --headers From,Date,Subject,To,Cc,Message-ID,Content-Disposition -F -f $PATCH > $TMPFILE
 	mv $TMPFILE $PATCH
 
 	formail -k -X From: -X Subject: -X From -X To: -X Cc: -X Date: -X Message-ID: -X Content-Disposition: -X Content-Type: -X MIME-Version: < $PATCH > $TMPFILE
