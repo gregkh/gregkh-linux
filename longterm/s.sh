@@ -3,7 +3,7 @@
 USER=`whoami`
 
 DIR=/home/$USER/linux/longterm
-SCRIPT_DIR=/home/$USER/linux
+SCRIPT_DIR=/home/$USER/linux/scripts
 KERNEL_DIR=$DIR/linux-2.6.32.y
 
 cd $DIR
