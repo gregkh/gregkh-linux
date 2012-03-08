@@ -175,7 +175,8 @@ reply()
 		-message_id="$ID" \
 		"$CHARCMD" \
 		| \
-	~/bin/msmtp-enqueue.sh -a coco "$to"
+	~/bin/msmtp-enqueue.sh "$to"
+#	~/bin/msmtp-enqueue.sh -a coco "$to"
 	#msmtp $to
 }
 
