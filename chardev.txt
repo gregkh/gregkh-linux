@@ -1,0 +1,64 @@
+What we have today:
+extern int alloc_chrdev_region(dev_t *, unsigned, unsigned, const char *);
+extern int register_chrdev_region(dev_t, unsigned, const char *);
+extern int __register_chrdev(unsigned int major, unsigned int baseminor,
+			     unsigned int count, const char *name,
+			     const struct file_operations *fops);
+extern void __unregister_chrdev(unsigned int major, unsigned int baseminor,
+				unsigned int count, const char *name);
+extern void unregister_chrdev_region(dev_t, unsigned);
+extern void chrdev_show(struct seq_file *,off_t);
+
+static inline int register_chrdev(unsigned int major, const char *name,
+				  const struct file_operations *fops)
+{
+	return __register_chrdev(major, 0, 256, name, fops);
+}
+
+static inline void unregister_chrdev(unsigned int major, const char *name)
+{
+	__unregister_chrdev(major, 0, 256, name);
+}
+
+Then there is the whole cdev.h stuff:
+ cdev_init(struct cdev *, const struct file_operations)
+ cdev_alloc(void)
+ cdev_del(struct cdev *)
+ cdev_add(struct cdev *, dev_t, unsigned)
+ 
+
+What we want:
+
+Register a char dev for a region and assign it a file operations.
+Unregister the region.
+That's it.
+
+
+Need:
+	fops
+	owner of module (different at times from fops)
+	major/minor range, or dynamic
+	name (for /proc)
+
+Watch out, i_cdev is a cdev in the inode, and it can be embedded within
+something else that grabs it when open() is called, so we need to know
+the size of struct cdev in drivers, it can't just be a "token".
+
+Today:
+	register needs:
+		cdev_init
+		cdev_add
+		register_chrdev_region, with same options as cdev_add() had
+
+	unregister:
+		cdev_del
+		unregister_chrdev_region
+
+
+register_chrdev() and unregister_chrdev() are the "simple" ones, need to
+combine cdev with those somehow to make things easier for poeple to keep
+from the cdev_init/add/del mess.
+
+Unless we really want to force everyone to do this?  It might be nicer...
+
+
