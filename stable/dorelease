@@ -76,9 +76,14 @@ echo -n "# [ret] to continue"
 read
 
 RELDIR="../release-$RELEASE"
-mkdir $RELDIR
 
-echo "# building tree in $RELDIR"
+if [ -d ${RELDIR} ] ; then
+	rm ${RELDIR}/*
+else
+	mkdir ${RELDIR}
+fi
+
+echo "# building tree in ${RELDIR}"
 
 # build release materials, tarball, base patch, incr patch, changelog
 #git archive --format=tar --prefix=linux-$RELEASE/ HEAD | gzip -9 > $RELDIR/linux-${RELEASE}.tar.gz
@@ -92,8 +97,10 @@ git archive --format=tar --prefix=linux-$RELEASE/ $RELEASE_COMMIT > $RELDIR/linu
 git diff-tree -p $BASE_COMMIT $RELEASE_COMMIT > $RELDIR/patch-${RELEASE}
 if [ $INCREMENTAL -ne 0 ]; then
 	git diff-tree -p $LAST_COMMIT $RELEASE_COMMIT > $RELDIR/patch-${LAST_REL}-${REL}
+	cat $RELDIR/patch-${LAST_REL}-${REL} | diffstat -p1 > $RELDIR/diffstat-${LAST_REL}-${REL} 2>/dev/null
+else
+	cat $RELDIR/patch-${RELEASE} | diffstat -p1 > $RELDIR/diffstat-${RELEASE} 2>/dev/null
 fi
-cat $RELDIR/patch-${LAST_REL}-${REL} | diffstat -p1 > $RELDIR/diffstat-${LAST_REL}-${REL} 2>/dev/null
 git log ${LAST_COMMIT}..${RELEASE_COMMIT} > $RELDIR/ChangeLog-$RELEASE
 < $RELDIR/ChangeLog-$RELEASE git shortlog > $RELDIR/shortlog-$RELEASE
 
