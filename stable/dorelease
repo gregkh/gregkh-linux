@@ -21,30 +21,33 @@ fi
 REL_ARRAY=(${RELEASE//./ })
 BASE=${REL_ARRAY[0]}.${REL_ARRAY[1]}.${REL_ARRAY[2]}
 REL=${REL_ARRAY[3]}
+MAJOR=${REL_ARRAY[0]}
 MINOR=${REL_ARRAY[2]}
 
 LONGTERM=0
 # see if this is a "longterm" kernel or not
-if [ $MINOR == "27" ]; then
-	LONGTERM=1
+if [ $MAJOR == "2" ]; then
+	if [ $MINOR == "27" ]; then
+		LONGTERM=1
+	fi
+	if [ $MINOR == "32" ]; then
+		LONGTERM=1
+	fi
+	if [ $MINOR == "33" ]; then
+		LONGTERM=1
+	fi
+	if [ $MINOR == "34" ]; then
+		LONGTERM=1
+	fi
+	if [ $MINOR == "35" ]; then
+		LONGTERM=1
+	fi
 fi
-if [ $MINOR == "32" ]; then
-	LONGTERM=1
-fi
-if [ $MINOR == "33" ]; then
-	LONGTERM=1
-fi
-if [ $MINOR == "34" ]; then
-	LONGTERM=1
-fi
-if [ $MINOR == "35" ]; then
-	LONGTERM=1
-fi
-#echo "longterm = $LONGTERM"
+#echo "major = $MAJOR, minor = $MINOR, longterm = $LONGTERM"
 
 # 3.0 or 2.6?
 VER="2.6"
-if [ ${REL_ARRAY[0]} == "3" ] ; then
+if [ ${MAJOR} == "3" ] ; then
 	# 3.x series
 	VER="3.0"
 	BASE=${REL_ARRAY[0]}.${REL_ARRAY[1]}

@@ -62,3 +62,28 @@ from the cdev_init/add/del mess.
 Unless we really want to force everyone to do this?  It might be nicer...
 
 
+
+Proposal:
+	cdev * cdev_create(major, minor, fops, name, private);
+	cdev_destroy(* cdev);
+
+	Can break cdev_create() into two parts:
+		cdev_init()
+		cdev_register()
+	then after cdev_init(), can do "special" things if needed:
+		- different module owner
+		- different private
+		- anything else?
+
+	TODO - talk with Kay about better names
+
+	set inode pointer to be cdev *.
+	once have cdev *:
+		void *cdev_private(cdev *)
+			gets private back
+		- can get anything else back with accessor function, not
+		  direct as we don't want to expose structure to
+		  anything outside of the cdev core to prevent people
+		  from poking with things directly.  But is this really
+		  good?
+
