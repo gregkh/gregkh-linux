@@ -26,25 +26,25 @@ apply_it ()
 	DIR="linux-$VERSION.y"
 	# echo "DIR=$DIR"
 
-	echo -n "${txtrst}Applying $PATCH to $DIR "
+	echo "${txtrst}Applying ${txtylw}$PATCH${txtrst} to ${txtblu}$DIR${txtrst}"
 
 	cd $DIR
 
 	quilt import ../$PATCH &> /dev/null
 	if [ $? -ne 0 ] ; then
 		echo "${txtred} FAILED${txtrst} to import"
+	else
+		qp-stable
+		# quilt push &> /dev/null
+		echo ""
+#		if [ $? -ne 0 ] ; then
+#			echo "${txtred} FAILED${txtrst}"
+#		else
+			quilt ref &> /dev/null
+#			echo "${txtgrn} SUCCEEDED${txtrst}"
+#		fi
 	fi
 
-	# TODO
-	# check for fuzz here much better than we currently do (by hand later)
-	# use something like what 'qp' does?
-	quilt push &> /dev/null
-	if [ $? -ne 0 ] ; then
-		echo "${txtred} FAILED${txtrst}"
-	else
-		quilt ref &> /dev/null
-		echo "${txtgrn} SUCCEEDED${txtrst}"
-	fi
 	cd ..
 }
 
