@@ -1,0 +1,22 @@
+#!/usr/bin/perl
+
+use strict;
+
+my $pwd = `pwd`;
+chomp($pwd);
+#print "pwd = $pwd\n";
+my $tree = `basename $pwd`;
+chomp($tree);
+#print "tree = $tree\n";
+my $version = `ketchup -m`;
+chomp($version);
+
+print "# What is the kernel version? [$version] ";
+my $q = <STDIN>;
+chomp($q);
+if ($q eq "") {
+	$q = $version;
+}
+print "git tag -u kroah.com -s $tree-$q $tree-linus\n";
+print "git push origin $tree-$q\n";
+print "git request-pull master git://git.kernel.org/pub/scm/linux/kernel/git/gregkh/$tree.git/ $tree-$q > msg.txt\n";
