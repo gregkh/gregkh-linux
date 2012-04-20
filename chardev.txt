@@ -1,3 +1,7 @@
+print_hex_dump_bytes - need dev_dbg_print_hex_dump_bytes()
+
+
+
 What we have today:
 extern int alloc_chrdev_region(dev_t *, unsigned, unsigned, const char *);
 extern int register_chrdev_region(dev_t, unsigned, const char *);
