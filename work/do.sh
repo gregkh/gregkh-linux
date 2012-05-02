@@ -203,7 +203,8 @@ fi
 ONLINE=`gregkh_machine_online`
 # Only push if we have a network connection
 if [ "$ONLINE" = "1" ] ; then
-	git push kroah.com && git push
+	git push kroah.com ${TREE}-${BRANCH}
+	git push
 fi
 
 # now go back to the original branch so that we can continue to work
