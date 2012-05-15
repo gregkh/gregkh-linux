@@ -114,10 +114,10 @@ reply()
 		echo "(usually sometime within the next 24 hours during the week.)"
 		echo
 		if [ "${BRANCH}" = "next" ] ; then
-			echo "The patch will also will be merged in the next major kernel release"
+			echo "The patch will also be merged in the next major kernel release"
 			echo "during the merge window."
 		else
-			echo "The patch will hopefully also will be merged in Linus's tree for the"
+			echo "The patch will hopefully also be merged in Linus's tree for the"
 			echo "next -rc kernel release."
 		fi
 		echo
