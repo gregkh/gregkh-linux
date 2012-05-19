@@ -18,6 +18,8 @@ if [ "$PATCH" == "" ] ; then
 	exit
 fi
 
+KERNEL_VERSION=$2
+
 #echo "PATCH=$PATCH"
 
 apply_it ()
@@ -48,8 +50,11 @@ apply_it ()
 	cd ..
 }
 
-
-apply_it 3.3
-#apply_it 3.2
-apply_it 3.0
-#apply_it 2.6.39
+if [ "$KERNEL_VERSION" != "" ] ; then
+	apply_it $KERNEL_VERSION
+else
+	apply_it 3.3
+	#apply_it 3.2
+	apply_it 3.0
+	#apply_it 2.6.39
+fi
