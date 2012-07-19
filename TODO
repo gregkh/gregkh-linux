@@ -24,3 +24,4 @@ Things I don't want to forget, might as well track them here.
   - kernel patches to make llvm build/link
   	http://git.linuxfoundation.org/?p=llvm-setup.git;a=tree;hb=HEAD
 
+  - remove __devX as it's pretty much pointless
