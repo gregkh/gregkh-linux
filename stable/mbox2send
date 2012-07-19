@@ -78,3 +78,5 @@ close FILE;
 print "# New mailbox is in $mboxnew\n";
 print "# To send the patches out, do:\n";
 print "cat $mboxnew | formail -A \"In-Reply-To: <FOO>\" -s  msmtp-enqueue.sh\n";
+print "# or\n";
+print "< $mboxnew formail -ds sh -c 'cat > msg.\$FILENO'\n";
