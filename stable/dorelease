@@ -120,6 +120,7 @@ echo "# "
 HOST="gregkh@geb.kernel.org"
 SCRIPT="${RELDIR}/upload_v${RELEASE}"
 touch ${SCRIPT}
+chmod 755 ${SCRIPT}
 
 if [ $LONGTERM -eq 1 ]; then
 	echo "# This is a longterm release"
