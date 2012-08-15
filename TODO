@@ -15,6 +15,7 @@ Things I don't want to forget, might as well track them here.
   - dev_hex_dump() to replace print_hex_dump() calls like dev_printk() does.
     Then make dev_hex_dump_warn(), dev_hex_dump_dbg(), which is what I really
     want.
+    or maybe just use %*ph instead
 
   - cross compilers from David Howwells http://people.redhat.com/~dhowells/cross/ into openSUSE.
 
