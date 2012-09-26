@@ -30,9 +30,9 @@ EMAIL="greg@kroah.com"
 REMOTE_STABLE_GIT="/home/ec2-user/linux/stable/linux-stable/"
 REMOTE_WORK="/home/ec2-user/tmp/"
 #REMOTE_SERVER="ec2-50-112-17-159.us-west-2.compute.amazonaws.com"	# not mine
-REMOTE_SERVER="ec2-54-245-1-104.us-west-2.compute.amazonaws.com"	# mine
+#REMOTE_SERVER="ec2-54-245-1-104.us-west-2.compute.amazonaws.com"	# mine - big
+REMOTE_SERVER="ec2-50-112-3-253.us-west-2.compute.amazonaws.com"	# mine - really big
 SSH_OPTIONS="-i /home/gregkh/.ssh/stable_build.pem"
-
 REMOTE_USER="ec2-user"
 
 LOCAL_WORK="/tmp/"
@@ -99,11 +99,19 @@ cd ..
 # Apply the patch queue
 QUILT_PATCHES=patches QUILT_SERIES=patches/series quilt push -aq --quiltrc
 
-# build stuff
-time perl ../ktest.pl ../ktest.conf
+# get initial time
+TIME=\$(date +%s)
 
-KTEST_RUN=$?
+# build stuff
+../ktest.pl ../ktest.conf
+
+KTEST_RUN=\$?
 echo "KTEST_RUN = \${KTEST_RUN}"
+
+# get time it took to do the build
+TIME="\$((\$(date +%s)-TIME))"
+
+echo "Took \${TIME} seconds to build"
 
 cd ..
 
@@ -150,9 +158,6 @@ rm -rf ${SCRIPT_HOME}
 
 # execute the script on the remote machine
 
-#ssh ${REMOTE_USER}@${REMOTE_SERVER} "cd ${REMOTE_DIR} && nohup \"cd ${REMOTE_DIR} && ./run_test.sh & > ${REMOTE_DIR} output_log \" "
-#ssh ${REMOTE_USER}@${REMOTE_SERVER} "cd ${REMOTE_DIR} && nohup \"${REMOTE_DIR}/run_test.sh & > ${REMOTE_DIR}/output_log\""
-#ssh ${REMOTE_USER}@${REMOTE_SERVER} "nohup ${REMOTE_DIR}/run_test.sh > ${REMOTE_DIR}/output_log &"
 #ssh ${REMOTE_USER}@${REMOTE_SERVER} "${REMOTE_DIR}/run_test.sh > ${REMOTE_DIR}/output_log"
 ssh ${SSH_OPTIONS} -n -f ${REMOTE_USER}@${REMOTE_SERVER} "sh -c \"cd ${REMOTE_DIR}; nohup ./run_test.sh > ${REMOTE_DIR}/output_log 2>&1 &\" "
 
