@@ -160,10 +160,16 @@ echo "BRANCH=$BRANCH"
 # don't want to accidentally send them out twice
 OLD_PATCH=`ls 0*.patch 2>/dev/null | head -n 1`
 if [ "${OLD_PATCH}" != "" ] ; then
-	echo "ERROR!!!"
-	echo "There are old patches still in the directory,"
-	echo "clean them up before running this again."
-	exit
+	echo "WARNING: There are old patches still in the directory:"
+	for P in 0*.patch; do
+		echo "	${P}"
+	done
+	echo ""
+	echo "I will clean them up if you don't stop the script right now."
+	echo -n "[ret] to continue"
+	read
+	rm 0*.patch
+	#exit
 fi
 
 PWD=`pwd`
