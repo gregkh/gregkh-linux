@@ -1,0 +1,20 @@
+# first time creating an instance
+sudo yum update
+sudo yum install gcc make quilt git tree mutt
+mkdir linux
+mkdir linux/stable
+mkdir tmp
+cd linux/stable
+git clone git://git.kernel.org/pub/scm/linux/kernel/git/stable/linux-stable.git
+cd linux-stable
+git checkout -t -b linux-3.0.y origin/linux-3.0.y
+git checkout -t -b linux-3.4.y origin/linux-3.4.y
+git checkout -t -b linux-3.5.y origin/linux-3.5.y
+
+# do at every boot
+sudo mount -t tmpfs tmpfs -o size=40G tmp
+cd linux/stable/linux-stable
+git fetch
+git checkout linux-3.0.y && git pull
+git checkout linux-3.4.y && git pull
+git checkout linux-3.5.y && git pull
