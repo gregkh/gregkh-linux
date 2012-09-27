@@ -31,7 +31,7 @@ REMOTE_STABLE_GIT="/home/ec2-user/linux/stable/linux-stable/"
 REMOTE_WORK="/home/ec2-user/tmp/"
 #REMOTE_SERVER="ec2-50-112-17-159.us-west-2.compute.amazonaws.com"	# not mine
 #REMOTE_SERVER="ec2-54-245-1-104.us-west-2.compute.amazonaws.com"	# mine - big
-REMOTE_SERVER="ec2-50-112-3-253.us-west-2.compute.amazonaws.com"	# mine - really big
+REMOTE_SERVER="ec2-50-112-71-91.us-west-2.compute.amazonaws.com"	# mine - really big
 SSH_OPTIONS="-i /home/gregkh/.ssh/stable_build.pem"
 REMOTE_USER="ec2-user"
 
@@ -62,6 +62,9 @@ echo "Using ${SCRIPT_HOME} for our local files"
 REMOTE_DIR=`ssh ${SSH_OPTIONS} ${REMOTE_USER}@${REMOTE_SERVER} mktemp -d ${REMOTE_WORK}/stable_test_XXXXX`
 echo "Using ${REMOTE_DIR} for the remote directory"
 
+# figure out how many processors are on the remote machine
+NUM_PROCESSORS=`ssh ${SSH_OPTIONS} ${REMOTE_USER}@${REMOTE_SERVER} grep -c "processor" /proc/cpuinfo`
+echo "Remote machine has ${NUM_PROCESSORS} processors."
 
 # tar up stable patch queue for just this kernel version
 cd ${QUEUE_DIR}/queue-${KERNEL_VERSION}/
@@ -141,7 +144,7 @@ BUILD_TYPE = allmodconfig
 OUTPUT_DIR = \${PWD}/output
 LOG_FILE = \${PWD}/log
 LOCALVERSION = -test
-BUILD_OPTIONS = -j16
+BUILD_OPTIONS = -j${NUM_PROCESSORS}
 MACHINE = aws
 BUILD_DIR = \${PWD}
 __EOF__
