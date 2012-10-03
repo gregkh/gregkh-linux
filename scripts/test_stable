@@ -27,13 +27,13 @@ REMOTE_WORK="/home/gregkh/tmp/"
 REMOTE_SERVER="build"
 REMOTE_USER="gregkh"
 
-REMOTE_STABLE_GIT="/home/ec2-user/linux/stable/linux-stable/"
-REMOTE_WORK="/home/ec2-user/tmp/"
-#REMOTE_SERVER="ec2-50-112-17-159.us-west-2.compute.amazonaws.com"	# not mine
-#REMOTE_SERVER="ec2-50-112-71-91.us-west-2.compute.amazonaws.com"	# mine - really big
-REMOTE_SERVER="ec2-50-112-51-233.us-west-2.compute.amazonaws.com"	# mine - really big
-SSH_OPTIONS="-i /home/gregkh/.ssh/stable_build.pem"
-REMOTE_USER="ec2-user"
+#REMOTE_STABLE_GIT="/home/ec2-user/linux/stable/linux-stable/"
+#REMOTE_WORK="/home/ec2-user/tmp/"
+##REMOTE_SERVER="ec2-50-112-17-159.us-west-2.compute.amazonaws.com"	# not mine
+##REMOTE_SERVER="ec2-50-112-71-91.us-west-2.compute.amazonaws.com"	# mine - really big
+#REMOTE_SERVER="ec2-50-112-51-233.us-west-2.compute.amazonaws.com"	# mine - really big
+#SSH_OPTIONS="-i /home/gregkh/.ssh/stable_build.pem"
+#REMOTE_USER="ec2-user"
 
 LOCAL_WORK="/tmp/"
 LOCAL_KTEST="/home/gregkh/linux/gregkh/tools/testing/ktest/ktest.pl"
@@ -55,11 +55,11 @@ if [ "${KERNEL_VERSION}" == "" ] ; then
 fi
 
 # create the local temporary directory to do the work in.
-SCRIPT_HOME=`mktemp -d ${LOCAL_WORK}/stable_test_XXXXX`
+SCRIPT_HOME=`mktemp -d ${LOCAL_WORK}/stable_test_XXXXX` || exit 1
 echo "Using ${SCRIPT_HOME} for our local files"
 
 # create the remote directory
-REMOTE_DIR=`ssh ${SSH_OPTIONS} ${REMOTE_USER}@${REMOTE_SERVER} mktemp -d ${REMOTE_WORK}/stable_test_XXXXX`
+REMOTE_DIR=`ssh ${SSH_OPTIONS} ${REMOTE_USER}@${REMOTE_SERVER} mktemp -d ${REMOTE_WORK}/stable_test_XXXXX` || exit 1
 echo "Using ${REMOTE_DIR} for the remote directory"
 
 # figure out how many processors are on the remote machine
@@ -67,8 +67,14 @@ NUM_PROCESSORS=`ssh ${SSH_OPTIONS} ${REMOTE_USER}@${REMOTE_SERVER} grep -c "proc
 echo "Remote machine has ${NUM_PROCESSORS} processors."
 
 # tar up stable patch queue for just this kernel version
-cd ${QUEUE_DIR}/queue-${KERNEL_VERSION}/
-tar -c . | gzip > ${SCRIPT_HOME}/stable_queue.tar.gz
+if [ -d ${QUEUE_DIR}/queue-${KERNEL_VERSION} ] ; then
+	cd ${QUEUE_DIR}/queue-${KERNEL_VERSION}/ || exit 1
+	tar -c . | gzip > ${SCRIPT_HOME}/stable_queue.tar.gz
+	TARBALL=1
+else
+	echo "No stable queue at this point in time, are you sure you picked the right kernel version?"
+	TARBALL=0
+fi
 
 # create the script to run remotely
 
@@ -81,26 +87,26 @@ STABLE_GIT="${REMOTE_STABLE_GIT}"
 KERNEL_VERSION="${KERNEL_VERSION}"
 PATCHES="stable_queue.tar.gz"
 
+
 cd ${REMOTE_DIR}
 
-# create the linux clone
-git clone -s ${REMOTE_STABLE_GIT} linux
+echo "Starting to test kernel version ${KERNEL_VERSION}"
+echo ""
+
+# create the linux clone with the correct branch
+git clone -q -s --branch linux-${KERNEL_VERSION}.y ${REMOTE_STABLE_GIT} linux
 cd linux
 
-# checkout the branch we need
-git checkout -t -b linux-${KERNEL_VERSION}.y origin/linux-${KERNEL_VERSION}.y
+# create a patches/ directory for the stable patches to apply if we have them
+if [ -f ${REMOTE_DIR}/\${PATCHES} ] ; then
+	mkdir patches
+	cd patches
+	tar -zxvf ${REMOTE_DIR}/\${PATCHES}
+	cd ..
 
-# remove the .git directory as we don't need that space hanging around anymore
-#rm -rf .git/
-
-# create a patches/ directory for the stable patches to apply
-mkdir patches
-cd patches
-tar -zxvf ${REMOTE_DIR}/\${PATCHES}
-cd ..
-
-# Apply the patch queue
-QUILT_PATCHES=patches QUILT_SERIES=patches/series quilt push -aq --quiltrc
+	# Apply the patch queue
+	QUILT_PATCHES=patches QUILT_SERIES=patches/series quilt push -aq --quiltrc
+fi
 
 # get initial time
 TIME=\$(date +%s)
@@ -164,6 +170,7 @@ rm -rf ${SCRIPT_HOME}
 #ssh ${REMOTE_USER}@${REMOTE_SERVER} "${REMOTE_DIR}/run_test.sh > ${REMOTE_DIR}/output_log"
 ssh ${SSH_OPTIONS} -n -f ${REMOTE_USER}@${REMOTE_SERVER} "sh -c \"cd ${REMOTE_DIR}; nohup ./run_test.sh > ${REMOTE_DIR}/output_log 2>&1 &\" "
 
+echo "Job successfully submitted."
 
 exit
 
