@@ -10,34 +10,58 @@
 #
 # Some variables you might want to mess with are:
 #
-# EMAIL: who to send the email to
-# REMOTE_STABLE_GIT: on the remote machine, where the linux-stable git tree is located
-# REMOTE_WORK: on the remote machine, what temporary location we can use to create a subdirectory and do our work in
-# REMOTE_SERVER: the remote machine name
-# REMOTE_USER: the username to run the script on the remote machine
-# LOCAL_WORK: temporay location on the local machine to create some files before we copy them to the remote machine
-# LOCAL_KTEST: local location of a version of ktest.pl that you want to run remotely (usually better than the version in the stable tree under testing due to age issues.)
-# QUEUE_DIR: local location of the stable-queue git tree we are wanting to test
+# EMAIL:		Who to send the email to.
+# LOCAL_WORK:		Temporary location on the local machine to create some
+#			files before we copy them to the remote machine.
+# LOCAL_KTEST:		Local location of a version of ktest.pl that you want
+#			to run remotely (usually better than the version in the
+#			stable tree under testing due to age issues.)
+# QUEUE_DIR:		Local location of the stable-queue git tree we are
+#			wanting to test.
+# REMOTE:		The server name you want to use, this lets you set all
+#			of the REMOTE_* options in an easier manner.
+# REMOTE_STABLE_GIT:	On the remote machine, where the linux-stable git tree
+#			is located
+# REMOTE_WORK:		On the remote machine, what temporary location we can
+#			use to create a subdirectory and do our work in.
+# REMOTE_SERVER:	The remote machine name.
+# REMOTE_USER:		The username to run the script on the remote machine
+# SSH_OPTIONS:		Options to pass to ssh to access the remote machine
 
 
 EMAIL="greg@kroah.com"
 
-REMOTE_STABLE_GIT="/home/gregkh/linux/stable/linux-stable/"
-REMOTE_WORK="/home/gregkh/tmp/"
-REMOTE_SERVER="build"
-REMOTE_USER="gregkh"
-
-#REMOTE_STABLE_GIT="/home/ec2-user/linux/stable/linux-stable/"
-#REMOTE_WORK="/home/ec2-user/tmp/"
-##REMOTE_SERVER="ec2-50-112-17-159.us-west-2.compute.amazonaws.com"	# not mine
-##REMOTE_SERVER="ec2-50-112-71-91.us-west-2.compute.amazonaws.com"	# mine - really big
-#REMOTE_SERVER="ec2-50-112-51-233.us-west-2.compute.amazonaws.com"	# mine - really big
-#SSH_OPTIONS="-i /home/gregkh/.ssh/stable_build.pem"
-#REMOTE_USER="ec2-user"
-
 LOCAL_WORK="/tmp/"
 LOCAL_KTEST="/home/gregkh/linux/gregkh/tools/testing/ktest/ktest.pl"
 QUEUE_DIR="/home/gregkh/linux/stable/stable-queue/"
+
+
+REMOTE=${REMOTE:-build}	# default option is the "build" server option
+
+# test for default server options
+case "${REMOTE}" in
+"build")
+	REMOTE_STABLE_GIT="/home/gregkh/linux/stable/linux-stable/"
+	REMOTE_WORK="/home/gregkh/tmp/"
+	REMOTE_SERVER="build"
+	REMOTE_USER="gregkh"
+	;;
+"aws")
+	REMOTE_STABLE_GIT="/home/ec2-user/linux/stable/linux-stable/"
+	REMOTE_WORK="/home/ec2-user/tmp/"
+	#REMOTE_SERVER="ec2-50-112-17-159.us-west-2.compute.amazonaws.com"	# not mine
+	#REMOTE_SERVER="ec2-50-112-71-91.us-west-2.compute.amazonaws.com"	# mine - really big
+	#REMOTE_SERVER="ec2-50-112-51-233.us-west-2.compute.amazonaws.com"	# mine - really big
+	REMOTE_SERVER="ec2-50-112-208-87.us-west-2.compute.amazonaws.com"	# mine - really big
+	SSH_OPTIONS="-i /home/gregkh/.ssh/stable_build.pem"
+	REMOTE_USER="ec2-user"
+	;;
+*)
+	echo "You need to specify a remote server name"
+	exit 1
+	;;
+esac
+
 
 #######################################################
 # I doubt you need to touch anything below this line,
@@ -54,6 +78,8 @@ if [ "${KERNEL_VERSION}" == "" ] ; then
 	exit;
 fi
 
+echo "Testing kernel version ${KERNEL_VERSION} on remote server \"${REMOTE}\""
+
 # create the local temporary directory to do the work in.
 SCRIPT_HOME=`mktemp -d ${LOCAL_WORK}/stable_test_XXXXX` || exit 1
 echo "Using ${SCRIPT_HOME} for our local files"
@@ -63,6 +89,7 @@ REMOTE_DIR=`ssh ${SSH_OPTIONS} ${REMOTE_USER}@${REMOTE_SERVER} mktemp -d ${REMOT
 echo "Using ${REMOTE_DIR} for the remote directory"
 
 # figure out how many processors are on the remote machine
+# we use this to know how many processes to spawn when doing the build
 NUM_PROCESSORS=`ssh ${SSH_OPTIONS} ${REMOTE_USER}@${REMOTE_SERVER} grep -c "processor" /proc/cpuinfo`
 echo "Remote machine has ${NUM_PROCESSORS} processors."
 
