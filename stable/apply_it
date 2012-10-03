@@ -53,6 +53,7 @@ apply_it ()
 if [ "$KERNEL_VERSION" != "" ] ; then
 	apply_it $KERNEL_VERSION
 else
+	apply_it 3.6
 	apply_it 3.5
 	apply_it 3.4
 	apply_it 3.0
