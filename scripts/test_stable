@@ -52,7 +52,8 @@ case "${REMOTE}" in
 	#REMOTE_SERVER="ec2-50-112-17-159.us-west-2.compute.amazonaws.com"	# not mine
 	#REMOTE_SERVER="ec2-50-112-71-91.us-west-2.compute.amazonaws.com"	# mine - really big
 	#REMOTE_SERVER="ec2-50-112-51-233.us-west-2.compute.amazonaws.com"	# mine - really big
-	REMOTE_SERVER="ec2-50-112-208-87.us-west-2.compute.amazonaws.com"	# mine - really big
+	#REMOTE_SERVER="ec2-50-112-208-87.us-west-2.compute.amazonaws.com"	# mine - really big
+	REMOTE_SERVER="ec2-50-112-224-134.us-west-2.compute.amazonaws.com"	# mine - really big
 	SSH_OPTIONS="-i /home/gregkh/.ssh/stable_build.pem"
 	REMOTE_USER="ec2-user"
 	;;
@@ -153,9 +154,9 @@ cd ..
 
 if [ "\${KTEST_RUN}" = "0" ]; then
 	# test succeeded
-	SUBJECT="Build of ${KERNEL_VERSION} was good"
+	SUBJECT="Build of ${KERNEL_VERSION} was good (\${TIME} seconds)"
 else
-	SUBJECT="Build of ${KERNEL_VERSION} FAILED!"
+	SUBJECT="Build of ${KERNEL_VERSION} FAILED! (\${TIME} seconds)"
 fi
 
 mutt -s "\${SUBJECT}" -a linux/log -- ${EMAIL} < output_log
