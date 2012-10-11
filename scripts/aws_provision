@@ -18,3 +18,10 @@ git fetch
 git checkout linux-3.0.y && git pull
 git checkout linux-3.4.y && git pull
 git checkout linux-3.5.y && git pull
+git checkout linux-3.6.y && git pull
+cd
+
+echo "machine is up and running" | mutt -s "machine is up and running" -- greg@kroah.com
+sleep 3
+sudo /etc/init.d/sendmail restart
+
