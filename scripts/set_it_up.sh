@@ -32,10 +32,10 @@ cd work/
 WORK_TREES="driver-core staging tty usb char-misc"
 
 # First, clone Linus's tree in --bare mode as we are going to work off of that:
-#git clone --bare git://git.kernel.org/pub/scm/linux/kernel/git/torvalds/linux.git torvalds
+git clone --bare git://git.kernel.org/pub/scm/linux/kernel/git/torvalds/linux.git torvalds
 
 # for local testing, to make it faster...
-git clone --bare gregkh@clark:linux/work/torvalds torvalds
+#git clone --bare gregkh@clark:linux/work/torvalds torvalds
 
 # now make clones of it for the different work types
 for TREE in ${WORK_TREES}
