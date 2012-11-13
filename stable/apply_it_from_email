@@ -17,6 +17,8 @@ COMMIT_ID=`cat - | grep -i "commit:" | head -n 1 | sed -s 's/ //g' | cut -f 2 -d
 #echo "$COMMIT_ID"
 #exit
 
+C2P=`which c2p`
+
 echo "${txtblu}c2p $COMMIT_ID${txtrst}"
-gnome-terminal --command="c2p $COMMIT_ID" --geometry=120x30 &
+gnome-terminal --command="${C2P} $COMMIT_ID" --geometry=120x30 &
 exit

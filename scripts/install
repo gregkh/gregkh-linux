@@ -12,7 +12,8 @@ SRC_RELEASE=$VERSION.$PATCHLEVEL.$SUBLEVEL$EXTRAVERSION
 
 # figure out the arch
 #ARCH=`grep "CONFIG_ARCH " include/linux/autoconf.h | cut -f 2 -d "\""`
-ARCH="i386"
+#ARCH="i386"
+ARCH="x86"
 
 # copy the kernel image
 cp arch/$ARCH/boot/bzImage /boot/bzImage-"$SRC_RELEASE"
@@ -22,3 +23,12 @@ cp System.map /boot/System.map-"$SRC_RELEASE"
 #ln -sf /boot/System.map-"$SRC_RELEASE" /boot/System.map
 
 echo "Installed $SRC_RELEASE for $ARCH"
+
+if [ -f "/etc/os-release" ]; then
+	source /etc/os-release
+fi
+
+if [ "${NAME}" = "Arch Linux" ]; then
+	# This is arch linux, so make the initrd
+	mkinitcpio -k ${SRC_RELEASE}-gregkh -g /boot/initramfs-${SRC_RELEASE}-gregkh.img
+fi
