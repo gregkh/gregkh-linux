@@ -157,3 +157,35 @@ else
 #	echo "# current LATEST-IS is '$LATEST' is that what it should be?"
 #	echo "# mv ~/v${VER}/${LATEST} ~/v${VER}/LATEST-IS-${RELEASE}"
 fi
+
+# create the email
+
+cat << __EOF__ > ${RELDIR}/email
+Subject: Linux ${RELEASE}
+
+I'm announcing the release of the ${RELEASE} kernel.
+
+All users of the ${BASE} kernel series must upgrade.
+
+The updated ${BASE}.y git tree can be found at:
+	git://git.kernel.org/pub/scm/linux/kernel/git/stable/linux-stable.git linux-${BASE}.y
+and can be browsed at the normal kernel.org git web browser:
+	http://git.kernel.org/?p=linux/kernel/git/stable/linux-stable.git;a=summary
+
+thanks,
+
+greg k-h
+
+------------
+
+__EOF__
+
+if [ $INCREMENTAL -ne 0 ]; then
+	cat ${RELDIR}/diffstat-${LAST_REL}-${REL} >> ${RELDIR}/email
+else
+	cat ${RELDIR}/diffstat-${RELEASE} >> ${RELDIR}/email
+fi
+
+echo "" >> ${RELDIR}/email
+cat $RELDIR/shortlog-$RELEASE >> ${RELDIR}/email
+
