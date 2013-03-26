@@ -11,13 +11,16 @@ chomp($tree);
 my $version = `ketchup -m`;
 chomp($version);
 
+my $branch = `git branch --no-color 2> /dev/null | sed -e '/^[^*]/d' -e 's/* \(.*\)/\1/' | cut -f 2 -d '-'`;
+chomp($branch);
+
 print "# What is the kernel version? [$version] ";
 my $q = <STDIN>;
 chomp($q);
 if ($q eq "") {
 	$q = $version;
 }
-#print "git tag -u kroah.com -s $tree-$q $tree-linus\n";
-print "git tag -u kroah.com -s $tree-$q $tree-next\n";
+print "git tag -u kroah.com -s $tree-$q $tree-$branch\n";
+#print "git tag -u kroah.com -s $tree-$q $tree-next\n";
 print "git push origin $tree-$q\n";
 print "echo \"git request-pull master git://git.kernel.org/pub/scm/linux/kernel/git/gregkh/$tree.git/ $tree-$q > msg.txt\" > do.sh\n";
