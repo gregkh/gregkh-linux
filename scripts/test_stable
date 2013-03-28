@@ -46,6 +46,12 @@ case "${REMOTE}" in
 	REMOTE_SERVER="build"
 	REMOTE_USER="gregkh"
 	;;
+"jade")
+	REMOTE_STABLE_GIT="/home/gregkh/linux/stable/linux-stable/"
+	REMOTE_WORK="/home/gregkh/tmp/"
+	REMOTE_SERVER="192.168.1.252"
+	REMOTE_USER="gregkh"
+	;;
 "aws")
 	REMOTE_STABLE_GIT="/home/ec2-user/linux/stable/linux-stable/"
 	REMOTE_WORK="/home/ec2-user/tmp/"
