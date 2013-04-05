@@ -11,8 +11,11 @@ chomp($tree);
 my $version = `ketchup -m`;
 chomp($version);
 
-my $branch = `git branch --no-color 2> /dev/null | sed -e '/^[^*]/d' -e 's/* \(.*\)/\1/' | cut -f 2 -d '-'`;
+my $branch = `git branch --no-color 2> /dev/null | sed -e '/^[^*]/d' -e 's/* \(.*\)/\1/' | cut -f2- -d '-' | cut -f2- -d '-'`;
+# doesn't work because the sed regex isn't working due to quoting and I don't feel like figuring it out...
+#my $branch = `git branch --no-color 2> /dev/null | sed -e '/^[^*]/d' -e 's/* \(.*\)/\1/' | rev | cut -f2- -d '-' | rev `;
 chomp($branch);
+#print "$branch\n";
 
 print "# What is the kernel version? [$version] ";
 my $q = <STDIN>;
