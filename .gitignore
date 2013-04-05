@@ -3,3 +3,5 @@ gregkh-stable/
 patches/
 tools/
 tmp/
+kdbus/
+ltsi/
