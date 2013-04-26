@@ -28,7 +28,7 @@ if [ -f "/etc/os-release" ]; then
 	source /etc/os-release
 fi
 
-if [ "${NAME}" = "Arch Linux" ]; then
-	# This is arch linux, so make the initrd
-	mkinitcpio -k ${SRC_RELEASE}-gregkh -g /boot/initramfs-${SRC_RELEASE}-gregkh.img
-fi
+#if [ "${NAME}" = "Arch Linux" ]; then
+#	# This is arch linux, so make the initrd
+#	mkinitcpio -k ${SRC_RELEASE}-gregkh -g /boot/initramfs-${SRC_RELEASE}-gregkh.img
+#fi
