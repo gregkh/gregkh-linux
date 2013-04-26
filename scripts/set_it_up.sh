@@ -32,10 +32,23 @@ cd work/
 WORK_TREES="driver-core staging tty usb char-misc"
 
 # First, clone Linus's tree in --bare mode as we are going to work off of that:
-git clone --bare git://git.kernel.org/pub/scm/linux/kernel/git/torvalds/linux.git torvalds
-
 # for local testing, to make it faster...
 #git clone --bare gregkh@clark:linux/work/torvalds torvalds
+git clone --bare git://git.kernel.org/pub/scm/linux/kernel/git/torvalds/linux.git torvalds
+
+cd torvalds
+# set up the config
+git config remote.origin.fetch +refs/heads/*:refs/heads/*
+git config remote.kroah.com.fetch +refs/heads/*:refs/heads/*
+git config remote.kroah.com.url git@git.kroah.com:kernel.org/linux.git/
+git config branch.master.remote kroah.com
+git config branch.master.merge refs/heads/master
+
+# write do.sh script
+echo "git fetch origin && git push" > do.sh
+chmod 755 do.sh
+cd ..
+
 
 # now make clones of it for the different work types
 for TREE in ${WORK_TREES}
@@ -45,16 +58,13 @@ do
 
 	echo "*** setting up the master link"
 	cd ${TREE}
-	git remote add temp gitolite@198.145.19.202:/pub/scm/linux/kernel/git/gregkh/${TREE}.git
+	git remote add temp gitolite@ra.kernel.org:/pub/scm/linux/kernel/git/gregkh/${TREE}.git
 	git remote rm origin
 	git remote rename temp origin
 
-	# ok, there has to be a better way than to add the following lines to
-	# the git config to have the master branch track the remote master
-	# branch, but I can't figure it out...
-	echo "[branch \"master\"]"		>> .git/config
-	echo "	remote = origin"		>> .git/config
-	echo "	merge = refs/heads/master"	>> .git/config
+	# have the master branch track the remote master
+	git config branch.master.remote origin
+	git config branch.master.merge refs/heads/master
 
 	echo "*** setting up kroah.com link"
 	git remote add kroah.com git@git.kroah.com:kernel/${TREE}.git
