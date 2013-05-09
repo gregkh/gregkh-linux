@@ -1,0 +1,10 @@
+#!/bin/bash
+
+NUMBERS=`git ls-files -o | cut -f 1 -d '/' | cut -f 2 -d '-' | sort | uniq`
+
+for N in ${NUMBERS}; do
+	echo "../do_it_all ${N}"
+	../do_it_all ${N}
+done
+
+
