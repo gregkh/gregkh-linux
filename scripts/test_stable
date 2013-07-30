@@ -47,10 +47,11 @@ case "${REMOTE}" in
 	REMOTE_USER="gregkh"
 	;;
 "jade")
-	REMOTE_STABLE_GIT="/home/gregkh/linux/stable/linux-stable/"
-	REMOTE_WORK="/home/gregkh/tmp/"
-	REMOTE_SERVER="192.168.1.252"
-	REMOTE_USER="gregkh"
+	REMOTE_STABLE_GIT="/home/guest/linux/stable/linux-stable/"
+	REMOTE_WORK="/home/guest/tmp/"
+	REMOTE_SERVER="192.168.1.159"
+#	REMOTE_USER="gregkh"
+	REMOTE_USER="guest"
 	;;
 "aws")
 	REMOTE_STABLE_GIT="/home/ec2-user/linux/stable/linux-stable/"
@@ -62,9 +63,15 @@ case "${REMOTE}" in
 	#REMOTE_SERVER="ec2-50-112-224-134.us-west-2.compute.amazonaws.com"	# mine - really big
 	#REMOTE_SERVER="ec2-50-112-233-67.us-west-2.compute.amazonaws.com"	# mine - really big
 	#REMOTE_SERVER="50.112.34.134"
-	REMOTE_SERVER="ec2-54-245-22-10.us-west-2.compute.amazonaws.com"
+	REMOTE_SERVER="ec2-54-244-131-37.us-west-2.compute.amazonaws.com"
 	SSH_OPTIONS="-i /home/gregkh/.ssh/stable_build.pem"
 	REMOTE_USER="ec2-user"
+	;;
+"google")
+	REMOTE_STABLE_GIT="/home/gregkh/linux/stable/linux-stable/"
+	REMOTE_WORK="/home/gregkh/tmp/"
+	REMOTE_SERVER="178.120.255.173.bc.googleusercontent.com"
+	REMOTE_USER="gregkh"
 	;;
 *)
 	echo "You need to specify a remote server name"

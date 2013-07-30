@@ -14,3 +14,5 @@ Things I don't want to forget, might as well track them here.
   	http://git.linuxfoundation.org/?p=llvm-setup.git;a=tree;hb=HEAD
 
   - remove __devX as it's pretty much pointless
+
+  - git quiltimport -c 2  (only apply X number of patches...)
