@@ -10,17 +10,15 @@ DIR="queue-$VERSION"
 
 
 # create a temp directory and copy the patches there
-# FIXME, use a "real" temp directory name, not just tmp, as that messes things
-# up when the script is run twice at the same time for different versions.
-mkdir ../tmp
-git ls-files -o | grep queue-$VERSION | xargs -i  cp {} -v ../tmp/
+TMP_DIR=`mktemp -d ../stable_patches-XXXXX` || exit 1
+
+git ls-files -o | grep queue-$VERSION | xargs -i  cp {} -v ${TMP_DIR}
 
 # create a commit message
-# FIXME, use a "real" temporary file name, not just 'commit.msg'
 echo "${VERSION}-stable patches" > commit.msg
 echo "" >> commit.msg
 echo "added patches:" >> commit.msg
-for file in `ls ../tmp/`
+for file in `ls ${TMP_DIR}`
 do
 	echo "	`basename $file`" >> commit.msg
 done
@@ -31,13 +29,13 @@ git commit $DIR -F commit.msg
 rm commit.msg
 
 # do notification for the authors that the patches are now added to the tree.
-for file in `ls ../tmp/`
+for file in `ls ${TMP_DIR}`
 do
-	../added-to-stable-version $VERSION ../tmp/$file
+	../added-to-stable-version $VERSION ${TMP_DIR}/$file
 done
 
 # clean up
-rm -rf ../tmp/
+rm -rf ${TMP_DIR}
 
 ONLINE=`gregkh_machine_online`
 # Only push if we have a network connection
