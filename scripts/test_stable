@@ -63,7 +63,7 @@ case "${REMOTE}" in
 	#REMOTE_SERVER="ec2-50-112-224-134.us-west-2.compute.amazonaws.com"	# mine - really big
 	#REMOTE_SERVER="ec2-50-112-233-67.us-west-2.compute.amazonaws.com"	# mine - really big
 	#REMOTE_SERVER="50.112.34.134"
-	REMOTE_SERVER="ec2-54-244-131-37.us-west-2.compute.amazonaws.com"
+	REMOTE_SERVER="ec2-54-245-33-228.us-west-2.compute.amazonaws.com"
 	SSH_OPTIONS="-i /home/gregkh/.ssh/stable_build.pem"
 	REMOTE_USER="ec2-user"
 	;;
