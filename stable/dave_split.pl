@@ -69,7 +69,7 @@ $tmp = `grep foo\@bar $tmpdir/*`;
 chomp($tmp);
 if ($tmp ne "") {
 	print "formail has a problem with the mbox, please edit it.\n";
-	print "error is:\n\t$tmp\n";
+	print "error is:\n$tmp\n";
 	exit;
 }
 
