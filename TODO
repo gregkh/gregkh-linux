@@ -16,3 +16,13 @@ Things I don't want to forget, might as well track them here.
   - remove __devX as it's pretty much pointless
 
   - git quiltimport -c 2  (only apply X number of patches...)
+
+  - no more attributes, use attribute groups
+
+  - no more device_create_file(), use groups
+
+  - DEVICE_ATTR_R*, not "raw" ones if at all possible.
+
+  - sysfs binary file creation moved to groups for all drivers
+
+  - no more driver calls to sysfs_* at all if possible.
