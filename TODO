@@ -26,3 +26,5 @@ Things I don't want to forget, might as well track them here.
   - sysfs binary file creation moved to groups for all drivers
 
   - no more driver calls to sysfs_* at all if possible.
+
+  - PCI MSI sysfs files, an attribute group instead of a kobject mess?
