@@ -57,6 +57,5 @@ else
 	apply_it 3.10
 #	apply_it 3.9
 	apply_it 3.4
-	apply_it 3.0
-	#apply_it 2.6.39
+#	apply_it 3.0
 fi
