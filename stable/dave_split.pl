@@ -62,7 +62,8 @@ chomp($tmpdir);
 print "tmpdir=\"$tmpdir\"\n";
 
 # Split mbox out into individual messages
-`<$mbox formail -ds sh -c 'cat > $tmpdir/msg.\$FILENO'`;
+#`<$mbox formail -ds sh -c 'cat > $tmpdir/msg.\$FILENO'`;
+`splitmbox.py $mbox $tmpdir/`;
 
 # see if we need to hand-edit anything
 $tmp = `grep foo\@bar $tmpdir/*`;
