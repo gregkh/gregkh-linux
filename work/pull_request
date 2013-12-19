@@ -8,7 +8,7 @@ chomp($pwd);
 my $tree = `basename $pwd`;
 chomp($tree);
 #print "tree = $tree\n";
-my $version = `ketchup -m`;
+my $version = `kv`;
 chomp($version);
 
 my $branch = `git branch --no-color 2> /dev/null | sed -e '/^[^*]/d' -e 's/* \(.*\)/\1/' | cut -f2- -d '-' | cut -f2- -d '-'`;
