@@ -1,6 +1,6 @@
 #
 # Automatically generated file; DO NOT EDIT.
-# Linux/x86 3.10.24 Kernel Configuration
+# Linux/x86 3.10.28 Kernel Configuration
 #
 CONFIG_64BIT=y
 CONFIG_X86_64=y
@@ -5140,7 +5140,6 @@ CONFIG_DMA_ACPI=y
 #
 # DMA Clients
 #
-CONFIG_NET_DMA=y
 CONFIG_ASYNC_TX_DMA=y
 # CONFIG_DMATEST is not set
 CONFIG_DCA=m
@@ -5891,8 +5890,7 @@ CONFIG_STACKTRACE=y
 # CONFIG_DEBUG_STACK_USAGE is not set
 # CONFIG_DEBUG_KOBJECT is not set
 CONFIG_DEBUG_BUGVERBOSE=y
-CONFIG_DEBUG_INFO=y
-# CONFIG_DEBUG_INFO_REDUCED is not set
+# CONFIG_DEBUG_INFO is not set
 # CONFIG_DEBUG_VM is not set
 # CONFIG_DEBUG_VIRTUAL is not set
 # CONFIG_DEBUG_WRITECOUNT is not set
