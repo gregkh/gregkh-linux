@@ -1,6 +1,6 @@
 #
 # Automatically generated file; DO NOT EDIT.
-# Linux/x86 3.12.6-rc1 Kernel Configuration
+# Linux/x86 3.12.9 Kernel Configuration
 #
 CONFIG_64BIT=y
 CONFIG_X86_64=y
@@ -5214,7 +5214,6 @@ CONFIG_DMA_ACPI=y
 #
 # DMA Clients
 #
-CONFIG_NET_DMA=y
 CONFIG_ASYNC_TX_DMA=y
 # CONFIG_DMATEST is not set
 CONFIG_DCA=m
@@ -5987,8 +5986,7 @@ CONFIG_DYNAMIC_DEBUG=y
 #
 # Compile-time checks and compiler options
 #
-CONFIG_DEBUG_INFO=y
-# CONFIG_DEBUG_INFO_REDUCED is not set
+# CONFIG_DEBUG_INFO is not set
 CONFIG_ENABLE_WARN_DEPRECATED=y
 CONFIG_ENABLE_MUST_CHECK=y
 CONFIG_FRAME_WARN=2048
