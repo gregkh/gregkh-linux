@@ -1,0 +1,13 @@
+#! /bin/sh
+
+sudo perf record -C 5  -c 1 -e power:pstate_sample&
+sleep .5
+foo=$!
+taskset -c 5 cat /dev/zero > /dev/null&
+bar=$!
+sleep 1
+kill $bar
+sleep .5
+sudo kill $foo
+
+echo "run 'perf script' to get the output"
