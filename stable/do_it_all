@@ -24,8 +24,8 @@ do
 done
 
 # add the files and commit them to git
-git add $DIR
-git commit $DIR -F commit.msg
+git add --all $DIR
+git commit -F commit.msg
 rm commit.msg
 
 # do notification for the authors that the patches are now added to the tree.
