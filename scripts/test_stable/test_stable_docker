@@ -30,58 +30,14 @@
 
 EMAIL="herlo@linuxfoundation.org"
 
-LOCAL_WORK="/tmp/"
-LOCAL_KTEST="/srv/linux/gregkh/tools/testing/ktest/ktest.pl"
-QUEUE_DIR="/srv/linux/stable/stable-queue/"
+GIT="/usr/bin/git"
+STABLE_QUEUE_GITURL="git://git.kernel.org/pub/scm/linux/kernel/git/stable/stable-queue.git"
 
-#REMOTE=${REMOTE:-build}    # default option is the "build" server option
-REMOTE="docker"
+LOCAL_KTEST="/root/ktest/ktest.pl"
+QUEUE_DIR="/root/stable-queue/"
 
-# test for default server options
-case "${REMOTE}" in
-"build")
-    REMOTE_STABLE_GIT="/home/gregkh/linux/stable/linux-stable/"
-    REMOTE_WORK="/home/gregkh/tmp/"
-    REMOTE_SERVER="build"
-    REMOTE_USER="gregkh"
-    ;;
-"jade")
-    REMOTE_STABLE_GIT="/home/guest/linux/stable/linux-stable/"
-    REMOTE_WORK="/home/guest/tmp/"
-    REMOTE_SERVER="192.168.1.159"
-#   REMOTE_USER="gregkh"
-    REMOTE_USER="guest"
-    ;;
-"aws")
-    REMOTE_STABLE_GIT="/home/ec2-user/linux/stable/linux-stable/"
-    REMOTE_WORK="/home/ec2-user/tmp/"
-    #REMOTE_SERVER="ec2-50-112-17-159.us-west-2.compute.amazonaws.com"  # not mine
-    #REMOTE_SERVER="ec2-50-112-71-91.us-west-2.compute.amazonaws.com"   # mine - really big
-    #REMOTE_SERVER="ec2-50-112-51-233.us-west-2.compute.amazonaws.com"  # mine - really big
-    #REMOTE_SERVER="ec2-50-112-208-87.us-west-2.compute.amazonaws.com"  # mine - really big
-    #REMOTE_SERVER="ec2-50-112-224-134.us-west-2.compute.amazonaws.com" # mine - really big
-    #REMOTE_SERVER="ec2-50-112-233-67.us-west-2.compute.amazonaws.com"  # mine - really big
-    #REMOTE_SERVER="50.112.34.134"
-    REMOTE_SERVER="ec2-54-245-33-228.us-west-2.compute.amazonaws.com"
-    SSH_OPTIONS="-i /home/gregkh/.ssh/stable_build.pem"
-    REMOTE_USER="ec2-user"
-    ;;
-"google")
-    REMOTE_STABLE_GIT="/home/gregkh/linux/stable/linux-stable/"
-    REMOTE_WORK="/home/gregkh/tmp/"
-    REMOTE_SERVER="178.120.255.173.bc.googleusercontent.com"
-    REMOTE_USER="gregkh"
-    ;;
-"docker")
-    DOCKER_BINARY="/usr/bin/docker"
-    DOCKER_DIR="/root/test_stable"
-    ;;
-*)
-    echo "You need to specify a remote server name"
-    exit 1
-    ;;
-esac
-
+DOCKER_BINARY="/usr/bin/docker"
+DOCKER_DIR="/root/test_stable"
 
 #######################################################
 # I doubt you need to touch anything below this line,
@@ -99,25 +55,16 @@ fi
 
 echo "Testing kernel version ${KERNEL_VERSION} on remote server \"${REMOTE}\""
 
-if [ ${REMOTE} != "docker" ]; then
-    # create the local temporary directory to do the work in.
-    SCRIPT_HOME=`mktemp -d ${LOCAL_WORK}/stable_test_XXXXX` || exit 1
-    echo "Using ${SCRIPT_HOME} for our local files"
+# hard code REMOTE_DIR and NUM_PROCESSORS for now
+# docker values might differ later
 
-    # create the remote directory
-    REMOTE_DIR=`ssh ${SSH_OPTIONS} ${REMOTE_USER}@${REMOTE_SERVER} mktemp -d ${REMOTE_WORK}/stable_test_XXXXX` || exit 1
-    echo "Using ${REMOTE_DIR} for the remote directory"
-else
-    REMOTE_DIR="/root"
-fi
+REMOTE_DIR="/root"
+NUM_PROCESSORS=1
 
-if [ ${REMOTE} != "docker" ]; then
-    # figure out how many processors are on the remote machine
-    # we use this to know how many processes to spawn when doing the build
-    NUM_PROCESSORS=`ssh ${SSH_OPTIONS} ${REMOTE_USER}@${REMOTE_SERVER} grep -c "processor" /proc/cpuinfo`
-    echo "Remote machine has ${NUM_PROCESSORS} processors."
-else
-    NUM_PROCESSORS=1
+# clone stable-queue
+if [ ! -d ${QUEUE_DIR} ]; then
+    mkdir -p ${QUEUE_DIR}
+    ${GIT} clone ${STABLE_QUEUE_GITURL} ${QUEUE_DIR}
 fi
 
 # tar up stable patch queue for just this kernel version
@@ -210,27 +157,27 @@ __EOF__
 
 
 # copy a version of ktest that we want to run
-cp ${LOCAL_KTEST} ${SCRIPT_HOME}
-
-# copy the files we created to the remote machine
-if [ ${REMOTE} != "docker" ]; then
-    scp ${SSH_OPTIONS} -q ${SCRIPT_HOME}/* ${REMOTE_USER}@${REMOTE_SERVER}:${REMOTE_DIR}
-    # remove the local files as we don't need them anymore
-    rm -rf ${SCRIPT_HOME}
-
-    # execute the script on the remote machine
-    #ssh ${REMOTE_USER}@${REMOTE_SERVER} "${REMOTE_DIR}/run_test.sh > ${REMOTE_DIR}/output_log"
-    ssh ${SSH_OPTIONS} -n -f ${REMOTE_USER}@${REMOTE_SERVER} "sh -c \"cd ${REMOTE_DIR}; nohup ./run_test.sh > ${REMOTE_DIR}/output_log 2>&1 &\" "
-
-    echo "Job successfully submitted."
-else
-
-    cp ${SCRIPT_HOME}/run_test.sh ${DOCKER_DIR}/
-    # perform a docker build with the file in place
-    /usr/bin/docker build
-    # start the new docker image to run_test.sh as above without ssh
-    # echo "Job successfully submitted."
-fi
+#cp ${LOCAL_KTEST} ${SCRIPT_HOME}
+#
+## copy the files we created to the remote machine
+#if [ ${REMOTE} != "docker" ]; then
+#    scp ${SSH_OPTIONS} -q ${SCRIPT_HOME}/* ${REMOTE_USER}@${REMOTE_SERVER}:${REMOTE_DIR}
+#    # remove the local files as we don't need them anymore
+#    rm -rf ${SCRIPT_HOME}
+#
+#    # execute the script on the remote machine
+#    #ssh ${REMOTE_USER}@${REMOTE_SERVER} "${REMOTE_DIR}/run_test.sh > ${REMOTE_DIR}/output_log"
+#    ssh ${SSH_OPTIONS} -n -f ${REMOTE_USER}@${REMOTE_SERVER} "sh -c \"cd ${REMOTE_DIR}; nohup ./run_test.sh > ${REMOTE_DIR}/output_log 2>&1 &\" "
+#
+#    echo "Job successfully submitted."
+#else
+#
+#    cp ${SCRIPT_HOME}/run_test.sh ${DOCKER_DIR}/
+#    # perform a docker build with the file in place
+#    /usr/bin/docker build
+#    # start the new docker image to run_test.sh as above without ssh
+#    # echo "Job successfully submitted."
+#fi
 
 exit
 
