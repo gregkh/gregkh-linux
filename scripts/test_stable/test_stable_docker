@@ -16,11 +16,11 @@
 # LOCAL_KTEST:      Local location of a version of ktest.pl that you want
 #           to run remotely (usually better than the version in the
 #           stable tree under testing due to age issues.)
-# QUEUE_DIR:        Local location of the stable-queue git tree we are
+# STABLE_QUEUE_DIR:        Local location of the stable-queue git tree we are
 #           wanting to test.
 # REMOTE:       The server name you want to use, this lets you set all
 #           of the REMOTE_* options in an easier manner.
-# REMOTE_STABLE_GIT:    On the remote machine, where the linux-stable git tree
+# REMOTE_STABLE_GIT:    On the remote machine (to docker), where the linux-stable git tree
 #           is located
 # REMOTE_WORK:      On the remote machine, what temporary location we can
 #           use to create a subdirectory and do our work in.
@@ -36,12 +36,15 @@ WGET="/usr/bin/wget"
 LOCAL_WORK="/tmp"
 SCRIPT_HOME=`mktemp -d ${LOCAL_WORK}/stable_test_XXXXX` || exit 1
 
-QUEUE_DIR="/root/stable-queue"
+STABLE_QUEUE_DIR="/root/stable-queue"
 STABLE_QUEUE_GITURL="git://git.kernel.org/pub/scm/linux/kernel/git/stable/stable-queue.git"
 
 KTEST_DIR="/root/ktest"
 KTEST_GITURL="git://git.kernel.org/pub/scm/linux/kernel/git/torvalds/linux.git"
 KTEST_URL="http://git.kernel.org/cgit/linux/kernel/git/torvalds/linux.git/plain/tools/testing/ktest/ktest.pl?id=HEAD"
+
+LINUX_STABLE_DIR="/root/linux-stable"
+LINUX_STABLE_GITURL="git://git.kernel.org/pub/scm/linux/kernel/git/torvalds/linux.git"
 
 DOCKER_BINARY="/usr/bin/docker"
 
@@ -82,19 +85,29 @@ fi
 # It's faster than cloning the whole linux repo
 ${WGET} -q ${KTEST_URL} -O ${KTEST_DIR}/ktest.pl
 
-# clone stable-queue
-if [ ! -d ${QUEUE_DIR} ]; then
-    mkdir -p ${QUEUE_DIR}
-    ${GIT} clone ${STABLE_QUEUE_GITURL} ${QUEUE_DIR}
+# clone linux-stable
+if [ ! -d ${LINUX_STABLE_DIR} ]; then
+    mkdir -p ${LINUX_STABLE_DIR}
+    ${GIT} clone ${LINUX_STABLE_GITURL} ${LINUX_STABLE_DIR}
 else
-    pushd ${QUEUE_DIR} &> /dev/null
+    pushd ${LINUX_STABLE_DIR} &> /dev/null
+    ${GIT} pull origin master
+    popd &> /dev/null
+fi
+
+# clone stable-queue
+if [ ! -d ${STABLE_QUEUE_DIR} ]; then
+    mkdir -p ${STABLE_QUEUE_DIR}
+    ${GIT} clone ${STABLE_QUEUE_GITURL} ${STABLE_QUEUE_DIR}
+else
+    pushd ${STABLE_QUEUE_DIR} &> /dev/null
     ${GIT} pull origin master
     popd &> /dev/null
 fi
 
 # tar up stable patch queue for just this kernel version
-if [ -d ${QUEUE_DIR}/queue-${KERNEL_VERSION} ] ; then
-    cd ${QUEUE_DIR}/queue-${KERNEL_VERSION}/ || exit 1
+if [ -d ${STABLE_QUEUE_DIR}/queue-${KERNEL_VERSION} ] ; then
+    cd ${STABLE_QUEUE_DIR}/queue-${KERNEL_VERSION}/ || exit 1
     tar -c . | gzip > ${SCRIPT_HOME}/stable_queue.tar.gz
     TARBALL=1
 else
@@ -117,7 +130,7 @@ echo "Starting to test kernel version ${KERNEL_VERSION}"
 echo ""
 
 # create the linux clone with the correct branch
-git clone -q -s --branch linux-${KERNEL_VERSION}.y ${REMOTE_STABLE_GIT} linux
+git clone -q -s --branch linux-${KERNEL_VERSION}.y ${LINUX_STABLE_DIR} linux
 cd linux
 
 # create a patches/ directory for the stable patches to apply if we have them
@@ -161,8 +174,6 @@ rm -rf ${REMOTE_DIR}
 
 __EOF__
 
-chmod 755 ${SCRIPT_HOME}/run_test.sh
-
 # create the ktest.conf file
 cat <<__EOF__ > ${SCRIPT_HOME}/ktest.conf
 TEST_START
@@ -197,7 +208,6 @@ __EOF__
 #
 #    cp ${SCRIPT_HOME}/run_test.sh ${DOCKER_DIR}/
 #    # perform a docker build with the file in place
-#    /usr/bin/docker build
 #    # start the new docker image to run_test.sh as above without ssh
 #    # echo "Job successfully submitted."
 #fi
