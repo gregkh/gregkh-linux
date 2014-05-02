@@ -40,14 +40,14 @@ SCRIPT_HOME=`mktemp -d ${LOCAL_WORK}/stable_test_XXXXX` || exit 1
 STABLE_QUEUE_DIR="/root/stable-queue"
 STABLE_QUEUE_GITURL="git://git.kernel.org/pub/scm/linux/kernel/git/stable/stable-queue.git"
 
-KTEST_DIR="/root/ktest"
+KTEST_DIR="${SCRIPT_HOME}/ktest"
 KTEST_GITURL="git://git.kernel.org/pub/scm/linux/kernel/git/torvalds/linux.git"
 KTEST_URL="http://git.kernel.org/cgit/linux/kernel/git/torvalds/linux.git/plain/tools/testing/ktest/ktest.pl?id=HEAD"
 
 LINUX_STABLE_DIR="/root/linux-stable"
-LINUX_STABLE_GITURL="git://git.kernel.org/pub/scm/linux/kernel/git/torvalds/linux.git"
+LINUX_STABLE_GITURL="git://git.kernel.org/pub/scm/linux/kernel/git/stable/linux-stable.git"
 
-DOCKER_BINARY="/usr/bin/docker"
+DOCKER="/usr/bin/docker"
 
 # hard code REMOTE_DIR and NUM_PROCESSORS for now
 # docker values might differ later
@@ -90,11 +90,12 @@ ${WGET} -q ${KTEST_URL} -O ${KTEST_DIR}/ktest.pl
 if [ ! -d ${LINUX_STABLE_DIR} ]; then
     mkdir -p ${LINUX_STABLE_DIR}
     ${GIT} clone ${LINUX_STABLE_GITURL} ${LINUX_STABLE_DIR}
-else
-    pushd ${LINUX_STABLE_DIR} &> /dev/null
-    ${GIT} pull origin master
-    popd &> /dev/null
 fi
+
+pushd ${LINUX_STABLE_DIR} &> /dev/null
+${GIT} checkout linux-${KERNEL_VERSION}.y
+${GIT} fetch
+popd &> /dev/null
 
 # clone stable-queue
 if [ ! -d ${STABLE_QUEUE_DIR} ]; then
@@ -169,7 +170,6 @@ fi
 mutt -s "\${SUBJECT}" -a linux/log -- ${EMAIL} < output_log
 
 # now that we are done, clean up after ourselves
-rm -rf ${REMOTE_DIR}
 
 __EOF__
 
@@ -195,16 +195,27 @@ cat <<__EOF__ > ${SCRIPT_HOME}/Dockerfile
 FROM lf/herlo/fedora:20
 MAINTAINER Clint Savage <herlo@linuxfoundation.org>
 
-ADD /run_test.sh /root/run_test.sh
+ADD /stable_queue.tar.gz /root/stable_queue.tar.gz
 
+ADD /ktest/ktest.pl /root/ktest.pl
+RUN chmod +x /root/ktest.pl
+
+ADD /run_test.sh /root/run_test.sh
 RUN chmod +x /root/run_test.sh
+
 
 #ENTRYPOINT bash -x /root/run_test.sh &> /root/run_test_output.log
 __EOF__
 
-
 pushd ${SCRIPT_HOME} &> /dev/null
-/usr/bin/docker build -t lf/kernel-test:$(date +%Y%m%d%H%M) ${SCRIPT_HOME}
+DATE=$(date +%Y%m%d%H%M)
+${DOCKER} build -t lf/kernel-test:${DATE} ${SCRIPT_HOME}
+
+#${DOCKER} run -i -t -v ${LINUX_STABLE_DIR}:${LINUX_STABLE_DIR}:ro lf/kernel-test:${DATE} '/bin/bash -x /root/run_test.sh'
+
+#${DOCKER} run -i -t -v ${LINUX_STABLE_DIR}:${LINUX_STABLE_DIR}:ro lf/kernel-test:${DATE} '/bin/bash -x /root/run_test.sh &> /root/run_test_output.log'
+
+
 popd &> /dev/null
 
 # copy a version of ktest that we want to run
