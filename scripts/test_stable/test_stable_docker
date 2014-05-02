@@ -36,6 +36,7 @@ WGET="/usr/bin/wget"
 LOCAL_WORK="/tmp"
 SCRIPT_HOME=`mktemp -d ${LOCAL_WORK}/stable_test_XXXXX` || exit 1
 
+
 STABLE_QUEUE_DIR="/root/stable-queue"
 STABLE_QUEUE_GITURL="git://git.kernel.org/pub/scm/linux/kernel/git/stable/stable-queue.git"
 
@@ -124,14 +125,12 @@ cat << __EOF__ > ${SCRIPT_HOME}/run_test.sh
 #
 PATCHES="stable_queue.tar.gz"
 
-cd ${REMOTE_DIR}
-
 echo "Starting to test kernel version ${KERNEL_VERSION}"
 echo ""
 
 # create the linux clone with the correct branch
-git clone -q -s --branch linux-${KERNEL_VERSION}.y ${LINUX_STABLE_DIR} linux
-cd linux
+git clone -q -s --branch linux-${KERNEL_VERSION}.y ${LINUX_STABLE_DIR} ${REMOTE_DIR}/linux
+cd ${REMOTE_DIR}/linux
 
 # create a patches/ directory for the stable patches to apply if we have them
 if [ -f ${REMOTE_DIR}/\${PATCHES} ] ; then
@@ -189,6 +188,24 @@ MACHINE = aws
 BUILD_DIR = \${PWD}
 __EOF__
 
+# put all of the pieces into a Dockerfile
+
+# create the Dockerfile
+cat <<__EOF__ > ${SCRIPT_HOME}/Dockerfile
+FROM lf/herlo/fedora:20
+MAINTAINER Clint Savage <herlo@linuxfoundation.org>
+
+ADD /run_test.sh /root/run_test.sh
+
+RUN chmod +x /root/run_test.sh
+
+#ENTRYPOINT bash -x /root/run_test.sh &> /root/run_test_output.log
+__EOF__
+
+
+pushd ${SCRIPT_HOME} &> /dev/null
+/usr/bin/docker build -t lf/kernel-test:$(date +%Y%m%d%H%M) ${SCRIPT_HOME}
+popd &> /dev/null
 
 # copy a version of ktest that we want to run
 #cp ${LOCAL_KTEST} ${SCRIPT_HOME}
