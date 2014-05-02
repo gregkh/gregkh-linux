@@ -174,7 +174,7 @@ mutt -s "\${SUBJECT}" -a linux/log -- ${EMAIL} < output_log
 __EOF__
 
 # create the ktest.conf file
-cat <<__EOF__ > ${SCRIPT_HOME}/ktest.conf
+cat <<__EOF__ > ${KTEST_DIR}/ktest.conf
 TEST_START
 TEST_TYPE = build
 
@@ -197,21 +197,21 @@ MAINTAINER Clint Savage <herlo@linuxfoundation.org>
 
 ADD /stable_queue.tar.gz /root/stable_queue.tar.gz
 
+ADD /ktest/ktest.conf /root/ktest.conf
 ADD /ktest/ktest.pl /root/ktest.pl
 RUN chmod +x /root/ktest.pl
 
 ADD /run_test.sh /root/run_test.sh
 RUN chmod +x /root/run_test.sh
 
-
-#ENTRYPOINT bash -x /root/run_test.sh &> /root/run_test_output.log
+#ENTRYPOINT /root/run_test.sh
 __EOF__
 
 pushd ${SCRIPT_HOME} &> /dev/null
 DATE=$(date +%Y%m%d%H%M)
 ${DOCKER} build -t lf/kernel-test:${DATE} ${SCRIPT_HOME}
 
-#${DOCKER} run -i -t -v ${LINUX_STABLE_DIR}:${LINUX_STABLE_DIR}:ro lf/kernel-test:${DATE} '/bin/bash -x /root/run_test.sh'
+echo ${DOCKER} run -i -t -v ${LINUX_STABLE_DIR}:${LINUX_STABLE_DIR}:ro lf/kernel-test:${DATE} '/bin/bash -x /root/run_test.sh'
 
 #${DOCKER} run -i -t -v ${LINUX_STABLE_DIR}:${LINUX_STABLE_DIR}:ro lf/kernel-test:${DATE} '/bin/bash -x /root/run_test.sh &> /root/run_test_output.log'
 
