@@ -204,17 +204,13 @@ RUN chmod +x /root/ktest.pl
 ADD /run_test.sh /root/run_test.sh
 RUN chmod +x /root/run_test.sh
 
-#ENTRYPOINT /root/run_test.sh
 __EOF__
 
 pushd ${SCRIPT_HOME} &> /dev/null
 DATE=$(date +%Y%m%d%H%M)
 ${DOCKER} build -t lf/kernel-test:${DATE} ${SCRIPT_HOME}
 
-echo ${DOCKER} run -i -t -v ${LINUX_STABLE_DIR}:${LINUX_STABLE_DIR}:ro lf/kernel-test:${DATE} '/bin/bash -x /root/run_test.sh'
-
-#${DOCKER} run -i -t -v ${LINUX_STABLE_DIR}:${LINUX_STABLE_DIR}:ro lf/kernel-test:${DATE} '/bin/bash -x /root/run_test.sh &> /root/run_test_output.log'
-
+${DOCKER} run -i -t -v ${LINUX_STABLE_DIR}:${LINUX_STABLE_DIR}:ro lf/kernel-test:${DATE} '/root/run_test.sh'
 
 popd &> /dev/null
 
