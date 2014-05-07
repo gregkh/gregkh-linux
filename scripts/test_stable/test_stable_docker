@@ -30,30 +30,30 @@
 
 EMAIL="herlo@linuxfoundation.org"
 
+# hard code REMOTE_DIR and NUM_PROCESSORS for now
+# docker values might differ later
+
+REMOTE_DIR=/docker
+NUM_PROCESSORS=1
+
 GIT="/usr/bin/git"
 WGET="/usr/bin/wget"
 
 LOCAL_WORK="/tmp"
 SCRIPT_HOME=`mktemp -d ${LOCAL_WORK}/stable_test_XXXXX` || exit 1
 
-
-STABLE_QUEUE_DIR="/root/stable-queue"
+STABLE_QUEUE_DIR="${REMOTE_DIR}/stable-queue"
 STABLE_QUEUE_GITURL="git://git.kernel.org/pub/scm/linux/kernel/git/stable/stable-queue.git"
 
 KTEST_DIR="${SCRIPT_HOME}/ktest"
 KTEST_GITURL="git://git.kernel.org/pub/scm/linux/kernel/git/torvalds/linux.git"
 KTEST_URL="http://git.kernel.org/cgit/linux/kernel/git/torvalds/linux.git/plain/tools/testing/ktest/ktest.pl?id=HEAD"
 
-LINUX_STABLE_DIR="/root/linux-stable"
+LINUX_STABLE_DIR="${REMOTE_DIR}/linux-stable"
 LINUX_STABLE_GITURL="git://git.kernel.org/pub/scm/linux/kernel/git/stable/linux-stable.git"
 
 DOCKER="/usr/bin/docker"
 
-# hard code REMOTE_DIR and NUM_PROCESSORS for now
-# docker values might differ later
-
-REMOTE_DIR="/root"
-NUM_PROCESSORS=1
 
 #######################################################
 # I doubt you need to touch anything below this line,
@@ -167,7 +167,7 @@ else
     SUBJECT="Build of ${KERNEL_VERSION} FAILED! (\${TIME} seconds)"
 fi
 
-mutt -s "\${SUBJECT}" -a linux/log -- ${EMAIL} < output_log
+mutt -s "\${SUBJECT}" -a linux/log -- ${EMAIL} < ${REMOTE_DIR}/output_log
 
 # now that we are done, clean up after ourselves
 
@@ -195,14 +195,17 @@ cat <<__EOF__ > ${SCRIPT_HOME}/Dockerfile
 FROM lf/herlo/fedora:20
 MAINTAINER Clint Savage <herlo@linuxfoundation.org>
 
-ADD /stable_queue.tar.gz /root/stable_queue.tar.gz
+ADD /stable_queue.tar.gz ${REMOTE_DIR}/stable_queue.tar.gz
 
-ADD /ktest/ktest.conf /root/ktest.conf
-ADD /ktest/ktest.pl /root/ktest.pl
-RUN chmod +x /root/ktest.pl
+ADD /ktest/ktest.conf ${REMOTE_DIR}/ktest.conf
+ADD /ktest/ktest.pl ${REMOTE_DIR}/ktest.pl
+RUN chmod +x ${REMOTE_DIR}/ktest.pl
 
-ADD /run_test.sh /root/run_test.sh
-RUN chmod +x /root/run_test.sh
+ADD /run_test.sh ${REMOTE_DIR}/run_test.sh
+RUN chmod +x ${REMOTE_DIR}/run_test.sh
+
+RUN echo "alias run_test=${REMOTE_DIR}/run_test.sh \> ${REMOTE_DIR}/output_log" >> ${REMOTE_DIR}/.bashrc
+RUN source "${REMOTE_DIR}/.bashrc"
 
 __EOF__
 
@@ -210,7 +213,9 @@ pushd ${SCRIPT_HOME} &> /dev/null
 DATE=$(date +%Y%m%d%H%M)
 ${DOCKER} build -t lf/kernel-test:${DATE} ${SCRIPT_HOME}
 
-${DOCKER} run -i -t -v ${LINUX_STABLE_DIR}:${LINUX_STABLE_DIR}:ro lf/kernel-test:${DATE} '/root/run_test.sh'
+echo "Running docker build lf/kernel-test:${DATE}"
+
+#${DOCKER} run -i -t -v ${LINUX_STABLE_DIR}:${LINUX_STABLE_DIR}:ro lf/kernel-test:${DATE} "${REMOTE_DIR}/run_test.sh" > ${REMOTE_DIR}/output_log
 
 popd &> /dev/null
 
