@@ -188,6 +188,12 @@ MACHINE = aws
 BUILD_DIR = \${PWD}
 __EOF__
 
+
+cat <<__EOF__ > ${SCRIPT_HOME}/run_the_test.sh
+#!/bin/bash
+${REMOTE_DIR}/run_test.sh | tee ${REMOTE_DIR}/output_log
+__EOF__
+
 # put all of the pieces into a Dockerfile
 
 # create the Dockerfile
@@ -200,13 +206,13 @@ ADD /ktest/ktest.conf ${REMOTE_DIR}/ktest.conf
 ADD /ktest/ktest.pl ${REMOTE_DIR}/ktest.pl
 RUN chmod +x ${REMOTE_DIR}/ktest.pl
 
+ADD /run_the_test.sh ${REMOTE_DIR}/run_the_test.sh
+RUN chmod +x ${REMOTE_DIR}/run_the_test.sh
+
 ADD /run_test.sh ${REMOTE_DIR}/run_test.sh
 RUN chmod +x ${REMOTE_DIR}/run_test.sh
 
 ADD /stable_queue.tar.gz ${SCRIPT_HOME}/stable_queue.tar.gz
-
-RUN echo "alias run_test=${REMOTE_DIR}/run_test.sh > ${REMOTE_DIR}/output_log" >> ${REMOTE_DIR}/.bashrc
-RUN source "${REMOTE_DIR}/.bashrc"
 
 __EOF__
 
@@ -216,7 +222,7 @@ ${DOCKER} build -t lf_kernel-test:${DATE} ${SCRIPT_HOME}
 
 echo "Running docker build lf/kernel-test:${DATE}"
 
-echo ${DOCKER} run --rm -i -t -v ${LINUX_STABLE_DIR}:${LINUX_STABLE_DIR}:ro lf_kernel-test:${DATE} "${REMOTE_DIR}/run_test.sh" > ${REMOTE_DIR}/output_log
+echo ${DOCKER} run --rm -i -t -v ${LINUX_STABLE_DIR}:${LINUX_STABLE_DIR}:ro lf_kernel-test:${DATE} "${REMOTE_DIR}/run_the_test.sh"
 
 popd &> /dev/null
 
