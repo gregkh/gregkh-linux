@@ -189,7 +189,7 @@ BUILD_DIR = \${PWD}
 __EOF__
 
 
-cat <<__EOF__ > ${SCRIPT_HOME}/run_the_test.sh
+cat <<__EOF__ > ${SCRIPT_HOME}/run_the_test
 #!/bin/bash
 ${REMOTE_DIR}/run_test.sh | tee ${REMOTE_DIR}/output_log
 __EOF__
@@ -198,15 +198,15 @@ __EOF__
 
 # create the Dockerfile
 cat <<__EOF__ > ${SCRIPT_HOME}/Dockerfile
-FROM herlo_lf/fedora:20
+FROM herlolf/fedora:20
 MAINTAINER Clint Savage <herlo@linuxfoundation.org>
 
 ADD /ktest/ktest.conf ${REMOTE_DIR}/ktest.conf
 ADD /ktest/ktest.pl ${REMOTE_DIR}/ktest.pl
 RUN chmod +x ${REMOTE_DIR}/ktest.pl
 
-ADD /run_the_test.sh ${REMOTE_DIR}/run_the_test.sh
-RUN chmod +x ${REMOTE_DIR}/run_the_test.sh
+ADD /run_the_test ${REMOTE_DIR}/run_the_test
+RUN chmod +x ${REMOTE_DIR}/run_the_test
 
 ADD /run_test.sh ${REMOTE_DIR}/run_test.sh
 RUN chmod +x ${REMOTE_DIR}/run_test.sh
@@ -221,7 +221,7 @@ ${DOCKER} build -t lf_kernel-test:${DATE} ${SCRIPT_HOME}
 
 echo "Running docker build lf/kernel-test:${DATE}"
 
-echo ${DOCKER} run -it -v ${LINUX_STABLE_DIR}:${LINUX_STABLE_DIR}:ro lf_kernel-test:${DATE} "${REMOTE_DIR}/run_the_test.sh"
+echo ${DOCKER} run -it -v ${LINUX_STABLE_DIR}:${LINUX_STABLE_DIR}:ro lf_kernel-test:${DATE} "${REMOTE_DIR}/run_the_test"
 
 popd &> /dev/null
 
