@@ -53,7 +53,8 @@ LINUX_STABLE_DIR="${REMOTE_DIR}/linux-stable"
 LINUX_STABLE_GITURL="git://git.kernel.org/pub/scm/linux/kernel/git/stable/linux-stable.git"
 
 DOCKER="/usr/bin/docker"
-
+DOCKER_ACCT_SRC=herlolf
+DOCKER_ACCT_DEST=linuxfoundation
 
 #######################################################
 # I doubt you need to touch anything below this line,
@@ -198,7 +199,7 @@ __EOF__
 
 # create the Dockerfile
 cat <<__EOF__ > ${SCRIPT_HOME}/Dockerfile
-FROM herlolf/fedora:20
+FROM ${DOCKER_ACCT_SRC}/fedora:20
 MAINTAINER Clint Savage <herlo@linuxfoundation.org>
 
 ADD /ktest/ktest.conf ${REMOTE_DIR}/ktest.conf
@@ -217,11 +218,11 @@ __EOF__
 
 pushd ${SCRIPT_HOME} &> /dev/null
 DATE=$(date +%Y%m%d%H%M)
-${DOCKER} build -t lf_kernel-test:${DATE} ${SCRIPT_HOME}
+${DOCKER} build -t ${DOCKER_ACCT_DEST}/kernel-test:${DATE} ${SCRIPT_HOME}
 
-echo "Running docker build lf/kernel-test:${DATE}"
+echo "Running docker build ${DOCKER_ACCT_DEST}/kernel-test:${DATE}"
 
-echo ${DOCKER} run -it -v ${LINUX_STABLE_DIR}:${LINUX_STABLE_DIR}:ro lf_kernel-test:${DATE} "${REMOTE_DIR}/run_the_test"
+echo ${DOCKER} run -it -v ${LINUX_STABLE_DIR}:${LINUX_STABLE_DIR}:ro ${DOCKER_ACCT_DEST}/kernel-test:${DATE} "${REMOTE_DIR}/run_the_test"
 
 popd &> /dev/null
 
