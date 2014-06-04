@@ -201,7 +201,6 @@ cat <<__EOF__ > ${SCRIPT_HOME}/Dockerfile
 FROM herlo_lf/fedora:20
 MAINTAINER Clint Savage <herlo@linuxfoundation.org>
 
-
 ADD /ktest/ktest.conf ${REMOTE_DIR}/ktest.conf
 ADD /ktest/ktest.pl ${REMOTE_DIR}/ktest.pl
 RUN chmod +x ${REMOTE_DIR}/ktest.pl
@@ -222,31 +221,9 @@ ${DOCKER} build -t lf_kernel-test:${DATE} ${SCRIPT_HOME}
 
 echo "Running docker build lf/kernel-test:${DATE}"
 
-echo ${DOCKER} run --rm -i -t -v ${LINUX_STABLE_DIR}:${LINUX_STABLE_DIR}:ro lf_kernel-test:${DATE} "${REMOTE_DIR}/run_the_test.sh"
+echo ${DOCKER} run -it -v ${LINUX_STABLE_DIR}:${LINUX_STABLE_DIR}:ro lf_kernel-test:${DATE} "${REMOTE_DIR}/run_the_test.sh"
 
 popd &> /dev/null
-
-# copy a version of ktest that we want to run
-#cp ${LOCAL_KTEST} ${SCRIPT_HOME}
-#
-## copy the files we created to the remote machine
-#if [ ${REMOTE} != "docker" ]; then
-#    scp ${SSH_OPTIONS} -q ${SCRIPT_HOME}/* ${REMOTE_USER}@${REMOTE_SERVER}:${REMOTE_DIR}
-#    # remove the local files as we don't need them anymore
-#    rm -rf ${SCRIPT_HOME}
-#
-#    # execute the script on the remote machine
-#    #ssh ${REMOTE_USER}@${REMOTE_SERVER} "${REMOTE_DIR}/run_test.sh > ${REMOTE_DIR}/output_log"
-#    ssh ${SSH_OPTIONS} -n -f ${REMOTE_USER}@${REMOTE_SERVER} "sh -c \"cd ${REMOTE_DIR}; nohup ./run_test.sh > ${REMOTE_DIR}/output_log 2>&1 &\" "
-#
-#    echo "Job successfully submitted."
-#else
-#
-#    cp ${SCRIPT_HOME}/run_test.sh ${DOCKER_DIR}/
-#    # perform a docker build with the file in place
-#    # start the new docker image to run_test.sh as above without ssh
-#    # echo "Job successfully submitted."
-#fi
 
 exit
 
