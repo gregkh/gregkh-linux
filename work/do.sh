@@ -116,9 +116,13 @@ reply()
 		if [ "${BRANCH}" = "next" ] ; then
 			echo "The patch will also be merged in the next major kernel release"
 			echo "during the merge window."
-		else
+		else if [ "${BRANCH}" = "linus" ]; then
 			echo "The patch will hopefully also be merged in Linus's tree for the"
 			echo "next -rc kernel release."
+		else
+			echo "The patch will be merged to the ${TREE}-next branch sometime soon,"
+			echo "after it pasts testing, and the merge window is open."
+		fi
 		fi
 		echo
 		echo "If you have any questions about this process, please let me know."
@@ -145,13 +149,17 @@ if [ "$CURRENT_BRANCH" = "work-next" ] ; then
 	BRANCH="next"
 else if [ "$CURRENT_BRANCH" = "work-linus" ] ; then
 	BRANCH="linus"
+else if [ "$CURRENT_BRANCH" = "work-testing" ] ; then
+	BRANCH="testing"
+fi
 fi
 fi
 
 if [ "$BRANCH" = "" ] ; then
 	echo "ERROR!!!"
 	echo "Right now you are on the \"$CURRENT_BRANCH\" branch."
-	echo "You need to be on either \"work-next\" or \"work-linus\" branch to work properly."
+	echo "You need to be on either \"work-next\" or \"work-linus\" or \"work-testing\""
+	echo "branch for things to work properly."
 	exit
 fi
 echo "BRANCH=$BRANCH"
@@ -209,7 +217,7 @@ fi
 ONLINE=`gregkh_machine_online`
 # Only push if we have a network connection
 if [ "$ONLINE" = "1" ] ; then
-	git push kroah.com ${TREE}-${BRANCH}
+	git push kroah.org ${TREE}-${BRANCH}
 	git push
 fi
 
