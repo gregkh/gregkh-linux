@@ -123,8 +123,8 @@ foreach my $patch (@patches) {
 	close PATCH;
 	close FILE;
 
-	system "vim -c \":set syntax=mail\" $tmpfile";
-	system "reset";
+#	system "vim -c \":set syntax=mail\" $tmpfile";
+#	system "reset";
 	$new_file = `rename-patch $tmpfile`;
 	chomp($new_file);
 	system "cd ~/linux/stable && ./apply_it $new_file $kernel_version";
