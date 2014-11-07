@@ -1,0 +1,141 @@
+#!/bin/bash
+# (c) 2014, Joe Perches <joe@perches.com>
+#
+# Automate checkpatch modifications and git commits to
+# neaten code that doesn't conform to CodingStyle.
+# Useful primarily for files in drivers/staging
+#
+# Licensed under the terms of the GNU GPL License version 2
+
+declare -ar whitespace_types=(	\
+    'whitespace_neatening:spacing,space_before_tab,pointer_location,trailing_whitespace,bracket_space'	\
+    'remove_spaces_before_tabs:space_before_tab'		\
+    'fix_label_positions:indented_label'		\
+    'align_arguments_to_parenthesis:parenthesis_alignment'	\
+)
+
+declare -ar changecode_types=(	\
+    'fix_brace_positions:open_brace,braces,else_after_brace,while_after_brace'		\
+    'fix_blank_lines:line_spacing'		\
+    'use_standard_attributes:prefer_packed,prefer_aligned'		\
+    'remove_unnecessary_externs:avoid_externs'		\
+    'update_c90_comment_style:c99_comments'		\
+)
+
+checkpatch_update ()
+{
+    file=$1
+
+    desc=$(echo $2 | cut -f1 -d: | sed 's/_/ /g')
+    types=$(echo $2 | cut -f2- -d:)
+
+    echo "file: <$file> description: <$desc> types:<$types>"
+
+    ./scripts/checkpatch.pl --file --fix-inplace --strict --types="$types" $file
+
+    checkpatch_fixes=$file.diff
+    git diff --stat -p --exit-code $file > $checkpatch_fixes
+    if [ $? == 0 ] ; then
+	rm -f $checkpatch_fixes
+	return
+    fi
+
+    basename=$(basename $file)
+    if [ "${basename##*.}" == "c" ] ; then
+
+	git checkout $file
+	obj="$(echo $file | sed 's/\.c$/\.o/')"
+	if [ -e $obj ] ; then
+	    rm -f $obj
+	fi
+
+	echo "Compiling original version..."
+
+	${CROSS_COMPILE}make $obj
+
+	${CROSS_COMPILE}objdump -D $obj | \
+	    sed "s/^[[:space:]]\+[0-9a-f]\+//" > $obj.old
+
+	patch -p1 < $checkpatch_fixes
+
+	echo "Compiling modified version..."
+
+	${CROSS_COMPILE}make $obj
+
+	${CROSS_COMPILE}objdump -D $obj | \
+	    sed "s/^[[:space:]]\+[0-9a-f]\+//" > $obj.new
+
+	echo "Comparing objects..."
+	diff -Nurd $obj.new $obj.old
+	if [ $? -ne 0 ] ; then
+	    echo "Object differences exist! - Verify changes before commit!"
+	    read -s -p "Press the 'enter' key to continue: "
+	else
+	    echo "No object differences found"
+	fi
+	rm -f $obj.old
+	rm -f $obj.new
+    fi
+
+    echo "running checkpatch on possible checkpatch fixes..."
+
+    ./scripts/checkpatch.pl --no-summary --no-signoff $checkpatch_fixes
+    rm -f $checkpatch_fixes
+
+    echo "Verify checkpatch output and make any necessary changes"
+    echo "Edit '$file' if appropriate"
+    read -s -p "Press the 'enter' key to continue: "
+
+    commit_log_file=$(mktemp git_commit.XXXXXX)
+
+    if [ -e $commit_log_file ] ; then
+	rm -f $commit_log_file
+    fi
+
+    if [[ $file =~ ^drivers/staging/ ]] ; then
+	echo -n "staging: " >> $commit_log_file
+    fi
+    echo "$(basename $(dirname $file)): checkpatch cleanup: $desc" >> $commit_log_file
+    echo "" >> $commit_log_file
+    git diff --exit-code -w $file > /dev/null
+    if [ $? == 0 ] ; then
+	echo "whitespace changes only - git diff -w shows no difference" >> $commit_log_file
+    fi
+
+    git diff $file | cat
+
+    echo "Ready to commit - First verify all diffs and make any necessary changes"
+    echo ""
+    read -r -p "Would you like to commit these changes <y>: " response
+    response=${response,,}
+    if [[ $response =~ ^(yes|y|)$ ]] ; then
+	git commit -s -F $commit_log_file -e $file
+    else
+	git checkout $file
+    fi
+
+    rm -f $commit_log_file
+}
+
+which git > /dev/null
+if [ $? -ne 0 ] || [ ! -e .git ] ; then
+    echo "git or git directory not found - run this from the top of the source tree"
+    exit 1
+fi
+
+for file in "$@" ; do
+
+    if [ ! -f $file ] ; then 
+	echo "Argument '$file' is not a file"
+	continue
+    fi
+
+    for type in "${whitespace_types[@]}" ; do
+	checkpatch_update $file $type
+    done
+
+    for type in "${changecode_types[@]}" ; do
+	checkpatch_update $file $type
+    done
+
+done
