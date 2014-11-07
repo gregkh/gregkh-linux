@@ -132,7 +132,7 @@ reply()
 		echo
 	) |
 	makemail -to "$AUTHOR" -from="$FROM" \
-		-subject="patch \"$SUBJECT\" added to ${TREE} tree" \
+		-subject="patch \"$SUBJECT\" added to ${TREE}-${BRANCH}" \
 		-date="$(date -R)" \
 		-reply_to="$MESSAGE_ID" \
 		-message_id="$ID" \
