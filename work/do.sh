@@ -184,8 +184,7 @@ PWD=`pwd`
 TREE=`basename ${PWD}`
 
 # generate the patches
-# 'fp' is my alias for 'format-patch -k -M -N'
-git fp ${TREE}-${BRANCH}
+git format-patch -k -M -N ${TREE}-${BRANCH}
 
 # verify that we actually generated some patches
 PATCH=`ls 0*.patch 2>/dev/null | head -n 1`
