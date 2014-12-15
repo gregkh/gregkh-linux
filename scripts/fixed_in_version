@@ -1,0 +1,25 @@
+#!/bin/bash
+
+# Text color variables
+txtund=$(tput sgr 0 1)    # Underline
+txtbld=$(tput bold)       # Bold
+txtred=$(tput setaf 1)    # Red
+txtgrn=$(tput setaf 2)    # Green
+txtylw=$(tput setaf 3)    # Yellow
+txtblu=$(tput setaf 4)    # Blue
+txtpur=$(tput setaf 5)    # Purple
+txtcyn=$(tput setaf 6)    # Cyan
+txtwht=$(tput setaf 7)    # White
+txtrst=$(tput sgr0)       # Text reset
+
+#COMMIT_ID=`cat - | ~/bin/get_commit_id.sh`
+#COMMIT_ID=`cat - | grep -i "fixes:" | head -n 1 | sed -s 's/ //g' | cut -f 2 -d ':'`
+#COMMIT_ID=`cat - | grep -i "fixes:" | head -n 1 | sed -e 's/^[ \t]*//' | cut -f 2 -d ':' | cut -f 1 -d ' '`
+COMMIT_ID=`cat - | grep -i "fixes:" | head -n 1 | sed -e 's/^[ \t]*//' | cut -f 2 -d ':' | sed -e 's/^[ \t]*//' | cut -f 1 -d ' '`
+#echo "$COMMIT_ID"
+#exit
+
+echo "${txtylw}fixes: '${COMMIT_ID}'${txtrst}"
+
+git describe --contains ${COMMIT_ID}
+
