@@ -24,14 +24,14 @@ author()
         do
 		# skip the Message-ID: line so we don't send email to the wrong place
 		#echo "$l"
-		reply=$(echo "$l" | grep -i Message-ID:)
+		reply=$(echo "$l" | grep -a -i Message-ID:)
 		if [ x"$reply" != x ]
 		then
 			continue
 		fi
 
 		# if this is the start of the diff, then it's time to stop looking
-		diff=$(echo "$l" | grep "^---")
+		diff=$(echo "$l" | grep -a "^---")
 		if [ x"$diff" != x ]
 		then
 			#echo "diffstart!!!!!"
@@ -53,7 +53,7 @@ author()
                         fi
                 done
         done < $TXT
-        author=$(echo "$author" | tr ' ' '\n' | grep -v "$first_author" |
+        author=$(echo "$author" | tr ' ' '\n' | grep -a -v "$first_author" |
                 sort | uniq)
         author="$first_author $author"
         eval $1=$(echo $author | sed -e 's/ /,/g')
@@ -67,8 +67,8 @@ reply()
 {
 	PATCH=$1
 	echo "PATCH=$PATCH"
-	SUBJECT=`grep "Subject:" $PATCH | sed s/Subject\:\ //`
-	MESSAGE_ID=`grep -i "^Message-ID:" $PATCH | cut -f 2 -d ' ' | cut -f 2 -d '<' | cut -f 1 -d '>'`
+	SUBJECT=`grep -a "Subject:" $PATCH | sed s/Subject\:\ //`
+	MESSAGE_ID=`grep -a -i "^Message-ID:" $PATCH | cut -f 2 -d ' ' | cut -f 2 -d '<' | cut -f 1 -d '>'`
 	author AUTHOR $1 FIRST_AUTHOR
 #	echo "author said $AUTHOR"
 #	echo "first_author said $FIRST_AUTHOR"
@@ -80,7 +80,7 @@ reply()
 	to=""
 	for i in $(echo "$AUTHOR" | sed -e 's/,/ /g')
 	do
-		if ! echo "$TO" | grep "$i"
+		if ! echo "$TO" | grep -a "$i"
 		then
 			to=$to" -to $i"
 		fi
@@ -121,7 +121,7 @@ reply()
 			echo "next -rc kernel release."
 		else
 			echo "The patch will be merged to the ${TREE}-next branch sometime soon,"
-			echo "after it pasts testing, and the merge window is open."
+			echo "after it passes testing, and the merge window is open."
 		fi
 		fi
 		echo
@@ -184,6 +184,7 @@ PWD=`pwd`
 TREE=`basename ${PWD}`
 
 # generate the patches
+echo "${TREE}-${BRANCH}"
 git format-patch -k -M -N ${TREE}-${BRANCH}
 
 # verify that we actually generated some patches
