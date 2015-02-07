@@ -1,0 +1,12 @@
+#!/bin/bash
+
+BRANCH="next"
+
+PWD=`pwd`
+TREE=`basename ${PWD}`
+
+git checkout ${TREE}-${BRANCH}
+for remote in `git remote`
+do
+	git push ${remote} ${TREE}-${BRANCH}
+done
