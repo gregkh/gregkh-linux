@@ -143,7 +143,8 @@ reply()
 
 # we need to be either on the 'work-next' branch, or the 'work-linus' branch in
 # order to work properly, error out if we are on something else.
-CURRENT_BRANCH=`git branch --no-color 2> /dev/null | sed -e '/^[^*]/d' -e 's/* \(.*\)/\1/'`
+#CURRENT_BRANCH=`git branch --no-color 2> /dev/null | sed -e '/^[^*]/d' -e 's/* \(.*\)/\1/'`
+CURRENT_BRANCH=`git symbolic-ref --short -q HEAD`
 BRANCH=""
 if [ "$CURRENT_BRANCH" = "work-next" ] ; then
 	BRANCH="next"

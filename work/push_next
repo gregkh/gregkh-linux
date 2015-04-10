@@ -1,5 +1,6 @@
 #!/bin/bash
 
+CURRENT_BRANCH=`git symbolic-ref --short -q HEAD`
 BRANCH="next"
 
 PWD=`pwd`
@@ -10,3 +11,5 @@ for remote in `git remote`
 do
 	git push ${remote} ${TREE}-${BRANCH}
 done
+
+git checkout ${CURRENT_BRANCH}
