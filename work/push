@@ -1,7 +1,12 @@
 #!/bin/bash
 
+BRANCH=$1
+if [ "$BRANCH" == "" ] ; then
+	echo "must specify branch! (linus, testing, next)"
+	exit 1
+fi
+
 CURRENT_BRANCH=`git symbolic-ref --short -q HEAD`
-BRANCH="testing"
 
 PWD=`pwd`
 TREE=`basename ${PWD}`
