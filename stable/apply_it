@@ -54,7 +54,7 @@ if [ "$KERNEL_VERSION" != "" ] ; then
 	apply_it $KERNEL_VERSION
 else
 	apply_it 4.1
-	apply_it 4.0
+#	apply_it 4.0
 	apply_it 3.14
 	apply_it 3.10
 fi
