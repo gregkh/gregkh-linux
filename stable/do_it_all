@@ -10,36 +10,36 @@ DIR="queue-$VERSION"
 
 
 # create a temp directory and copy the patches there
-TMP_DIR=`mktemp -d ../stable_patches-XXXXX` || exit 1
+TMP_DIR=$(mktemp -d ../stable_patches-XXXXX) || exit 1
 
-git ls-files -o | grep queue-$VERSION | xargs -i  cp {} -v ${TMP_DIR}
+git ls-files -o | grep "queue-${VERSION}" | xargs -i  cp {} -v "${TMP_DIR}"
 
 # create a commit message
 echo "${VERSION}-stable patches" > commit.msg
 echo "" >> commit.msg
 echo "added patches:" >> commit.msg
-for file in `ls ${TMP_DIR}`
+for file in $(ls "${TMP_DIR}")
 do
-	echo "	`basename $file`" >> commit.msg
+	echo "	$(basename ${file})" >> commit.msg
 done
 
 # add the files and commit them to git
-git add --all $DIR
+git add --all "${DIR}"
 git commit -F commit.msg
 rm commit.msg
 
 # do notification for the authors that the patches are now added to the tree.
-for file in `ls ${TMP_DIR}`
+for file in $(ls "${TMP_DIR}")
 do
-	../added-to-stable-version $VERSION ${TMP_DIR}/$file
+	../added-to-stable-version "${VERSION}" "${TMP_DIR}/$file"
 done
 
 # clean up
-rm -rf ${TMP_DIR}
+rm -rf "${TMP_DIR}"
 
-ONLINE=`gregkh_machine_online`
+ONLINE=$(gregkh_machine_online)
 # Only push if we have a network connection
-if [ "$ONLINE" = "1" ] ; then
+if [ "${ONLINE}" = "1" ] ; then
 	git push kroah.com master
 	git push
 fi
