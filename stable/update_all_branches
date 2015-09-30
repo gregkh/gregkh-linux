@@ -3,6 +3,6 @@
 git pull
 for branch in $(git branch --list --no-color | cut -f 3 -d ' '); do
 	echo "Updating $branch"
-	git checkout $branch
+	git checkout "${branch}"
 	git pull
 done
