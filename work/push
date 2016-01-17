@@ -2,8 +2,13 @@
 
 BRANCH=$1
 if [ "$BRANCH" == "" ] ; then
-	echo "must specify branch! (linus, testing, next)"
+	echo "must specify branch! (linus, testing, next, master)"
 	exit 1
+fi
+
+if [ "${BRANCH}" == "help" ] ; then
+	echo "linus testing next master"
+	exit 0
 fi
 
 CURRENT_BRANCH=`git symbolic-ref --short -q HEAD`
@@ -11,10 +16,16 @@ CURRENT_BRANCH=`git symbolic-ref --short -q HEAD`
 PWD=`pwd`
 TREE=`basename ${PWD}`
 
-git checkout ${TREE}-${BRANCH}
+if [ "${BRANCH}" == "master" ] ; then
+	TO_PUSH="master"
+else
+	TO_PUSH="${TREE}-${BRANCH}"
+fi
+
+git checkout ${TO_PUSH}
 for remote in `git remote`
 do
-	git push ${remote} ${TREE}-${BRANCH}
+	git push ${remote} ${TO_PUSH}
 done
 
 git checkout ${CURRENT_BRANCH}
