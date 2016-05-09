@@ -1,6 +1,6 @@
 #
 # Automatically generated file; DO NOT EDIT.
-# Linux/x86 3.10.85-rc1 Kernel Configuration
+# Linux/x86 3.10.99 Kernel Configuration
 #
 CONFIG_64BIT=y
 CONFIG_X86_64=y
