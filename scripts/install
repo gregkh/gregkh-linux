@@ -22,12 +22,15 @@ cp arch/$ARCH/boot/bzImage /boot/bzImage-"$SRC_RELEASE"
 cp System.map /boot/System.map-"$SRC_RELEASE"
 #ln -sf /boot/System.map-"$SRC_RELEASE" /boot/System.map
 
+# delete the keys used for this kernel
+rm certs/signing_key.*
+
 echo "Installed $SRC_RELEASE for $ARCH"
 
-if [ -f "/etc/os-release" ]; then
-	source /etc/os-release
-fi
-
+#if [ -f "/etc/os-release" ]; then
+#	source /etc/os-release
+#fi
+#
 #if [ "${NAME}" = "Arch Linux" ]; then
 #	# This is arch linux, so make the initrd
 #	mkinitcpio -k ${SRC_RELEASE}-gregkh -g /boot/initramfs-${SRC_RELEASE}-gregkh.img
