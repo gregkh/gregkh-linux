@@ -42,4 +42,6 @@ ONLINE=$(gregkh_machine_online)
 if [ "${ONLINE}" = "1" ] ; then
 	git push kroah.com master
 	git push
+	# kick off a build
+	/home/gregkh/linux/scripts/test_stable/test_stable_ssh ${VERSION}
 fi
