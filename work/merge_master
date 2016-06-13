@@ -1,0 +1,8 @@
+#!/bin/bash
+
+git merge master
+for branch in $(git branch --list --no-color | cut -f 3 -d ' '); do
+	echo "Updating $branch"
+	git checkout "${branch}"
+	git merge master
+done
