@@ -44,6 +44,7 @@ case "${REMOTE}" in
 	REMOTE_STABLE_GIT="/home/gregkh/linux/stable/linux-stable/"
 	REMOTE_WORK="/home/gregkh/tmp/"
 	REMOTE_SERVER="build"
+	REMOTE_SERVER="gregkh-builder"
 	REMOTE_USER="gregkh"
 	;;
 "jade")
