@@ -13,19 +13,26 @@
 
 my $line;
 
-my $version = shift;
+my $root_version = shift;
 
-if ($version eq "") {
-	print "must provide kernel version number\n";
+if ($root_version eq "") {
+	print "must provide kernel root version number\n";
 	die;
 }
 
+my $full_version = shift;
+if ($full_version eq "") {
+	print "must provide kernel full version number\n";
+	die;
+}
 my $mbox = shift;
 
 if ($mbox eq "") {
 	print "must provide the name of the mbox file\n";
 	die;
 }
+
+my $date=`date -u --iso-8601=minutes --date="2 days"`;
 
 $mboxnew = "$mbox.new";
 chomp($mboxnew);
@@ -60,9 +67,17 @@ while ($line = <MBOX>) {
 			# we are now out of the header
 			$header = "false";
 
+			# write out our own X-KernelTest tags to make automated tools's lives easier
+			print FILE "X-KernelTest-Patch: http://kernel.org/pub/linux/kernel/v4.x/stable-review/patch-$full_version.gz\n";
+			print FILE "X-KernelTest-Tree: git://git.kernel.org/pub/scm/linux/kernel/git/stable/linux-stable-rc.git\n";
+			print FILE "X-KernelTest-Branch: linux-$root_version.y-rc\n";
+			print FILE "X-KernelTest-Patches: git://git.kernel.org/pub/scm/linux/kernel/git/stable/stable-queue.git\n";
+			print FILE "X-KernelTest-Version: $full_version\n";
+			print FILE "X-KernelTest-Deadline: $date\n";
+
 			# write out our custom header too
 			print FILE "\n";
-			print FILE "$version-stable review patch.  If anyone has any objections, please let me know.\n";
+			print FILE "$root_version-stable review patch.  If anyone has any objections, please let me know.\n";
 			print FILE "\n";
 			print FILE "------------------\n";
 		}
