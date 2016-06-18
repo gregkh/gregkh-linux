@@ -2,6 +2,7 @@ linux-2.6*
 linux-3.*
 linux-4.*
 linux-stable
+linux-stable-rc
 stable-queue
 linux-stable
 release-*
