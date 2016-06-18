@@ -42,6 +42,7 @@ open FILE, ">$mboxnew" || die "Failed to create $mboxnew";
 
 my $header = "true";
 my $eat = "false";
+my $tags_written = "false";
 
 while ($line = <MBOX>) {
 	$eat = "false";
@@ -54,6 +55,21 @@ while ($line = <MBOX>) {
 	}
 
 	if ($header eq "true") {
+		# if first Subject: line, add our tags
+		if ($tags_written eq "false") {
+			if ($line =~ m/^Subject:/) {
+				# write out our own X-KernelTest tags to make automated tools's lives easier
+				print FILE "X-KernelTest-Patch: http://kernel.org/pub/linux/kernel/v4.x/stable-review/patch-$full_version.gz\n";
+				print FILE "X-KernelTest-Tree: git://git.kernel.org/pub/scm/linux/kernel/git/stable/linux-stable-rc.git\n";
+				print FILE "X-KernelTest-Branch: linux-$root_version.y\n";
+				print FILE "X-KernelTest-Patches: git://git.kernel.org/pub/scm/linux/kernel/git/stable/stable-queue.git\n";
+				print FILE "X-KernelTest-Version: $full_version\n";
+				print FILE "X-KernelTest-Deadline: $date";  # no trailing \n on purpose!
+
+				$tags_written = "true";
+			}
+		}
+
 		# strip out References line
 		if ($line =~ m/^References:/) {
 			# eat the line
@@ -66,14 +82,6 @@ while ($line = <MBOX>) {
 
 			# we are now out of the header
 			$header = "false";
-
-			# write out our own X-KernelTest tags to make automated tools's lives easier
-			print FILE "X-KernelTest-Patch: http://kernel.org/pub/linux/kernel/v4.x/stable-review/patch-$full_version.gz\n";
-			print FILE "X-KernelTest-Tree: git://git.kernel.org/pub/scm/linux/kernel/git/stable/linux-stable-rc.git\n";
-			print FILE "X-KernelTest-Branch: linux-$root_version.y-rc\n";
-			print FILE "X-KernelTest-Patches: git://git.kernel.org/pub/scm/linux/kernel/git/stable/stable-queue.git\n";
-			print FILE "X-KernelTest-Version: $full_version\n";
-			print FILE "X-KernelTest-Deadline: $date\n";
 
 			# write out our custom header too
 			print FILE "\n";
