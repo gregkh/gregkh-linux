@@ -12,14 +12,25 @@ txtcyn=$(tput setaf 6)    # Cyan
 txtwht=$(tput setaf 7)    # White
 txtrst=$(tput sgr0)       # Text reset
 
+fixes=`cat - | grep -i "fixes:" | head -n 1`
+if [[ ${fixes} =~ [[:xdigit:]]{12} ]] ; then
+	id=${BASH_REMATCH}
+else
+	echo "${txtred}try 2${txtrst}"
+	id=`echo ${fixes} | sed -e 's/^[ \t]*//' | cut -f 2 -d ':' | sed -e 's/^[ \t]*//' | cut -f 1 -d ' '`
+fi
+
+echo "${txtylw}id: '$id'${txtrst}"
+
 #COMMIT_ID=`cat - | ~/bin/get_commit_id.sh`
 #COMMIT_ID=`cat - | grep -i "fixes:" | head -n 1 | sed -s 's/ //g' | cut -f 2 -d ':'`
 #COMMIT_ID=`cat - | grep -i "fixes:" | head -n 1 | sed -e 's/^[ \t]*//' | cut -f 2 -d ':' | cut -f 1 -d ' '`
-COMMIT_ID=`cat - | grep -i "fixes:" | head -n 1 | sed -e 's/^[ \t]*//' | cut -f 2 -d ':' | sed -e 's/^[ \t]*//' | cut -f 1 -d ' '`
+#COMMIT_ID=`cat - | grep -i "fixes:" | head -n 1 | sed -e 's/^[ \t]*//' | cut -f 2 -d ':' | sed -e 's/^[ \t]*//' | cut -f 1 -d ' '`
 #echo "$COMMIT_ID"
 #exit
 
-echo "${txtylw}fixes: '${COMMIT_ID}'${txtrst}"
+#echo "${txtylw}fixes: '${COMMIT_ID}'${txtrst}"
 
-git describe --contains ${COMMIT_ID}
 
+#git describe --contains ${COMMIT_ID}
+git describe --contains ${id}
