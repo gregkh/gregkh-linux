@@ -116,7 +116,7 @@ foreach my $patch (@patches) {
 		# if this is the end of the mail header, write the author info.
 		if ($header_complete eq "false") {
 			if ($line eq "\n") {
-				print FILE "$author\n";
+				#print FILE "$author\n";
 				$header_complete = "true";
 			}
 		}
