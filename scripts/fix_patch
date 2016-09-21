@@ -10,7 +10,7 @@ do
 
 	formail -k -X From: -X Subject: -X From -X To: -X Cc: -X Date: -X Message-ID: -X Content-Disposition: -X Content-Type: -X MIME-Version: < $PATCH > $TMPFILE
 	mv $TMPFILE $PATCH
-
+	dos2unix $PATCH
 
 done
 
