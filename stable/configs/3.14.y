@@ -1,6 +1,6 @@
 #
 # Automatically generated file; DO NOT EDIT.
-# Linux/x86 3.14.49-rc1 Kernel Configuration
+# Linux/x86 3.14.79 Kernel Configuration
 #
 CONFIG_64BIT=y
 CONFIG_X86_64=y
@@ -1790,7 +1790,7 @@ CONFIG_HMC6352=m
 CONFIG_DS1682=m
 CONFIG_TI_DAC7512=m
 CONFIG_VMWARE_BALLOON=m
-CONFIG_BMP085=y
+CONFIG_BMP085=m
 CONFIG_BMP085_I2C=m
 CONFIG_BMP085_SPI=m
 CONFIG_PCH_PHUB=m
