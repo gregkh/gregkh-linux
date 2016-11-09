@@ -161,11 +161,19 @@ echo "Took \${TIME} seconds to build"
 
 cd ..
 
+# find warnings and errors
+WARNINGS=\$(grep --count warning: linux/log)
+ERRORS=\$(grep --count error: linux/log)
+
+echo ""
+echo "Warnings = \${WARNINGS}"
+echo "Errors   = \${ERRORS}"
+
 if [ "\${KTEST_RUN}" = "0" ]; then
     # test succeeded
-    SUBJECT="Build of ${KERNEL_VERSION} was good (\${TIME} seconds)"
+    SUBJECT="Build of ${KERNEL_VERSION} was good (W:\${WARNINGS} E:\${ERRORS} \${TIME} seconds)"
 else
-    SUBJECT="Build of ${KERNEL_VERSION} FAILED! (\${TIME} seconds)"
+    SUBJECT="Build of ${KERNEL_VERSION} FAILED! (W:\${WARNINGS} E:\${ERRORS} \${TIME} seconds)"
 fi
 
 mutt -s "\${SUBJECT}" -a linux/log -- ${EMAIL} < ${REMOTE_DIR}/output_log
