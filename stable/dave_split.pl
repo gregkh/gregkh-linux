@@ -27,6 +27,7 @@ $SIG{__DIE__} = sub
 
 sub usage() {
 	print "$0 mbox kernel_version\n";
+	print "Subject:.*\\_.\\_^\\s.*\n";
 	exit;
 }
 
