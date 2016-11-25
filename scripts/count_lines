@@ -1,0 +1,138 @@
+#!/bin/bash
+#
+# Copyright 2016 Greg Kroah-Hartman <gregkh@linuxfoundation.org>
+#
+# Released under the GPL version 2 only.
+# SPDX-License-Identifier: GPL-2.0
+#
+# Count the lines of kernel code that we are actually using for our machine
+#
+# Run this in a Linux kernel source directory where you have built the
+# kernel already.
+#
+# This script will go through and find all of the .o files in your tree,
+# try to match them up with the .c files, parse the .c files to find the
+# .h files that they use, then parse the .h files to see what they use.
+# Then count up all of the lines of these .c and .h files.
+#
+# Yes, it's a horrid hack.  But it gives a good estimate of how much
+# code you are using.
+# Yes, we should probably run another loop on the .h files that the
+# original .h files included, but it's a bit of diminishing returns at
+# that point in time, so we can live with it.
+#
+
+# what arch we are dealing with
+# change this if you are using a different architecture
+ARCH="x86"
+
+
+# Don't touch anything below here.
+SCRIPT=${0##*/}
+TOTAL_LINES=0
+
+find_includes() {
+	FILES=$1		# files to look at
+	INCLUDES=$2		# where to write the includes we find
+
+	#printf "FILES=%s\tINCLUDES=%s\n" "${FILES}" "${INCLUDES}"
+
+	# iterate over all files and try to find the includes
+	while read -r FILE ; do
+		if [ -f "${FILE}" ]; then
+			# find all of the .h files this file used
+			#  search for include         remove after "         remove after >       remove all of the ../  remove #include   remove whitespace    remove ""    remove <  remove >
+			grep "^#include" "${FILE}" | sed -e 's/\.h".*$/\.h"/' -e 's/\.h>.*$/\.h>/' -e 's/\.\.\///g'  -e 's/#include//'  -e 's/[[:blank:]]//g' -e 's/"//g' -e 's/<//g' -e 's/>//g' >> "${INCLUDES}"
+		fi
+	done < "${FILES}"
+
+	# sort and try to clean up the list of includes
+	TMP=$(mktemp "${SCRIPT}"_tmp.XXXX) || exit 1
+	sort "${INCLUDES}" | uniq > "${TMP}"
+	mv "${TMP}" "${INCLUDES}"
+
+	# fine the "real" .h file based on the list we now have
+	while read -r FILE ; do
+		#printf "looking for %s\n" "${FILE}"
+		F=$(grep -F "${FILE}" "${FIND}")
+		echo "${F}" >> "${TMP}"
+	done < "${INCLUDES}"
+
+	# sort the list again
+	TMP2=$(mktemp "${SCRIPT}"_tmp2.XXXX) || exit 1
+	sort "${TMP}" | uniq > "${TMP2}"
+	mv "${TMP2}" "${TMP}"
+
+	rm "${INCLUDES}"
+	touch "${INCLUDES}"
+	# only take the include files and arch/${ARCH}
+	while read -r FILE ; do
+		if [[ ${FILE} == "./include/"* ]] ; then
+			echo "${FILE}" >> "${INCLUDES}"
+		fi
+
+		if [[ ${FILE} == "./arch/${ARCH}/"* ]] ; then
+			echo "${FILE}" >> "${INCLUDES}"
+		fi
+	done < "${TMP}"
+
+	rm "${TMP}"
+}
+
+count_lines() {
+	FILES=$1
+	while read -r FILE ; do
+		if [ -f "${FILE}" ]; then
+			LINES=$(wc -l "${FILE}" | cut -f 1 -d ' ')
+			TOTAL_LINES=$((LINES + TOTAL_LINES))
+			#printf "total=%08d\tlines=%06d\t%s\n" ${TOTAL_LINES} "${LINES}" "${FILE}"
+		fi
+	done < "${FILES}"
+}
+
+
+# make some temp files to mess around with
+C_FILES=$(mktemp "${SCRIPT}"_c_files.XXXX) || exit 1
+C_INCLUDES=$(mktemp "${SCRIPT}"_c_includes.XXXX) || exit 1
+H_INCLUDES=$(mktemp "${SCRIPT}"_h_includes.XXXX) || exit 1
+REAL_INCLUDES=$(mktemp "${SCRIPT}"_real_includes.XXXX) || exit 1
+FIND=$(mktemp "${SCRIPT}"_find.XXXX) || exit 1
+
+
+# -----------------start here!------------------
+printf "Finding all .c files used based on the .o files...\n"
+find . -type f > "${FIND}"
+
+# first get the object files and strip off the .o and replace it with a .c
+# to find the .c files we want to count.
+#find . -type f | grep "\.o$" | sed -e 's/\.o$/\.c/' > "${C_FILES}"
+grep "\.o$" "${FIND}" | sed -e 's/\.o$/\.c/' > "${C_FILES}"
+
+# find all of the include files these .c files pull in
+printf "Searching for what .h files the .c code pulls in...\n"
+find_includes "${C_FILES}" "${C_INCLUDES}"
+
+# find all of the include files these .h files pull in
+printf "Searching for what .h files the .h files pull in...\n"
+find_includes "${C_INCLUDES}" "${H_INCLUDES}"
+
+# squish the includes together and sort to get a real list of included files
+cat "${C_INCLUDES}" "${H_INCLUDES}" | sort | uniq > "${REAL_INCLUDES}"
+
+# count the lines that we have in .c code
+count_lines "${C_FILES}"
+
+printf "C files total = %9d\n" ${TOTAL_LINES}
+TOTAL_LINES=0
+
+# count the lines of .h files
+count_lines "${REAL_INCLUDES}"
+printf "H files total = %9d\n" ${TOTAL_LINES}
+
+rm "${C_FILES}"
+rm "${C_INCLUDES}"
+rm "${H_INCLUDES}"
+rm "${REAL_INCLUDES}"
+rm "${FIND}"
+
+exit 0
