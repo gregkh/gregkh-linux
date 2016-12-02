@@ -32,6 +32,7 @@
 EMAIL="greg@kroah.com"
 
 LOCAL_WORK="/tmp/"
+LOCAL_WORK=${TMPDIR}
 LOCAL_KTEST="/home/gregkh/linux/gregkh/tools/testing/ktest/ktest.pl"
 QUEUE_DIR="/home/gregkh/linux/stable/stable-queue/"
 
