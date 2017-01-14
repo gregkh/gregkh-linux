@@ -22,10 +22,13 @@
 # that point in time, so we can live with it.
 #
 
-# what arch we are dealing with
-# change this if you are using a different architecture
-ARCH="x86"
-
+# can specify the arch on the command line, otherwise default to x86
+if [ $# -ne 1 ]; then
+	ARCH="x86"
+else
+	ARCH=$1
+fi
+echo "Finding files for arch ${ARCH}"
 
 # Don't touch anything below here.
 SCRIPT=${0##*/}
@@ -121,13 +124,23 @@ cat "${C_INCLUDES}" "${H_INCLUDES}" | sort | uniq > "${REAL_INCLUDES}"
 
 # count the lines that we have in .c code
 count_lines "${C_FILES}"
+C_LINE_COUNT=${TOTAL_LINES}
+C_FILE_COUNT=$(wc -l ${C_FILES} | cut -f 1 -d ' ')
 
-printf "C files total = %9d\n" ${TOTAL_LINES}
-TOTAL_LINES=0
+printf "     C: %9d files\t%9d lines\n" ${C_FILE_COUNT} ${C_LINE_COUNT}
 
 # count the lines of .h files
+TOTAL_LINES=0
 count_lines "${REAL_INCLUDES}"
-printf "H files total = %9d\n" ${TOTAL_LINES}
+H_LINE_COUNT=${TOTAL_LINES}
+H_FILE_COUNT=$(wc -l ${REAL_INCLUDES} | cut -f 1 -d ' ')
+
+printf "     H: %9d files\t%9d lines\n" ${H_FILE_COUNT} ${H_LINE_COUNT}
+
+TOTAL_LINES=$((C_LINE_COUNT + H_LINE_COUNT))
+TOTAL_FILES=$((C_FILE_COUNT + H_FILE_COUNT))
+
+printf "Totals: %9d files\t%9d lines\n" ${TOTAL_FILES} ${TOTAL_LINES}
 
 rm "${C_FILES}"
 rm "${C_INCLUDES}"
