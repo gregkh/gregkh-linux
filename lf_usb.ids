@@ -10,7 +10,9 @@
 	0103  NCM (Ethernet) Gadget
 	0104  Multifunction Composite Gadget
 	0105  FunctionFS Gadget
+	0106  Composite Gadget: ACM + Mass Storage
 	0200  Qemu Audio Device
 	0246  BlueZ Host Stack
+	0247  BlueZ for Android
 
 
