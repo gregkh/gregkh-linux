@@ -1,0 +1,16 @@
+# Linux Foundation USB id list.
+
+1d6b  Linux Foundation
+	0001  1.1 root hub
+	0002  2.0 root hub
+	0003  3.0 root hub
+	0100  PTP Gadget
+	0101  Audio Gadget
+	0102  EEM Gadget
+	0103  NCM (Ethernet) Gadget
+	0104  Multifunction Composite Gadget
+	0105  FunctionFS Gadget
+	0200  Qemu Audio Device
+	0246  BlueZ Host Stack
+
+
