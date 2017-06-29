@@ -101,6 +101,7 @@ foreach my $patch (@patches) {
 		# clean up the subject line?
 		$line =~ s/^Subject: \[PATCH \d\/\d\]/Subject:/;
 		$line =~ s/^Subject: \[PATCH \d\d\/\d\d\]/Subject:/;
+		$line =~ s/^Subject: \[PATCH \d\d\d\/\d\d\d\]/Subject:/;
 
 		# add our signed off by if this is the last line in the header
 		if ($line =~ m/^---$/) {
