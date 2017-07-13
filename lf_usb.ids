@@ -11,6 +11,7 @@
 	0104  Multifunction Composite Gadget
 	0105  FunctionFS Gadget
 	0106  Composite Gadget: ACM + Mass Storage
+	0107  Embedded Hub Gadgetg
 	0200  Qemu Audio Device
 	0246  BlueZ Host Stack
 	0247  BlueZ for Android
