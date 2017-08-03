@@ -28,7 +28,7 @@ apply_it ()
 	DIR="linux-$VERSION.y"
 	# echo "DIR=$DIR"
 
-	echo "${txtrst}Applying ${txtylw}$PATCH${txtrst} to ${txtblu}$DIR${txtrst}"
+	echo "${txtrst}Applying ${txtylw}$PATCH${txtrst} to ${txtcyn}$DIR${txtrst}"
 
 	cd $DIR
 
