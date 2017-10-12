@@ -1,0 +1,60 @@
+#!/bin/bash
+
+TREE=$1
+
+if [ "$TREE" == "" ] ; then
+	echo "$0 KERNEL_BASE_VERSION"
+	exit
+fi
+
+TREE_DIR="linux-${1}.y"
+
+#echo "releasing ${TREE_DIR}"
+
+if [ ! -d "${TREE_DIR}" ] ; then
+	echo "kernel directory ${TREE_DIR} must be present..."
+	exit
+fi
+
+cd ${TREE_DIR}
+VERSION=$(kv)
+cd ..
+
+BASE_VERSION=${VERSION/-rc?/}
+
+if [ ${BASE_VERSION} != ${VERSION} ] ; then
+	echo "${VERSION} still has a -rc tag, do you mean for that to be there?"
+	exit
+fi
+
+echo "# About to release ${VERSION}"
+echo "#"
+echo -n "# [ret] to continue"
+read
+
+# apply the patches to the release-specific directory tree
+echo "cd ${TREE_DIR}"
+echo "quilt pop -qa"
+# kick git a bunch to work before we apply the patches...
+echo "git am --abort"
+echo "git reset"
+echo "git quiltimport --patches ../stable-queue/queue-${TREE}"
+#echo "vim Makefile"
+echo "git commit -a -m \"Linux ${VERSION}\""
+echo "../dotag ${VERSION}"
+echo "../dorelease"
+
+
+# move the file in the stable queue to the released location
+echo "cd ../stable-queue"
+echo "git mv queue-${TREE} releases/${VERSION}"
+echo "git commit -a -m \"Linux ${VERSION}\""
+echo "../dotag ${VERSION}"
+echo "git push && git push --tags && git push kroah.com master && git push kroah.com --tags"
+
+# pull the release into the linux-stable tree and push it to kernel.org
+echo "cd ../linux-stable"
+echo "git checkout linux-${TREE}.y"
+echo "git pull ../linux-${TREE}.y"
+echo "git pull ../linux-${TREE}.y --tags"
+echo "git push && git push --tags"
