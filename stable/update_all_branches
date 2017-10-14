@@ -1,7 +1,7 @@
 #!/bin/bash
 
-git pull
-for branch in $(git branch --list --no-color | cut -f 3 -d ' '); do
+git fetch
+for branch in $(git branch --list --no-color -vv | grep " behind " | cut -f 3 -d ' '); do
 	echo "Updating $branch"
 	git checkout "${branch}"
 	git pull
