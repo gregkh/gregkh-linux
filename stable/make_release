@@ -27,10 +27,11 @@ if [ ${BASE_VERSION} != ${VERSION} ] ; then
 	exit
 fi
 
-echo "# About to release ${VERSION}"
-echo "#"
-echo -n "# [ret] to continue"
+echo "# About to release ${VERSION}" >&2
+echo "#" >&2
+echo "# [ret] to continue" >&2
 read
+#echo "#"
 
 # apply the patches to the release-specific directory tree
 echo "cd ${TREE_DIR}"
