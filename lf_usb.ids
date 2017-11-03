@@ -4,6 +4,7 @@
 	0001  1.1 root hub
 	0002  2.0 root hub
 	0003  3.0 root hub
+	0010  USB Debug Target
 	0100  PTP Gadget
 	0101  Audio Gadget
 	0102  EEM Gadget
