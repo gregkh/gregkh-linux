@@ -113,6 +113,7 @@ echo "Using ${REMOTE_DIR} for the remote directory"
 # figure out how many processors are on the remote machine
 # we use this to know how many processes to spawn when doing the build
 NUM_PROCESSORS=`ssh ${SSH_OPTIONS} ${REMOTE_USER}@${REMOTE_SERVER} grep -c "processor" /proc/cpuinfo`
+NUM_PROCESSORS=`ssh ${SSH_OPTIONS} ${REMOTE_USER}@${REMOTE_SERVER} nproc`
 echo "Remote machine has ${NUM_PROCESSORS} processors."
 
 # tar up stable patch queue for just this kernel version
@@ -154,7 +155,8 @@ if [ -f ${REMOTE_DIR}/\${PATCHES} ] ; then
 	cd ..
 
 	# Apply the patch queue
-	QUILT_PATCHES=patches QUILT_SERIES=patches/series quilt push -aq --quiltrc
+	git quiltimport --patches patches
+	#QUILT_PATCHES=patches QUILT_SERIES=patches/series quilt push -aq --quiltrc
 fi
 
 # get initial time
