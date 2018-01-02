@@ -1,4 +1,8 @@
 #!/bin/bash
+#
+# echo out to stdout the steps needed to do a stable kernel release.
+# pipe it to another file if you just want to run it that way.
+#
 
 TREE=$1
 
@@ -17,15 +21,28 @@ if [ ! -d "${TREE_DIR}" ] ; then
 fi
 
 cd ${TREE_DIR}
-VERSION=$(kv)
+OLD_VERSION=$(kv)
+
+CLEAN=$(git diff Makefile)
 cd ..
 
-BASE_VERSION=${VERSION/-rc?/}
-
-if [ ${BASE_VERSION} != ${VERSION} ] ; then
-	echo "${VERSION} still has a -rc tag, do you mean for that to be there?"
+if [ "${CLEAN}" != "" ] ; then
+	echo "${0} has to run with a clean Makefile, exiting..."
 	exit
 fi
+
+
+BASE_VERSION=${OLD_VERSION/-rc?/}
+
+if [ ${BASE_VERSION} != ${OLD_VERSION} ] ; then
+	echo "${OLD_VERSION} still has a -rc tag, do you mean for that to be there?"
+	exit
+fi
+
+REL_ARRAY=(${OLD_VERSION//./ })
+MINOR=${REL_ARRAY[2]}
+NEW_MINOR=$(($MINOR + 1))
+VERSION="${REL_ARRAY[0]}.${REL_ARRAY[1]}.${NEW_MINOR}"
 
 echo "# About to release ${VERSION}" >&2
 echo "#" >&2
@@ -39,8 +56,10 @@ echo "quilt pop -qa"
 # kick git a bunch to work before we apply the patches...
 echo "git am --abort"
 echo "git reset"
+echo "git checkout Makefile"
 echo "git quiltimport --patches ../stable-queue/queue-${TREE}"
 #echo "vim Makefile"
+echo "../version_bump"
 echo "git commit -a -m \"Linux ${VERSION}\""
 echo "../dotag ${VERSION}"
 echo "../dorelease"

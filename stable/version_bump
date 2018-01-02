@@ -1,0 +1,64 @@
+#!/bin/bash
+# edits the Makefile of a kernel, and bumps the SUBLEVEL version to be one
+# greater than what it is now.  Used when making stable kernel releases
+#
+# Must be in the directory of the kernel that you wish to change the version
+# of, and the Makefile must be "clean" with no changes in it.
+#
+# And of course, this is a horrid hack...
+
+VERSION=$(kv)
+
+#BASE_VERSION=${VERSION/-rc?/}
+#
+#if [ ${BASE_VERSION} != ${VERSION} ] ; then
+#        echo "${VERSION} still has a -rc tag, do you mean for that to be there?"
+#        exit
+#fi
+
+CLEAN=$(git diff Makefile)
+
+if [ "${CLEAN}" != "" ] ; then
+	echo "${0} has to run with a clean Makefile, exiting..."
+	exit
+fi
+
+REL_ARRAY=(${VERSION//./ })
+MINOR=${REL_ARRAY[2]}
+NEW_MINOR=$(($MINOR + 1))
+
+echo "${REL_ARRAY[0]}.${REL_ARRAY[1]}.${MINOR} -> ${REL_ARRAY[0]}.${REL_ARRAY[1]}.${NEW_MINOR}"
+
+cp Makefile Makefile.orig
+rm Makefile
+
+#
+# I fight with sed too much, this should work:
+# sed -i -e 's/SUBLEVEL = ${MINOR}/SUBLEVEL = ${NEW_MINOR}/' Makefile.new
+# but it doesn't, so abuse bash to just read in the whole Makefile and change a
+# single line.  I suck.
+#
+while IFS= read -r line
+do
+	case "$line" in
+	SUBLEVEL*)	printf "%s\n" "${line/${MINOR}/${NEW_MINOR}}" >> Makefile;;
+	*)		printf "%s\n" "$line" >> Makefile;;
+	esac
+done < Makefile.orig
+
+diff -u Makefile.orig Makefile > makefile.patch
+mv Makefile.orig Makefile
+
+patch -s -p0 < makefile.patch
+
+rm makefile.patch
+
+#cp Makefile Makefile.new
+#
+#
+# sed -i -e 's/SUBLEVEL = ${MINOR}/SUBLEVEL = ${NEW_MINOR}/' Makefile.new
+#echo "sed -i -e 's/SUBLEVEL = ${MINOR}/SUBLEVEL = ${NEW_MINOR}/' Makefile.new"
+#
+#$(diff -u Makefile Makefile.new > makefile.patch)
+
+
