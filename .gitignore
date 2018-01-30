@@ -3,5 +3,6 @@ gregkh-stable/
 patches/
 tools/
 tmp/
+trees/
 kdbus/
 ltsi/
