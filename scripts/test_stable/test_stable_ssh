@@ -103,11 +103,11 @@ fi
 echo "Testing kernel version ${KERNEL_VERSION} on remote server \"${REMOTE}\""
 
 # create the local temporary directory to do the work in.
-SCRIPT_HOME=`mktemp -d ${LOCAL_WORK}/stable_test_XXXXX` || exit 1
+SCRIPT_HOME=`mktemp -d ${LOCAL_WORK}/stable_test_${KERNEL_VERSION}_XXXXX` || exit 1
 echo "Using ${SCRIPT_HOME} for our local files"
 
 # create the remote directory
-REMOTE_DIR=`ssh ${SSH_OPTIONS} ${REMOTE_USER}@${REMOTE_SERVER} mktemp -d ${REMOTE_WORK}/stable_test_XXXXX` || exit 1
+REMOTE_DIR=`ssh ${SSH_OPTIONS} ${REMOTE_USER}@${REMOTE_SERVER} mktemp -d ${REMOTE_WORK}/stable_test_${KERNEL_VERSION}_XXXXX` || exit 1
 echo "Using ${REMOTE_DIR} for the remote directory"
 
 # figure out how many processors are on the remote machine
