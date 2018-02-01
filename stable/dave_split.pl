@@ -85,7 +85,7 @@ foreach my $patch (@patches) {
 	# create temp file to copy this one into
 	$tmp = "$tmpdir/patch.XXXXX";
 	$tmpfile = `mktemp $tmp` || die "failed to run mktemp $tmp";
-	print "tmpfile = $tmpfile";
+	#print "tmpfile = $tmpfile";
 
 	open FILE, ">$tmpfile" || die "Failed to create $tmpfile";
 	open (PATCH, "$tmpdir/$patch") || die "failed to read $patch";
