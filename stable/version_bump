@@ -5,9 +5,19 @@
 # Must be in the directory of the kernel that you wish to change the version
 # of, and the Makefile must be "clean" with no changes in it.
 #
-# And of course, this is a horrid hack...
+# If the second arg is not "", then extraversion will get a -rc1 added to it.
+#
+# And of course, this whole thing is a horrid hack...
 
 VERSION=$(kv)
+
+RC=${1}
+
+if [ "${RC}" != "" ] ; then
+	RC=" -rc1"
+else
+	RC=""
+fi
 
 #BASE_VERSION=${VERSION/-rc?/}
 #
@@ -27,7 +37,7 @@ REL_ARRAY=(${VERSION//./ })
 MINOR=${REL_ARRAY[2]}
 NEW_MINOR=$(($MINOR + 1))
 
-echo "${REL_ARRAY[0]}.${REL_ARRAY[1]}.${MINOR} -> ${REL_ARRAY[0]}.${REL_ARRAY[1]}.${NEW_MINOR}"
+echo "${REL_ARRAY[0]}.${REL_ARRAY[1]}.${MINOR} -> ${REL_ARRAY[0]}.${REL_ARRAY[1]}.${NEW_MINOR}${RC/ /}"
 
 cp Makefile Makefile.orig
 rm Makefile
@@ -42,6 +52,7 @@ while IFS= read -r line
 do
 	case "$line" in
 	SUBLEVEL*)	printf "%s\n" "${line/${MINOR}/${NEW_MINOR}}" >> Makefile;;
+	EXTRAVERSION*)	printf "%s%s\n" "${line}" "${RC}" >> Makefile;;
 	*)		printf "%s\n" "$line" >> Makefile;;
 	esac
 done < Makefile.orig
