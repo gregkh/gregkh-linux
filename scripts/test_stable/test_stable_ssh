@@ -176,8 +176,8 @@ echo "Took \${TIME} seconds to build"
 cd ..
 
 # find warnings and errors
-WARNINGS=\$(grep --count warning: linux/log)
-ERRORS=\$(grep --count error: linux/log)
+WARNINGS=\$(grep --count -i "warning:" linux/log)
+ERRORS=\$(grep --count -i "error:" linux/log)
 
 echo ""
 echo "Warnings = \${WARNINGS}"
