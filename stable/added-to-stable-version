@@ -176,6 +176,7 @@ reply()
 		-date="$(date -R)" \
 		-reply_to="$MESSAGE_ID" \
 		-message_id="$ID" \
+		-stable="commit" \
 		"$CHARCMD" \
 		| \
 	~/bin/msmtp-enqueue.sh "$to"
