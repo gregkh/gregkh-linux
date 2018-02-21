@@ -33,6 +33,7 @@ if ($mbox eq "") {
 }
 
 my $date=`date -u --iso-8601=minutes --date="2 days"`;
+chomp($date);
 
 $mboxnew = "$mbox.new";
 chomp($mboxnew);
@@ -43,6 +44,7 @@ open FILE, ">$mboxnew" || die "Failed to create $mboxnew";
 my $header = "true";
 my $eat = "false";
 my $tags_written = "false";
+my $stable_tag_written = "false";
 
 while ($line = <MBOX>) {
 	$eat = "false";
@@ -55,6 +57,14 @@ while ($line = <MBOX>) {
 	}
 
 	if ($header eq "true") {
+		if ($stable_tag_written eq "false") {
+			if ($line =~ m/^Subject:/) {
+				# always add a "X-stable: review" tag
+				print FILE "X-stable: review\n";
+				$stable_tag_written = "true";
+			}
+		}
+
 		# if first Subject: line, add our tags
 		if ($tags_written eq "false") {
 			if ($line =~ m/^Subject:/) {
@@ -64,7 +74,7 @@ while ($line = <MBOX>) {
 				print FILE "X-KernelTest-Branch: linux-$root_version.y\n";
 				print FILE "X-KernelTest-Patches: git://git.kernel.org/pub/scm/linux/kernel/git/stable/stable-queue.git\n";
 				print FILE "X-KernelTest-Version: $full_version\n";
-				print FILE "X-KernelTest-Deadline: $date";  # no trailing \n on purpose!
+				print FILE "X-KernelTest-Deadline: $date\n";
 
 				$tags_written = "true";
 			}
@@ -82,6 +92,7 @@ while ($line = <MBOX>) {
 
 			# we are now out of the header
 			$header = "false";
+			$stable_tag_written = "false";
 
 			# write out our custom header too
 			print FILE "\n";
