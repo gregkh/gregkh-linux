@@ -186,7 +186,7 @@ TREE=`basename ${PWD}`
 
 # generate the patches
 echo "${TREE}-${BRANCH}"
-git format-patch -k -M -N ${TREE}-${BRANCH}
+git format-patch -k -M -N ${TREE}-${BRANCH}..HEAD
 
 # verify that we actually generated some patches
 PATCH=`ls 0*.patch 2>/dev/null | head -n 1`
@@ -194,6 +194,46 @@ if [ "${PATCH}" = "" ] ; then
 	echo "ERROR!!!"
 	echo "No patches were generated, are you sure you actually committed anything here?"
 	exit
+fi
+
+# Verify we have signed-off-by correct for everything set up properly
+# Thanks to Stephen Rothwell <sfr@canb.auug.org.au> for this chunk of code
+error=false
+for c in $(git rev-list --no-merges ${TREE}-${BRANCH}..HEAD); do
+	ae=$(git log -1 --format='%ae' "$c")
+	aE=$(git log -1 --format='%aE' "$c")
+	an=$(git log -1 --format='%an' "$c")
+	aN=$(git log -1 --format='%aN' "$c")
+	ce=$(git log -1 --format='%ce' "$c")
+	cE=$(git log -1 --format='%cE' "$c")
+	cn=$(git log -1 --format='%cn' "$c")
+	cN=$(git log -1 --format='%cN' "$c")
+	sob=$(git log -1 --format='%b' "$c" | grep -i '^[[:space:]]*Signed-off-by:')
+
+	am=false
+	cm=false
+	grep -i -q "<$ae>" <<<"$sob" ||
+		grep -i -q "<$aE>" <<<"$sob" ||
+		grep -i -q ":[[:space:]]*$an[[:space:]]*<" <<<"$sob" ||
+		grep -i -q ":[[:space:]]*$aN[[:space:]]*<" <<<"$sob" ||
+		am=true
+	grep -i -q "<$ce>" <<<"$sob" ||
+		grep -i -q "<$cE>" <<<"$sob" ||
+		grep -i -q ":[[:space:]]*$cn[[:space:]]*<" <<<"$sob" ||
+		grep -i -q ":[[:space:]]*$cN[[:space:]]*<" <<<"$sob" ||
+		cm=true
+
+	if "$am" || "$cm"; then
+		printf "Commit %s\n" "$c"
+		"$am" && printf "\tauthor SOB missing\n"
+		"$cm" && printf "\tcommitter SOB missing\n"
+		printf "\t%s %s\n\t%s\n" "$ae" "$ce" "$sob"
+		error=true
+	fi
+done
+if "$error"; then
+	echo "Errors in tree with signed-off-by, please fix!"
+	exit 1
 fi
 
 # send out emails
