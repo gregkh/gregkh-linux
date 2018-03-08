@@ -45,5 +45,6 @@ echo -n "${txtylw}id: '$id'${txtrst} is in: "
 
 
 #git describe --contains ${COMMIT_ID}
-release=`git describe --contains ${id} | cut -f 1 -d '~'`
+#release=`git describe --contains ${id} | cut -f 1 -d '~'`
+release=`/home/gregkh/linux/scripts/fix_in_what_release ${id}`
 echo "${txtcyn}${release}${txtrst}"

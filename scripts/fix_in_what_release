@@ -1,0 +1,53 @@
+#!/bin/bash
+#
+# Find what release(s) a specific git commit is in.
+#
+# Yes, we can just use 'git describe --contains' but that ends up being slower
+# than just grepping the commit logs.  We also want to catch the releases where
+# we have backported fixes to different stable releases.  So this script tries
+# to poke around in the log files to figure it all out.
+#
+
+# Location of all of the kernel log files
+# git repo is at: github.com:gregkh/kernel-history.git
+LOG_LOCATION="/home/gregkh/kernel-history/logs"
+
+# Location of all of the patches that have ever been added to the stable trees
+# git repo is at git.kernel.org:/pub/scm/linux/kernel/git/stable/stable-queue.git
+STABLE_QUEUE="/home/gregkh/linux/stable/stable-queue"
+
+id=$1
+
+if [ "${id}" == "" ] ; then
+	echo "$0 ID"
+	exit 1
+fi
+
+# Array of places we find
+output=()
+
+# Look in the kernel log text files first
+cd ${LOG_LOCATION}
+releases=`git grep -l ${id}`
+for release in ${releases}; do
+	release=${release#log-}		# delete "log-" off of the front of any match
+	output+=("${release}")
+#	echo -n "${release} "
+done
+
+# Then look in the stable queue patches themselves
+cd ${STABLE_QUEUE}
+releases=`git grep -l ${id}`
+for release in ${releases}; do
+	release=${release#releases\/}	# delete "releases/" off of the front of any match
+	release=${release%\/*}		# only keep the front kernel release directory of a match, not the patch itself
+	output+=("${release}")
+#	echo -n "${release} "
+done
+
+# sort the list of releases and put them in a new array called "sorted"
+readarray -t sorted < <(for release in "${output[@]}"; do echo "${release}"; done | sort -V | uniq)
+
+# print them out all on one line, with ' ' inbetween them
+(IFS=' ' ; printf '%s\n' "${sorted[*]}")
+
