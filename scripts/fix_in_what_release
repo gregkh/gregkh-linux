@@ -1,4 +1,7 @@
 #!/bin/bash
+# SPDX-License-Identifier: GPL-2.0
+#
+# Copyright 2018, Greg Kroah-Hartman <gregkh@linuxfoundation.org>
 #
 # Find what release(s) a specific git commit is in.
 #
@@ -6,6 +9,8 @@
 # than just grepping the commit logs.  We also want to catch the releases where
 # we have backported fixes to different stable releases.  So this script tries
 # to poke around in the log files to figure it all out.
+#
+# kernel git commit e586b3b0baee is a fun one to use for testing this out.
 #
 
 # Location of all of the kernel log files
