@@ -1,0 +1,72 @@
+#!/bin/bash
+#
+#
+
+HOME="/home/gregkh/linux"
+TMPDIR="/home/gregkh/tmp"
+PREFIX="stable_search_"
+TMP_PREFIX="${TMPDIR}/${PREFIX}"
+
+#KERNEL_RANGE="v4.9..v4.10"
+#KERNEL_RANGE="v4.14..v4.15"
+KERNEL_RANGE="v4.15..HEAD"
+
+STABLE_KERNEL="${HOME}/stable/linux-4.15.y"
+#STABLE_KERNEL="${HOME}/stable/linux-4.14.y"
+LATEST_KERNEL="${HOME}/gregkh"
+
+cd "${STABLE_KERNEL}"
+STABLE_LOG=`mktemp ${TMP_PREFIX}stable_log.XXXXXX` || exit 1
+git log v4.14..HEAD > "${STABLE_LOG}"
+
+cd -
+
+cd "${LATEST_KERNEL}"
+GIT_LOG=`mktemp ${TMP_PREFIX}git_log.XXXXXX` || exit 1
+git log --no-merges --format='%h' "${KERNEL_RANGE}" > ${GIT_LOG}
+
+NOT_STABLE_YET=`mktemp ${TMP_PREFIX}not_stable_yet.XXXXXX` || exit 1
+
+SYZ_MBOX=`mktemp ${TMP_PREFIX}syzkaller_mbox.XXXXXX` || exit 1
+
+COMMIT_LOG=`mktemp ${TMP_PREFIX}tmp_log.XXXXX` || exit 1
+
+while read -r commit
+do
+	#echo "commit = ${commit}"
+
+	# is it in the log already?
+	present=`grep "${commit}" "${STABLE_LOG}"`
+	if [ "${present}" == "" ] ; then
+		echo "${commit}" >> ${NOT_STABLE_YET}
+		#echo "commit ${commit} is not present!"
+
+		git log -1 --format='%b' ${commit} > ${COMMIT_LOG}
+
+		# is this commit a "fix" for something already in this release?
+		# fixme...
+		fixes=`grep -i '^[[:space:]]*Fixes:' ${COMMIT_LOG}`
+		if [ "${fixes}" != "" ] ; then
+			fix_commit=`echo ${fixes} | sed -e 's/^[ \t]*//' | cut -f 2 -d ':' | sed -e 's/^[ \t]*//' | cut -f 1 -d ' '`
+			echo "fixes='${fixes}'"
+			echo "	fix_commit='${fix_commit}'"
+			fix_release=`git describe --contains ${fix_commit} | cut -f 1 -d '~'`
+			echo "	fix_release='${fix_release}'"
+		fi
+
+
+		# is it a syzkaller reported patch?
+		grep -i "syzkaller" ${COMMIT_LOG} &> /dev/null
+		if [ $? -eq 0 ] ; then
+			#echo "${commit}" >> "${SYZ_MBOX}"
+			git show --pretty=email ${commit} >> "${SYZ_MBOX}"
+			echo "commit ${commit} is a syzkaller one!"
+		fi
+	fi
+done < "${GIT_LOG}"
+
+rm ${COMMIT_LOG}
+rm ${NOT_STABLE_YET}
+rm ${GIT_LOG}
+rm ${STABLE_LOG}
+
