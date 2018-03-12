@@ -33,7 +33,9 @@ output=()
 
 # Look in the kernel log text files first
 cd ${LOG_LOCATION}
-releases=`git grep -l ${id}`
+releases=`git grep -l -i ${id}`
+# We do not want to catch the places where this commit has been "fixed" by other commits, so filter out those files
+#releases=`git grep ${id} | grep -v -i "Fixes:" | cut -f 1 -d ':'`
 for release in ${releases}; do
 	release=${release#log-}		# delete "log-" off of the front of any match
 	output+=("${release}")
@@ -42,7 +44,7 @@ done
 
 # Then look in the stable queue patches themselves
 cd ${STABLE_QUEUE}
-releases=`git grep -l ${id}`
+releases=`git grep -l -i ${id}`
 for release in ${releases}; do
 	release=${release#releases\/}	# delete "releases/" off of the front of any match
 	release=${release%\/*}		# only keep the front kernel release directory of a match, not the patch itself
