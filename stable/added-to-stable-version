@@ -69,6 +69,12 @@ author()
                         a=$(echo "$x" | sed -n -e 's/.*<\(.*@[^>]*\).*/\1/p')
                         if [ x"$a" != x ]
                         then
+				# drop any vger mailing lists from the message
+				vger=`echo ${a} | grep vger\.kernel\.org`
+				if [ "${vger}" != "" ] ; then
+					continue
+				fi
+
                                 if [ x"$author" == x ]
                                 then
                                         author=$a
@@ -87,9 +93,51 @@ author()
         then
                 eval $3=$first_author
         fi
+	echo "      author = '${AUTHOR}'"
+	echo "first_author = '${FIRST_AUTHOR}'"
 }
 
+fast_author()
+{
+	first_author=""
+	TXT=$2
+	full_text=""
 
+	# read in the whole text into a variable
+        while read l ; do
+		# skip the Message-ID: line so we don't send email to the wrong place
+		if [[ $l =~ "^Message-ID:" ]] ; then
+			continue
+		fi
+
+		# if this is the start of the diff, then it's time to stop looking
+		if [[ $l =~ "^---" ]] ; then
+			break;
+		fi
+
+
+		full_text="${full_text} ${l}"
+	done < $TXT
+
+	# grep the full text for email addresses
+	addresses=$(echo "${full_text}" | grep -E -o "\b[A-Za-z0-9._%+-]+@[A-Za-z0-9.-]+\.[A-Za-z]{2,6}\b")
+
+	# we pick off the first found address as the "first author" which
+	# should correspond to who wrote this patch.
+	first_author=$(echo "${addresses}" | head -n 1)
+
+	# sort and drop any duplicate or vger addresses
+	addresses=$(echo "${addresses}" | sort | grep -v vger\.kernel\.org | uniq)
+
+	# put them in a list and send them back to the caller
+	eval $1=$(echo ${addresses} | sed -e 's/ /,/g')
+        if [ x"$3" != x ] ; then
+                eval $3=$first_author
+        fi
+	echo "   addresses = '${addresses}'"
+	echo "      author = '${AUTHOR}'"
+	echo "first_author = '${FIRST_AUTHOR}'"
+}
 
 reply()
 {
@@ -107,7 +155,8 @@ reply()
 	SUBJECT=`grep -a "Subject:" $PATCH | sed s/Subject\:\ //`
 #	SUBJECT=$(head -n 2 $PATCH | tail -n 1)
 	MESSAGE_ID=`grep -a -i "^Message-ID:" $PATCH | cut -f 2 -d ' ' | cut -f 2 -d '<' | cut -f 1 -d '>'`
-	author AUTHOR $1 FIRST_AUTHOR
+#	author AUTHOR $1 FIRST_AUTHOR
+	fast_author AUTHOR $1 FIRST_AUTHOR
 ##	echo "author said $AUTHOR"
 ##	echo "first_author said $FIRST_AUTHOR"
 	if [ x"$AUTHOR" == "x" ]
@@ -171,7 +220,7 @@ reply()
 	) |
 	makemail -to "$AUTHOR" \
 		-from="$FROM" \
-		-cc="$STABLE, $STABLE_COMMITS"  \
+		-cc="$STABLE_COMMITS"  \
 		-subject="Patch \"$SUBJECT\" has been added to the $KERNEL-stable tree" \
 		-date="$(date -R)" \
 		-reply_to="$MESSAGE_ID" \
