@@ -106,12 +106,12 @@ fast_author()
 	# read in the whole text into a variable
         while read l ; do
 		# skip the Message-ID: line so we don't send email to the wrong place
-		if [[ $l =~ "^Message-ID:" ]] ; then
+		if [[ $l =~ ^Message-ID: ]] ; then
 			continue
 		fi
 
 		# if this is the start of the diff, then it's time to stop looking
-		if [[ $l =~ "^---" ]] ; then
+		if [[ $l =~ ^--- ]] ; then
 			break;
 		fi
 
