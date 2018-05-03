@@ -7,7 +7,7 @@
 TREE=$1
 
 if [ "$TREE" == "" ] ; then
-	echo "$0 KERNEL_BASE_VERSION"
+	echo "$0 KERNEL_BASE_VERSION" >&2
 	exit
 fi
 
@@ -16,7 +16,7 @@ TREE_DIR="linux-${1}.y"
 #echo "releasing ${TREE_DIR}"
 
 if [ ! -d "${TREE_DIR}" ] ; then
-	echo "kernel directory ${TREE_DIR} must be present..."
+	echo "kernel directory ${TREE_DIR} must be present..." >&2
 	exit
 fi
 
