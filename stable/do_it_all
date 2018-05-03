@@ -10,7 +10,7 @@ DIR="queue-$VERSION"
 
 
 # create a temp directory and copy the patches there
-TMP_DIR=$(mktemp -d ../stable_patches-XXXXX) || exit 1
+TMP_DIR=$(mktemp -d "../stable_patches-${VERSION}-XXXXX") || exit 1
 
 git ls-files -o | grep "queue-${VERSION}" | xargs -i  cp {} -v "${TMP_DIR}"
 
