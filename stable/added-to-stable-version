@@ -2,7 +2,7 @@
 
 KERNEL=$1
 shift
-echo "VERSION=$KERNEL"
+#echo "VERSION=$KERNEL"
 
 #KERNEL="2.6.$KERNEL_MINOR_VERSION"
 
@@ -134,9 +134,9 @@ fast_author()
         if [ x"$3" != x ] ; then
                 eval $3=$first_author
         fi
-	echo "   addresses = '${addresses}'"
-	echo "      author = '${AUTHOR}'"
-	echo "first_author = '${FIRST_AUTHOR}'"
+#	echo "   addresses = '${addresses}'"
+#	echo "      author = '${AUTHOR}'"
+#	echo "first_author = '${FIRST_AUTHOR}'"
 }
 
 reply()
@@ -150,7 +150,7 @@ reply()
 #		echo $TXT is missing
 #		exit 1
 #	fi
-	echo "PATCH=$PATCH"
+	#echo "PATCH=$PATCH"
 #	SUBJECT=`grep -a "Subject:" $PATCH`
 	SUBJECT=`grep -a "Subject:" $PATCH | sed s/Subject\:\ //`
 #	SUBJECT=$(head -n 2 $PATCH | tail -n 1)
