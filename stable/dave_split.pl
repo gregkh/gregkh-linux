@@ -113,6 +113,7 @@ foreach my $patch (@patches) {
 		# figure out who wrote this patch
 		if ($line =~ m/^From: /) {
 			$author = $line;
+			chomp($author);
 		}
 
 		# if this is the end of the mail header, write the author info.
