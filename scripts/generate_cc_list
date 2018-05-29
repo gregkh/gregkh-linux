@@ -1,0 +1,32 @@
+#!/bin/bash
+# SPDX-License-Identifier: GPL-2.0
+#
+# generate_cc_list
+#
+# Copyright 2018 (c) Greg Kroah-Hartman <gregkh@linuxfoundation.org>
+#
+# Generate a list of Cc: to add to a patch based on the get_maintainer.pl script
+#
+# You need to have a set of patches in the directory, and it will create a
+# .info file for them with the needed names to add.
+
+Have one of the below uncommented out:
+
+# "fast" option:
+#	no mailing lists, no git history, just the people listed in the
+#	maintiners file
+OPTIONS="--no-rolestats --nol --nogit --nogit-fallback"
+
+# "full/slow" option:
+#	all of the history, mailing lists, anyone who has breathed on the file.
+OPTIONS="--no-rolestats"
+
+for file in ./*patch; do
+	out=$(echo "${file}" | cut -f 1 -d '-')
+	out_file="${out}.info"
+	echo "${file} -> ${out} -> ${out_file}"
+	rm -f "${out_file}"
+	./scripts/get_maintainer.pl ${OPTIONS} "${file}" | while IFS= read -r name; do
+		echo "Cc: ${name}" >> "${out_file}"
+	done
+done
