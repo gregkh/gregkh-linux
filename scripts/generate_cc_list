@@ -10,7 +10,7 @@
 # You need to have a set of patches in the directory, and it will create a
 # .info file for them with the needed names to add.
 
-Have one of the below uncommented out:
+# Have one of the below uncommented out:
 
 # "fast" option:
 #	no mailing lists, no git history, just the people listed in the
