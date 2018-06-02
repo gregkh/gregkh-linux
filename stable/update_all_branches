@@ -3,6 +3,6 @@
 git fetch
 for branch in $(git branch --list --no-color -vv | grep " behind " | sed -e 's/^  //' | sed  -e 's/\* //' | awk '{print $1}'); do
 	echo "Updating $branch"
-	git checkout "${branch}"
+	git checkout -q "${branch}"
 	git pull
 done
