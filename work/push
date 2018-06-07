@@ -11,16 +11,16 @@ if [ "${BRANCH}" == "help" ] ; then
 	exit 0
 fi
 
-CURRENT_BRANCH=`git symbolic-ref --short -q HEAD`
+CURRENT_BRANCH=$(git symbolic-ref --short -q HEAD)
 
-PWD=`pwd`
-TREE=`basename ${PWD}`
+PWD=$(pwd)
+TREE=$(basename "${PWD}")
 
 # push tags only
 if [ "${BRANCH}" == "tags" ] ; then
-	for remote in `git remote`
+	for remote in $(git remote)
 	do
-		git push ${remote} --tags
+		git push "${remote}" --tags
 	done
 	exit
 fi
@@ -40,10 +40,16 @@ else
 	TO_PUSH="${TREE}-${BRANCH}"
 fi
 
-git checkout ${TO_PUSH}
-for remote in `git remote`
+if [[ "${TO_PUSH}" != "${CURRENT_BRANCH}" ]]; then
+	#echo "checking out ${TO_PUSH}"
+	git checkout -q "${TO_PUSH}"
+fi
+
+for remote in $(git remote)
 do
-	git push ${remote} ${TO_PUSH}
+	echo "pushing ${TO_PUSH} to ${remote}"
+	git push -q "${remote}" "${TO_PUSH}"
 done
 
-git checkout ${CURRENT_BRANCH}
+#echo "Switching back to ${CURRENT_BRANCH}"
+git checkout -q "${CURRENT_BRANCH}"
