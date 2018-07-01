@@ -27,7 +27,7 @@ CLEAN=$(git diff Makefile)
 cd ..
 
 if [ "${CLEAN}" != "" ] ; then
-	echo "${0} has to run with a clean Makefile, exiting..."
+	echo "${0} has to run with a clean Makefile, exiting..." >&2
 	exit
 fi
 
