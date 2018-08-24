@@ -19,18 +19,20 @@ FIXED_IN="/home/gregkh/linux/scripts/fix_in_what_release"
 
 TMP_PREFIX="${TMPDIR}/${PREFIX}"
 
+BASE_KERNEL="4.17"
+
 #KERNEL_RANGE="v4.9..v4.10"
 #KERNEL_RANGE="v4.14..v4.15"
-KERNEL_RANGE="v4.17..HEAD"
+KERNEL_RANGE="v4.17..v4.18"
 #KERNEL_RANGE="v4.15..v4.16"
 
-STABLE_KERNEL="${HOME}/stable/linux-4.17.y"
+STABLE_KERNEL="${HOME}/stable/linux-${BASE_KERNEL}.y"
 #STABLE_KERNEL="${HOME}/stable/linux-4.14.y"
 LATEST_KERNEL="${HOME}/gregkh"
 
 cd "${STABLE_KERNEL}"
 STABLE_LOG=`mktemp ${TMP_PREFIX}stable_log.XXXXXX` || exit 1
-git log v4.14..HEAD > "${STABLE_LOG}"
+git log v${BASE_KERNEL}..HEAD > "${STABLE_LOG}"
 
 cd -
 
