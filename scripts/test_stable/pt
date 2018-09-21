@@ -1,0 +1,242 @@
+#!/bin/bash
+#
+# Testing script to take a stable kernel patch set, build it on a remote
+# machine using ktest, and email back the results.
+#
+# Copyright 2012 Greg Kroah-Hartman <gregkh@linuxfoundation.org>
+#
+# Released under the GPLv2 only.
+#
+#
+# Some variables you might want to mess with are:
+#
+# EMAIL:		Who to send the email to.
+# LOCAL_WORK:		Temporary location on the local machine to create some
+#			files before we copy them to the remote machine.
+# LOCAL_KTEST:		Local location of a version of ktest.pl that you want
+#			to run remotely (usually better than the version in the
+#			stable tree under testing due to age issues.)
+# QUEUE_DIR:		Local location of the stable-queue git tree we are
+#			wanting to test.
+# REMOTE:		The server name you want to use, this lets you set all
+#			of the REMOTE_* options in an easier manner.
+# REMOTE_STABLE_GIT:	On the remote machine, where the linux-stable git tree
+#			is located
+# REMOTE_WORK:		On the remote machine, what temporary location we can
+#			use to create a subdirectory and do our work in.
+# REMOTE_SERVER:	The remote machine name.
+# REMOTE_USER:		The username to run the script on the remote machine
+# SSH_OPTIONS:		Options to pass to ssh to access the remote machine
+
+
+EMAIL="greg@kroah.com"
+
+LOCAL_WORK="/tmp/"
+LOCAL_WORK=${TMPDIR}
+LOCAL_KTEST="/home/gregkh/linux/gregkh/tools/testing/ktest/ktest.pl"
+#LOCAL_KTEST="/home/gregkh/linux/stable/linux-4.10.y/tools/testing/ktest/ktest.pl"
+QUEUE_DIR="/home/gregkh/linux/stable/stable-queue/"
+
+
+REMOTE=${REMOTE:-build}	# default option is the "build" server option
+
+# test for default server options
+case "${REMOTE}" in
+"build")
+#	REMOTE_STABLE_GIT="/home/gregkh/linux/stable/linux-stable/"
+	REMOTE_STABLE_GIT="/home/gregkh/linux/builder-test.git"
+	REMOTE_WORK="/home/gregkh/tmp/"
+	REMOTE_SERVER="build"
+	REMOTE_SERVER="gregkh-builder"
+	REMOTE_USER="gregkh"
+	;;
+"jade")
+	REMOTE_STABLE_GIT="/home/guest/linux/stable/linux-stable/"
+	REMOTE_WORK="/home/guest/tmp/"
+	REMOTE_SERVER="192.168.1.159"
+#	REMOTE_USER="gregkh"
+	REMOTE_USER="guest"
+	;;
+"aws")
+	REMOTE_STABLE_GIT="/home/ec2-user/linux/stable/linux-stable/"
+	REMOTE_WORK="/home/ec2-user/tmp/"
+	#REMOTE_SERVER="ec2-50-112-17-159.us-west-2.compute.amazonaws.com"	# not mine
+	#REMOTE_SERVER="ec2-50-112-71-91.us-west-2.compute.amazonaws.com"	# mine - really big
+	#REMOTE_SERVER="ec2-50-112-51-233.us-west-2.compute.amazonaws.com"	# mine - really big
+	#REMOTE_SERVER="ec2-50-112-208-87.us-west-2.compute.amazonaws.com"	# mine - really big
+	#REMOTE_SERVER="ec2-50-112-224-134.us-west-2.compute.amazonaws.com"	# mine - really big
+	#REMOTE_SERVER="ec2-50-112-233-67.us-west-2.compute.amazonaws.com"	# mine - really big
+	#REMOTE_SERVER="50.112.34.134"
+#	REMOTE_SERVER="ec2-54-203-107-75.us-west-2.compute.amazonaws.com"
+#	REMOTE_SERVER="ec2-54-184-29-194.us-west-2.compute.amazonaws.com"
+	REMOTE_SERVER="ec2-52-12-118-32.us-west-2.compute.amazonaws.com"
+	#REMOTE_SERVER="ec2-54-202-249-138.us-west-2.compute.amazonaws.com"
+	SSH_OPTIONS="-i /home/gregkh/.ssh/stable_build.pem"
+	REMOTE_USER="ec2-user"
+	;;
+"google")
+	REMOTE_STABLE_GIT="/home/gregkh/linux/stable/linux-stable/"
+	REMOTE_WORK="/home/gregkh/tmp/"
+	REMOTE_SERVER="178.120.255.173.bc.googleusercontent.com"
+	REMOTE_USER="gregkh"
+	;;
+*)
+	echo "You need to specify a remote server name"
+	exit 1
+	;;
+esac
+
+
+#######################################################
+# I doubt you need to touch anything below this line,
+# unless you want to fix my bugs, or rewrite the scripts
+# to be saner (hint, feel free to do so...)
+#######################################################
+
+#GIT_TREE="git://git.kernel.org/pub/scm/linux/kernel/git/gregkh/driver-core.git"
+GIT_BRANCH="builder-test"
+
+echo "Testing builder-test tree"
+
+cd ~/linux/work/builder-test/
+git pull ~/linux/torvalds/
+git push
+
+# create the local temporary directory to do the work in.
+SCRIPT_HOME=`mktemp -d ${LOCAL_WORK}/stable_test_${GIT_BRANCH}_XXXXX` || exit 1
+echo "Using ${SCRIPT_HOME} for our local files"
+
+# create the remote directory
+REMOTE_DIR=`ssh ${SSH_OPTIONS} ${REMOTE_USER}@${REMOTE_SERVER} mktemp -d ${REMOTE_WORK}/${GIT_BRANCH}_XXXXX` || exit 1
+echo "Using ${REMOTE_DIR} for the remote directory"
+
+# figure out how many processors are on the remote machine
+# we use this to know how many processes to spawn when doing the build
+#NUM_PROCESSORS=`ssh ${SSH_OPTIONS} ${REMOTE_USER}@${REMOTE_SERVER} grep -c "processor" /proc/cpuinfo`
+NUM_PROCESSORS=`ssh ${SSH_OPTIONS} ${REMOTE_USER}@${REMOTE_SERVER} nproc`
+echo "Remote machine has ${NUM_PROCESSORS} processors."
+
+## tar up stable patch queue for just this kernel version
+#if [ -d ${QUEUE_DIR}/queue-${KERNEL_VERSION} ] ; then
+#	cd ${QUEUE_DIR}/queue-${KERNEL_VERSION}/ || exit 1
+#	tar -c . | gzip > ${SCRIPT_HOME}/stable_queue.tar.gz
+#	TARBALL=1
+#else
+#	echo "No stable queue at this point in time, are you sure you picked the right kernel version?"
+#	TARBALL=0
+#fi
+
+# create the script to run remotely
+
+cat << __EOF__ > ${SCRIPT_HOME}/run_test.sh
+#!/bin/bash
+# Test script for the ${KERNEL_VERSION}-stable kernel
+# autogenerated, do not edit by hand
+#
+STABLE_GIT="${REMOTE_STABLE_GIT}"
+GIT_TREE="${GIT_TREE}"
+GIT_BRANCH="${GIT_BRANCH}"
+#KERNEL_VERSION="${KERNEL_VERSION}"
+#PATCHES="stable_queue.tar.gz"
+
+
+cd ${REMOTE_DIR}
+
+echo "Starting to test kernel branch ${GIT_BRANCH}"
+echo ""
+
+# create the linux clone with the correct branch
+git clone -q -s --branch master ${REMOTE_STABLE_GIT} linux
+#git clone -q -s --branch linux-${KERNEL_VERSION}.y ${REMOTE_STABLE_GIT} linux
+cd linux
+
+# pull in the branch we want
+#git pull ${GIT_TREE} ${GIT_BRANCH}
+
+## create a patches/ directory for the stable patches to apply if we have them
+#if [ -f ${REMOTE_DIR}/\${PATCHES} ] ; then
+#	mkdir patches
+#	cd patches
+#	tar -zxvf ${REMOTE_DIR}/\${PATCHES}
+#	cd ..
+#
+#	# Apply the patch queue
+#	git quiltimport --patches patches
+#	#QUILT_PATCHES=patches QUILT_SERIES=patches/series quilt push -aq --quiltrc
+#fi
+
+# get initial time
+TIME=\$(date +%s)
+
+# build stuff
+../ktest.pl ../ktest.conf
+
+KTEST_RUN=\$?
+echo "KTEST_RUN = \${KTEST_RUN}"
+
+# get time it took to do the build
+TIME="\$((\$(date +%s)-TIME))"
+
+echo "Took \${TIME} seconds to build"
+
+cd ..
+
+# find warnings and errors
+WARNINGS=\$(grep --count -i "warning:" linux/log)
+ERRORS=\$(grep --count -i "error:" linux/log)
+
+echo ""
+echo "Warnings = \${WARNINGS}"
+echo "Errors   = \${ERRORS}"
+
+if [ "\${KTEST_RUN}" = "0" ]; then
+	# test succeeded
+	SUBJECT="Build of ${GIT_BRANCH} was good (W:\${WARNINGS} E:\${ERRORS} \${TIME} seconds)"
+else
+	SUBJECT="Build of ${GIT_BRANCH} FAILED! (W:\${WARNINGS} E:\${ERRORS} \${TIME} seconds)"
+fi
+
+mutt -s "\${SUBJECT}" -a linux/log -- ${EMAIL} < output_log
+
+# now that we are done, clean up after ourselves
+rm -rf ${REMOTE_DIR}
+
+
+__EOF__
+chmod 755 ${SCRIPT_HOME}/run_test.sh
+
+# create the ktest.conf file
+cat <<__EOF__ > ${SCRIPT_HOME}/ktest.conf
+TEST_START
+TEST_TYPE = build
+
+DEFAULTS
+BUILD_TYPE = allmodconfig
+OUTPUT_DIR = \${PWD}/output
+LOG_FILE = \${PWD}/log
+LOCALVERSION = -test
+BUILD_OPTIONS = -j${NUM_PROCESSORS}
+MACHINE = aws
+BUILD_DIR = \${PWD}
+__EOF__
+
+
+# copy a version of ktest that we want to run
+cp ${LOCAL_KTEST} ${SCRIPT_HOME}
+
+# copy the files we created to the remote machine
+scp ${SSH_OPTIONS} -q ${SCRIPT_HOME}/* ${REMOTE_USER}@${REMOTE_SERVER}:${REMOTE_DIR}
+
+# remove the local files as we don't need them anymore
+rm -rf ${SCRIPT_HOME}
+
+# execute the script on the remote machine
+
+#ssh ${REMOTE_USER}@${REMOTE_SERVER} "${REMOTE_DIR}/run_test.sh > ${REMOTE_DIR}/output_log"
+ssh ${SSH_OPTIONS} -n -f ${REMOTE_USER}@${REMOTE_SERVER} "sh -c \"cd ${REMOTE_DIR}; nohup ./run_test.sh > ${REMOTE_DIR}/output_log 2>&1 &\" "
+
+echo "Job successfully submitted."
+
+exit
+
+
