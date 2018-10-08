@@ -1,12 +1,18 @@
 #!/bin/bash
+#
+# take a kernel version, git tree, and tag/branch and turn them into a
+# mbox of patches to be applied to the stable tree
+#
+# run this in a linux-stable tree:
+# $0 KERNEL_VERSION GIT_URL TAG
 
-VERSION="4.18"
 
-URL=$1
-TAG=$2
+VERSION=$1
+URL=$2
+TAG=$3
 
 if [ "${TAG}" == "" ] ; then
-	echo "$0 URL TAG"
+	echo "$0 VERSION GIT_URL TAG/BRANCH"
 	exit
 fi
 
