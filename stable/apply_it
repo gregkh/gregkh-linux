@@ -36,8 +36,8 @@ apply_it ()
 	if [ $? -ne 0 ] ; then
 		echo "${txtred} FAILED${txtrst} to import"
 	else
-		qp-stable -p
-#		qp-stable
+#		qp-stable -p
+		qp-stable
 		# quilt push &> /dev/null
 		echo ""
 #		if [ $? -ne 0 ] ; then
