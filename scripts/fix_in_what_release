@@ -21,6 +21,11 @@ LOG_LOCATION="/home/gregkh/kernel-history/logs"
 # git repo is at git.kernel.org:/pub/scm/linux/kernel/git/stable/stable-queue.git
 STABLE_QUEUE="/home/gregkh/linux/stable/stable-queue"
 
+# Location of the "latest" git tree for when patches are not found in the
+# stable tree at the moment.  This is the "fall-back" that we can use the
+# slower 'git decribe --contains' on.
+LATEST_TREE="/home/gregkh/linux/work/torvalds"
+
 id=$1
 
 if [ "${id}" == "" ] ; then
@@ -51,6 +56,14 @@ for release in ${releases}; do
 	output+=("${release}")
 #	echo -n "${release} "
 done
+
+# if we have found nothing, let's try the fallback and do the old and
+# slow 'git describe --contains' to try to find at least some hint of
+# where this commit might be at.
+if [ "${output}" == "" ] ; then
+	cd "${LATEST_TREE}"
+	output=$(git describe --contains ${id})
+fi
 
 # sort the list of releases and put them in a new array called "sorted"
 readarray -t sorted < <(for release in "${output[@]}"; do echo "${release}"; done | sort -V | uniq)
