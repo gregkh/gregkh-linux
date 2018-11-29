@@ -62,6 +62,8 @@ while ($line = <MBOX>) {
 				# always add a "X-stable: review" tag
 				print FILE "X-stable: review\n";
 				$stable_tag_written = "true";
+				# and a "X-Patchwork-Hint: ignore" tag
+				print FILE "X-Patchwork-Hint: ignore\n"
 			}
 		}
 
