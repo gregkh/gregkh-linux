@@ -79,6 +79,10 @@ while ($line = <MBOX>) {
 				print FILE "X-KernelTest-Deadline: $date\n";
 
 				$tags_written = "true";
+
+				# hack around the fact that content-type is not in the 000 message
+				# and so the 001 message will not get the X- flags we want to set above
+				$stable_tag_written = "false";
 			}
 		}
 
