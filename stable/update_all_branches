@@ -1,7 +1,7 @@
 #!/bin/bash
 
 git fetch
-for branch in $(git branch --list --no-color -vv | grep " behind " | sed -e 's/^  //' | sed  -e 's/\* //' | awk '{print $1}'); do
+for branch in $(git branch --list --no-color -vv | grep " behind " | sed -e 's/^  //' | sed  -e 's/\* //' | awk '{print $1}' | sort -V); do
 	echo "Updating $branch"
 	git checkout -q "${branch}"
 	git pull
