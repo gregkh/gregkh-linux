@@ -48,7 +48,7 @@ echo "# About to release ${VERSION}" >&2
 echo "#" >&2
 echo "# [ret] to continue" >&2
 read
-#echo "#"
+echo "# release ${VERSION}"
 
 # apply the patches to the release-specific directory tree
 echo "cd ${TREE_DIR}"
@@ -79,3 +79,6 @@ echo "git pull ../linux-${TREE}.y"
 echo "git pull ../linux-${TREE}.y --tags"
 echo "git push && git push --tags"
 echo "git-archive-signer"
+
+# return back to home
+echo "cd .."
