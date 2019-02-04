@@ -13,12 +13,11 @@ txtwht=$(tput setaf 7)    # White
 txtrst=$(tput sgr0)       # Text reset
 
 PATCH=$1
+shift
 if [ "$PATCH" == "" ] ; then
 	echo "you need a patch!"
 	exit
 fi
-
-KERNEL_VERSION=$2
 
 #echo "PATCH=$PATCH"
 
@@ -51,9 +50,16 @@ apply_it ()
 	cd ..
 }
 
-if [ "$KERNEL_VERSION" != "" ] ; then
-	apply_it $KERNEL_VERSION
+VERSION="$1"
+
+# if a version (or versions) are asked for, do them.
+if [ "$VERSION" != "" ] ; then
+	for VERSION in $*
+	do
+		apply_it ${VERSION}
+	done
 else
+	# no versions, use these as the "default"
 	apply_it 4.20
 	apply_it 4.19
 	apply_it 4.14
