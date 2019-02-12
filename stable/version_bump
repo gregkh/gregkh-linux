@@ -1,4 +1,8 @@
 #!/bin/bash
+# SPDX-License-Identifier: GPL-2.0
+#
+# Copyright 2018 Greg Kroah-Hartman <gregkh@linuxfoundation.org>
+#
 # edits the Makefile of a kernel, and bumps the SUBLEVEL version to be one
 # greater than what it is now.  Used when making stable kernel releases
 #
