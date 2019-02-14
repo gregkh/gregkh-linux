@@ -1,6 +1,6 @@
 #
 # Automatically generated file; DO NOT EDIT.
-# Linux/x86 4.9.148-rc1 Kernel Configuration
+# Linux/x86 4.9.157-rc1 Kernel Configuration
 #
 CONFIG_64BIT=y
 CONFIG_X86_64=y
@@ -9545,6 +9545,7 @@ CONFIG_CIFS_STATS2=y
 CONFIG_CIFS_WEAK_PW_HASH=y
 CONFIG_CIFS_UPCALL=y
 CONFIG_CIFS_XATTR=y
+CONFIG_CIFS_POSIX=y
 CONFIG_CIFS_ACL=y
 CONFIG_CIFS_DEBUG=y
 CONFIG_CIFS_DEBUG2=y
