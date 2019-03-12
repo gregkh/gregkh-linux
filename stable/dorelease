@@ -45,7 +45,7 @@ if [ $MAJOR == "2" ]; then
 fi
 #echo "major = $MAJOR, minor = $MINOR, longterm = $LONGTERM"
 
-# 4.x or 3.x or 2.6?
+# 5.x or 4.x or 3.x or 2.6?
 VER="2.6"
 if [ ${MAJOR} == "3" ] ; then
 	# 3.x series
@@ -57,6 +57,13 @@ fi
 if [ ${MAJOR} == "4" ] ; then
 	# 4.x series
 	VER="4.x"
+	BASE=${REL_ARRAY[0]}.${REL_ARRAY[1]}
+	REL=${REL_ARRAY[2]}
+	MINOR=${REL_ARRAY[1]}
+fi
+if [ ${MAJOR} == "5" ] ; then
+	# 5.x series
+	VER="5.x"
 	BASE=${REL_ARRAY[0]}.${REL_ARRAY[1]}
 	REL=${REL_ARRAY[2]}
 	MINOR=${REL_ARRAY[1]}
