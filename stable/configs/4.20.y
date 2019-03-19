@@ -1,6 +1,6 @@
 #
 # Automatically generated file; DO NOT EDIT.
-# Linux/x86 4.20.9-rc1 Kernel Configuration
+# Linux/x86 4.20.17-rc1 Kernel Configuration
 #
 
 #
