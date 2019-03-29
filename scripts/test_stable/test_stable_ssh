@@ -94,13 +94,9 @@ esac
 #######################################################
 
 
-# grab the kernel version from the command line
-KERNEL_VERSION="$1"
-
-if [ "${KERNEL_VERSION}" == "" ] ; then
-	echo "$0 KERNEL_VERSION"
-	exit;
-fi
+test_it()
+{
+KERNEL_VERSION=$1
 
 echo "Testing kernel version ${KERNEL_VERSION} on remote server \"${REMOTE}\""
 
@@ -232,6 +228,21 @@ rm -rf ${SCRIPT_HOME}
 ssh ${SSH_OPTIONS} -n -f ${REMOTE_USER}@${REMOTE_SERVER} "sh -c \"cd ${REMOTE_DIR}; nohup ./run_test.sh > ${REMOTE_DIR}/output_log 2>&1 &\" "
 
 echo "Job successfully submitted."
+
+}
+
+# grab the kernel version from the command line
+VERSION="$1"
+
+if [ "${VERSION}" == "" ] ; then
+	echo "$0 VERSION"
+	exit;
+fi
+
+for VERSION in $*
+do
+	test_it ${VERSION}
+done
 
 exit
 
