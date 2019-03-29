@@ -19,13 +19,13 @@ FIXED_IN="/home/gregkh/linux/scripts/fix_in_what_release"
 
 TMP_PREFIX="${TMPDIR}/${PREFIX}"
 
-BASE_KERNEL="4.20"
+BASE_KERNEL="5.0"
 
 #KERNEL_RANGE="v4.9..v4.10"
 #KERNEL_RANGE="v4.14..v4.15"
 #KERNEL_RANGE="v4.17..v4.18"
 #KERNEL_RANGE="v4.15..v4.16"
-KERNEL_RANGE="v4.20..HEAD"
+KERNEL_RANGE="v5.0..HEAD"
 
 STABLE_KERNEL="${HOME}/stable/linux-${BASE_KERNEL}.y"
 #STABLE_KERNEL="${HOME}/stable/linux-4.14.y"
