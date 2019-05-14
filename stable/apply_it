@@ -60,8 +60,8 @@ if [ "$VERSION" != "" ] ; then
 	done
 else
 	# no versions, use these as the "default"
+	apply_it 5.1
 	apply_it 5.0
-#	apply_it 4.20
 	apply_it 4.19
 	apply_it 4.14
 	apply_it 4.9
