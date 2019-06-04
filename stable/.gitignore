@@ -7,6 +7,7 @@ linux-stable-rc
 stable-queue
 linux-stable
 release-*
+queue-3.18
 old
 s
 scratch/
