@@ -16,7 +16,7 @@ release_it()
 		exit
 	fi
 
-	cd ${TREE_DIR}
+	cd "${TREE_DIR}"
 	OLD_VERSION=$(kv)
 
 	CLEAN=$(git diff Makefile)
@@ -30,14 +30,14 @@ release_it()
 
 	BASE_VERSION=${OLD_VERSION/-rc?/}
 
-	if [ ${BASE_VERSION} != ${OLD_VERSION} ] ; then
+	if [ "${BASE_VERSION}" != "${OLD_VERSION}" ] ; then
 		echo "${OLD_VERSION} still has a -rc tag, do you mean for that to be there?"
 		exit
 	fi
 
 	REL_ARRAY=(${OLD_VERSION//./ })
 	MINOR=${REL_ARRAY[2]}
-	NEW_MINOR=$(($MINOR + 1))
+	NEW_MINOR=$((MINOR + 1))
 	VERSION="${REL_ARRAY[0]}.${REL_ARRAY[1]}.${NEW_MINOR}"
 
 	echo "# About to release ${VERSION}" >&2
@@ -87,8 +87,8 @@ if [ "$VERSION" == "" ] ; then
 	exit
 fi
 
-for VERSION in $*
+for VERSION in "$@"
 do
-	release_it ${VERSION}
+	release_it "${VERSION}"
 done
 
