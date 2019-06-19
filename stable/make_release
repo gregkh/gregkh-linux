@@ -4,81 +4,91 @@
 # pipe it to another file if you just want to run it that way.
 #
 
-TREE=$1
+release_it()
+{
+	TREE=$1
+	TREE_DIR="linux-${1}.y"
 
-if [ "$TREE" == "" ] ; then
+	#echo "releasing ${TREE_DIR}"
+
+	if [ ! -d "${TREE_DIR}" ] ; then
+		echo "kernel directory ${TREE_DIR} must be present..." >&2
+		exit
+	fi
+
+	cd ${TREE_DIR}
+	OLD_VERSION=$(kv)
+
+	CLEAN=$(git diff Makefile)
+	cd ..
+
+	if [ "${CLEAN}" != "" ] ; then
+		echo "${0} has to run with a clean Makefile, exiting..." >&2
+		exit
+	fi
+
+
+	BASE_VERSION=${OLD_VERSION/-rc?/}
+
+	if [ ${BASE_VERSION} != ${OLD_VERSION} ] ; then
+		echo "${OLD_VERSION} still has a -rc tag, do you mean for that to be there?"
+		exit
+	fi
+
+	REL_ARRAY=(${OLD_VERSION//./ })
+	MINOR=${REL_ARRAY[2]}
+	NEW_MINOR=$(($MINOR + 1))
+	VERSION="${REL_ARRAY[0]}.${REL_ARRAY[1]}.${NEW_MINOR}"
+
+	echo "# About to release ${VERSION}" >&2
+	echo "#" >&2
+	echo "# [ret] to continue" >&2
+	read
+	echo "# release ${VERSION}"
+
+	# apply the patches to the release-specific directory tree
+	echo "cd ${TREE_DIR}"
+	echo "quilt pop -qa"
+	# kick git a bunch to work before we apply the patches...
+	echo "git am --abort"
+	echo "git reset"
+	echo "git checkout Makefile"
+	echo "git quiltimport --patches ../stable-queue/queue-${TREE}"
+	#echo "vim Makefile"
+	echo "../version_bump"
+	echo "git commit -a -m \"Linux ${VERSION}\""
+	echo "../dotag ${VERSION}"
+	echo "../dorelease"
+
+
+	# move the file in the stable queue to the released location
+	echo "cd ../stable-queue"
+	echo "git mv queue-${TREE} releases/${VERSION}"
+	echo "git commit -a -m \"Linux ${VERSION}\""
+	echo "../dotag ${VERSION}"
+	echo "git push && git push --tags && git push kroah.com master && git push kroah.com --tags"
+
+	# pull the release into the linux-stable tree and push it to kernel.org
+	echo "cd ../linux-stable"
+	echo "git checkout linux-${TREE}.y"
+	echo "git pull ../linux-${TREE}.y"
+	echo "git pull ../linux-${TREE}.y --tags"
+	echo "git push && git push --tags"
+	echo "git-archive-signer"
+
+	# return back to home
+	echo "cd .."
+}
+
+VERSION="$1"
+
+if [ "$VERSION" == "" ] ; then
 	echo "$0 KERNEL_BASE_VERSION" >&2
 	exit
 fi
 
-TREE_DIR="linux-${1}.y"
+for VERSION in $*
+do
+	release_it ${VERSION}
+done
 
-#echo "releasing ${TREE_DIR}"
-
-if [ ! -d "${TREE_DIR}" ] ; then
-	echo "kernel directory ${TREE_DIR} must be present..." >&2
-	exit
-fi
-
-cd ${TREE_DIR}
-OLD_VERSION=$(kv)
-
-CLEAN=$(git diff Makefile)
-cd ..
-
-if [ "${CLEAN}" != "" ] ; then
-	echo "${0} has to run with a clean Makefile, exiting..." >&2
-	exit
-fi
-
-
-BASE_VERSION=${OLD_VERSION/-rc?/}
-
-if [ ${BASE_VERSION} != ${OLD_VERSION} ] ; then
-	echo "${OLD_VERSION} still has a -rc tag, do you mean for that to be there?"
-	exit
-fi
-
-REL_ARRAY=(${OLD_VERSION//./ })
-MINOR=${REL_ARRAY[2]}
-NEW_MINOR=$(($MINOR + 1))
-VERSION="${REL_ARRAY[0]}.${REL_ARRAY[1]}.${NEW_MINOR}"
-
-echo "# About to release ${VERSION}" >&2
-echo "#" >&2
-echo "# [ret] to continue" >&2
-read
-echo "# release ${VERSION}"
-
-# apply the patches to the release-specific directory tree
-echo "cd ${TREE_DIR}"
-echo "quilt pop -qa"
-# kick git a bunch to work before we apply the patches...
-echo "git am --abort"
-echo "git reset"
-echo "git checkout Makefile"
-echo "git quiltimport --patches ../stable-queue/queue-${TREE}"
-#echo "vim Makefile"
-echo "../version_bump"
-echo "git commit -a -m \"Linux ${VERSION}\""
-echo "../dotag ${VERSION}"
-echo "../dorelease"
-
-
-# move the file in the stable queue to the released location
-echo "cd ../stable-queue"
-echo "git mv queue-${TREE} releases/${VERSION}"
-echo "git commit -a -m \"Linux ${VERSION}\""
-echo "../dotag ${VERSION}"
-echo "git push && git push --tags && git push kroah.com master && git push kroah.com --tags"
-
-# pull the release into the linux-stable tree and push it to kernel.org
-echo "cd ../linux-stable"
-echo "git checkout linux-${TREE}.y"
-echo "git pull ../linux-${TREE}.y"
-echo "git pull ../linux-${TREE}.y --tags"
-echo "git push && git push --tags"
-echo "git-archive-signer"
-
-# return back to home
-echo "cd .."
