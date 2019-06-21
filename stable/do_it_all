@@ -1,5 +1,16 @@
 #!/bin/bash
 
+txtund=$(tput sgr 0 1)    # Underline
+txtbld=$(tput bold)       # Bold
+txtred=$(tput setaf 1)    # Red
+txtgrn=$(tput setaf 2)    # Green
+txtylw=$(tput setaf 3)    # Yellow
+txtblu=$(tput setaf 4)    # Blue
+txtpur=$(tput setaf 5)    # Purple
+txtcyn=$(tput setaf 6)    # Cyan
+txtwht=$(tput setaf 7)    # White
+txtrst=$(tput sgr0)       # Text reset
+
 VERSION=$1
 if [ "$VERSION" == "" ] ; then
 	echo "you need a version!"
@@ -40,7 +51,9 @@ rm -rf "${TMP_DIR}"
 ONLINE=$(gregkh_machine_online)
 # Only push if we have a network connection
 if [ "${ONLINE}" = "1" ] ; then
+	echo "${txtylw}pushing to${txtrst} ${txtcyn}kroah.com${txtrst}"
 	git push kroah.com master
+	echo "${txtylw}pushing to${txtrst} ${txtcyn}origin${txtrst}"
 	git push
 	# kick off a build
 	/home/gregkh/linux/scripts/test_stable/test_stable_ssh ${VERSION}
