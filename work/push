@@ -1,5 +1,17 @@
 #!/bin/bash
 
+# colors!
+txtund=$(tput sgr 0 1)    # Underline
+txtbld=$(tput bold)       # Bold
+txtred=$(tput setaf 1)    # Red
+txtgrn=$(tput setaf 2)    # Green
+txtylw=$(tput setaf 3)    # Yellow
+txtblu=$(tput setaf 4)    # Blue
+txtpur=$(tput setaf 5)    # Purple
+txtcyn=$(tput setaf 6)    # Cyan
+txtwht=$(tput setaf 7)    # White
+txtrst=$(tput sgr0)       # Text reset
+
 BRANCH=$1
 if [ "$BRANCH" == "" ] ; then
 	echo "must specify branch (linus, testing, next, master), or 'all' or 'tags'"
@@ -47,7 +59,10 @@ fi
 
 for remote in $(git remote)
 do
-	echo "pushing ${TO_PUSH} to ${remote}"
+	echo -n "${txtylw}pushing${txtrst} "
+	echo -n "${txtcyn}${TO_PUSH} ${txtrst}"
+	echo -n "${txtylw}to ${txtrst}"
+	echo    "${txtred}${remote}${txtrst}"
 	git push -q "${remote}" "${TO_PUSH}"
 done
 
