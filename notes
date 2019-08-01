@@ -1,0 +1,11 @@
+building a initrd:
+	in busybox _install dir:
+	find . -print0 | cpio --null -ov --format=newc | gzip -9v > ../initramfs-busybox-x86.cpio.gz
+
+
+qemu kernel image:
+	qemu-system-x86_64 -kernel arch/x86_64/boot/bzImage -initrd ../tools/initramfs-busybox-x86.cpio.gz -nographic -append "console=ttyS0" -enable-kvm
+
+
+
+
