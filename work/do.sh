@@ -343,7 +343,7 @@ has these problem(s):
 		done <<< "$fixes_lines"
 	done
 
-	echo "ERROR = ${error}\n"
+	#echo "ERROR = ${error}\n"
 
 	if [ ${error} -eq 1 ] ; then
 		exit 1
@@ -372,18 +372,18 @@ if [ "$BRANCH" = "" ] ; then
 	echo "branch for things to work properly."
 	exit
 fi
-echo "BRANCH=$BRANCH"
+#echo "BRANCH=$BRANCH"
 
 # look and see if there are any patches in this dir first, error out if so, we
 # don't want to accidentally send them out twice
 OLD_PATCH=`ls 0*.patch 2>/dev/null | head -n 1`
 if [ "${OLD_PATCH}" != "" ] ; then
-	echo "WARNING: There are old patches still in the directory:"
+	echo -n "${txtcyn}WARNING:${txtrst}"
+	echo " ${txtylw}There are old patches still in the directory:${txtrst}"
 	for P in 0*.patch; do
 		echo "	${P}"
 	done
-	echo ""
-	echo "I will clean them up if you don't stop the script right now."
+	echo "${txtylw}I will clean them up if you don't stop the script right now.${txtrst}"
 	echo -n "[ret] to continue"
 	read
 	rm 0*.patch
@@ -400,13 +400,18 @@ git format-patch -k -M -N ${TREE}-${BRANCH}..HEAD
 # verify that we actually generated some patches
 PATCH=`ls 0*.patch 2>/dev/null | head -n 1`
 if [ "${PATCH}" = "" ] ; then
-	echo "ERROR!!!"
-	echo "No patches were generated, are you sure you actually committed anything here?"
+	echo -n "${txtred}${txtbld}ERROR:${txtrst}"
+	echo " ${txtylw}No patches were generated, are you sure you actually committed anything here?${txtrst}"
 	exit
 fi
 
+echo -n "${txtylw}Verifying \"Signed-off-by:\"...${txtrst}"
 verify_signedoff
+echo "${txtgrn}PASSED${txtrst}"
+
+echo -n "${txtylw}Verifying \"Fixes:\"...${txtrst}"
 verify_fixes
+echo "${txtgrn}PASSED${txtrst}"
 
 # send out emails
 #../added-to-${TREE}-${BRANCH} 0*.patch
