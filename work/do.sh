@@ -23,6 +23,24 @@ CC=""
 # This should be a git tree that contains *only* Linus' tree
 Linus_tree="${HOME}/linux/work/torvalds"
 
+# turn to 1 if you want debugging
+debug=0
+#debug=1
+
+if [ ${debug} -eq 1 ] ; then
+	quiet=""
+else
+	quiet="-q"
+fi
+
+log()
+{
+	if [ ${debug} -eq 1 ] ; then
+		echo "${txtpur}${@}${txtrst}"
+	fi
+}
+
+
 author()
 {
         first_author=""
@@ -47,7 +65,7 @@ author()
 		diff=$(echo "$l" | grep -a "^---")
 		if [ x"$diff" != x ]
 		then
-			#echo "diffstart!!!!!"
+			log "diffstart!!!!!"
 			break
 		fi
 
@@ -79,7 +97,7 @@ author()
 reply()
 {
 	PATCH=$1
-	echo "PATCH=$PATCH"
+	log "PATCH=$PATCH"
 	SUBJECT=`grep -a "Subject:" $PATCH | sed s/Subject\:\ //`
 	MESSAGE_ID=`grep -a -i "^Message-ID:" $PATCH | cut -f 2 -d ' ' | cut -f 2 -d '<' | cut -f 1 -d '>'`
 	author AUTHOR $1 FIRST_AUTHOR
@@ -394,7 +412,9 @@ PWD=`pwd`
 TREE=`basename ${PWD}`
 
 # generate the patches
-echo "${TREE}-${BRANCH}"
+log "${TREE}-${BRANCH}"
+#git format-patch ${quiet} -k -M -N ${TREE}-${BRANCH}..HEAD
+# for now let's see the patches being created.
 git format-patch -k -M -N ${TREE}-${BRANCH}..HEAD
 
 # verify that we actually generated some patches
@@ -405,32 +425,36 @@ if [ "${PATCH}" = "" ] ; then
 	exit
 fi
 
-echo -n "${txtylw}Verifying \"Signed-off-by:\"...${txtrst}"
+echo -n "${txtylw}Verifying \"Signed-off-by:\"...${txtrst}		"
 verify_signedoff
 echo "${txtgrn}PASSED${txtrst}"
 
-echo -n "${txtylw}Verifying \"Fixes:\"...${txtrst}"
+echo -n "${txtylw}Verifying \"Fixes:\"...${txtrst}			"
 verify_fixes
 echo "${txtgrn}PASSED${txtrst}"
 
 # send out emails
 #../added-to-${TREE}-${BRANCH} 0*.patch
+echo -n "${txtylw}Sending emails...${txtrst}			"
 for patch_file in `ls 0*.patch`
 do
 	reply $patch_file
-	echo "acknowledged $patch_file"
-	echo "-----------------------------------------------"
-	echo
+	log "acknowledged $patch_file"
+	log "-----------------------------------------------"
 done
+echo "${txtgrn}DONE${txtrst}"
 
+
+echo -n "${txtylw}Merging patches back to branch ${txtcyn}${BRANCH}${txtrst}...${txtrst}	"
 
 # merge the patches back to the branch
-git checkout ${TREE}-${BRANCH} && git merge work-${BRANCH}
+git checkout ${quiet} ${TREE}-${BRANCH} && git merge ${quiet} work-${BRANCH}
 
 # if something goes wrong, exit
 if [ $? -ne 0 ] ; then
 	exit
 fi
+echo "${txtgrn}DONE${txtrst}"
 
 ONLINE=`gregkh_machine_online`
 # Only push if we have a network connection
@@ -438,9 +462,9 @@ if [ "$ONLINE" = "1" ] ; then
 	for remote in `git remote`
 	do
 		echo "${txtylw}pushing to${txtrst} ${txtcyn}${remote}${txtrst}"
-		git push ${remote} ${TREE}-${BRANCH}
+		git push ${quiet} ${remote} ${TREE}-${BRANCH}
 	done
 fi
 
 # now go back to the original branch so that we can continue to work
-git checkout work-${BRANCH}
+git checkout ${quiet} work-${BRANCH}
