@@ -1,0 +1,33 @@
+#!/bin/bash
+#
+# Build the stable kernel tree with a different version of gcc depending on the
+# directory we are in.
+#
+
+RELEASE=$(kv)
+
+REL_ARRAY=(${RELEASE//./ })
+BASE=${REL_ARRAY[0]}.${REL_ARRAY[1]}.${REL_ARRAY[2]}
+MAJOR=${REL_ARRAY[0]}
+MINOR=${REL_ARRAY[1]}
+
+#echo "major=${MAJOR}"
+#echo "minor=${MINOR}"
+
+
+cc=""
+
+case "${MAJOR}" in
+	3*)	CC="gcc-7";;
+	4*)	CC="gcc-8";;
+	*)	CC="gcc";;
+esac
+
+BUILD_COMMAND="make CC=${CC} ${@}"
+
+set -x
+
+echo "make CC=${CC} ${@}"
+#$(CC=${CC} make CC=${CC} ${@})
+
+
