@@ -98,6 +98,11 @@ test_it()
 {
 KERNEL_VERSION=$1
 
+CC=""
+if [ "${KERNEL_VERSION}" == "4.4" ] ; then
+	CC="CC=\"gcc-8\""
+fi
+
 echo "Testing kernel version ${KERNEL_VERSION} on remote server \"${REMOTE}\""
 
 # create the local temporary directory to do the work in.
