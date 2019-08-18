@@ -20,6 +20,9 @@ FROM='<gregkh@linuxfoundation.org>'
 TO=""
 CC=""
 
+DIR="$( cd "$( dirname "${BASH_SOURCE[0]}" )" && pwd )"
+SCRIPT=${0##*/}
+
 # This should be a git tree that contains *only* Linus' tree
 Linus_tree="${HOME}/linux/work/torvalds"
 
@@ -459,11 +462,12 @@ echo "${txtgrn}DONE${txtrst}"
 ONLINE=`gregkh_machine_online`
 # Only push if we have a network connection
 if [ "$ONLINE" = "1" ] ; then
-	for remote in `git remote`
-	do
-		echo "${txtylw}pushing to${txtrst} ${txtcyn}${remote}${txtrst}"
-		git push ${quiet} ${remote} ${TREE}-${BRANCH}
-	done
+	${DIR}/push ${BRANCH}
+#	for remote in `git remote`
+#	do
+#		echo "${txtylw}pushing to${txtrst} ${txtcyn}${remote}${txtrst}"
+#		git push ${quiet} ${remote} ${TREE}-${BRANCH}
+#	done
 fi
 
 # now go back to the original branch so that we can continue to work
