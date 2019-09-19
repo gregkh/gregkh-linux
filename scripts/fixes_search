@@ -30,7 +30,7 @@ BASE_KERNEL="5.2"
 #KERNEL_RANGE="v4.15..v4.16"
 #KERNEL_RANGE="v5.0..v5.1"
 #KERNEL_RANGE="v5.1..v5.2"
-KERNEL_RANGE="v5.2..HEAD"
+KERNEL_RANGE="v5.2..v5.3"
 #KERNEL_RANGE="v5.3-rc3..v5.3-rc4"
 
 STABLE_KERNEL="${HOME}/stable/linux-${BASE_KERNEL}.y"
@@ -71,13 +71,16 @@ do
 		fixes=`grep -i '^[[:space:]]*Fixes:' ${COMMIT_LOG}`
 		if [[ ${fixes} =~ [[:xdigit:]]{12} ]] ; then
 			fix_commit=${BASH_REMATCH}
+			fix_full_commit=$(git log --pretty=format:"%H" ${fix_commit}^..${fix_commit})
 #			fix_commit=`echo ${fixes} | sed -e 's/^[ \t]*//' | cut -f 2 -d ':' | sed -e 's/^[ \t]*//' | cut -f 1 -d ' '`
 			echo "	fixes='${fixes}'"
 			echo "	fix_commit='${fix_commit}'"
+			echo "	fix_full_commit='${fix_full_commit}'"
 
 
 			# see if this fixes something we have already queued up in the stable tree
-			stable_included=$(cd /home/gregkh/linux/stable/stable-queue && git grep ${fix_commit})
+			#stable_included=$(cd /home/gregkh/linux/stable/stable-queue && git grep ${fix_commit})
+			stable_included=$(cd /home/gregkh/linux/stable/stable-queue && git grep ${fix_full_commit})
 			cd "${LATEST_KERNEL}"
 			if [ "${stable_included}" != "" ] ; then
 				echo "	stable_included='${stable_included}'"
