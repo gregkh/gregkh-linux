@@ -1,15 +1,19 @@
 #!/bin/bash
+# SPDX-License-Identifier: GPL-2.0
+#
+# Copyright (C) 2019 Stephen Rothwell <sfr@canb.auug.org.au>
+# Copyright (C) 2019 Greg Kroah-Hartman <gregkh@linuxfoundation.org>
 #
 # Verify that the signed-off-by chain looks correct for a range of git commits.
 #
-# Thanks to Stephen Rothwell <sfr@canb.auug.org.au> for the majority of this code
-#
 # usage:
-#	verify_signedoff GIT_RANGE
+#	verify_signedoff.sh GIT_RANGE
 #
 # To test just the HEAD commit do:
-#	verify_signedoff HEAD^..HEAD
+#	verify_signedoff.sh HEAD^..HEAD
 #
+#
+# Thanks to Stephen Rothwell <sfr@canb.auug.org.au> for the majority of this code
 #
 
 help()
