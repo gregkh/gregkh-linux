@@ -3,12 +3,15 @@
 #
 # Copyright (C) 2019 Greg Kroah-Hartman <gregkh@linuxfoundation.org>
 #
-# Given a git range, spit out the Change ID (CI) that are fixed in that release
+# Given a git range, spit out the Change ID (CID) that are fixed in that release
 #
 # usage:
-#	generate_ci.sh GIT_RANGE
+#	generate_cid.sh GIT_RANGE
 #
 #
+
+# if we decide to rename the thing, change it here
+prefix="CID-"
 
 help()
 {
@@ -18,14 +21,14 @@ help()
 	exit 1
 }
 
-print_ci()
+print_sha()
 {
 	sha1=$1
-	gsr=$(git show -s --abbrev-commit --abbrev=12 --pretty=format:"%h (\"%s\")%n" ${sha1})
-	echo "CI-${gsr}"
+	gsr=$(git show -s --abbrev-commit --abbrev=12 --pretty=format:"%h (\"%s\")%n" "${sha1}")
+	echo "${prefix}${gsr}"
 }
 
-generate_ci()
+generate_cid()
 {
 	git_range=$1
 	for c in $(git rev-list --no-merges "${git_range}"); do
@@ -35,9 +38,9 @@ generate_ci()
 		# "    [ Upstream commit 3a069024d371125227de3ac8fa74223fcf473520 ]"
 		#
 		# Pick out the "first" 40 digit sha1 in the changelog text, which should be the "upstream" id
-		upstream=$(git log -1 "${c}" | awk '{if(NR>1)print}' | egrep -o '[0-9a-f]{40}' | head -n 1 )
+		upstream=$(git log -1 "${c}" | awk '{if(NR>1)print}' | grep -E -o '[0-9a-f]{40}' | head -n 1 )
 		if [ "${upstream}" != "" ] ; then
-			print_ci "${upstream}"
+			print_sha "${upstream}"
 			continue
 		fi
 		echo "upstream git id not found for ${c}"
@@ -50,5 +53,5 @@ if [ "${git_range}" == "" ] ; then
 	help
 fi
 
-generate_ci "${git_range}"
+generate_cid "${git_range}"
 exit 0
