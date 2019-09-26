@@ -37,8 +37,8 @@ fi
 output=()
 
 # Look in the kernel log text files first
-cd ${LOG_LOCATION}
-releases=`git grep -l -i ${id}`
+cd ${LOG_LOCATION} || exit
+releases=$(git grep -l -i "${id}")
 # We do not want to catch the places where this commit has been "fixed" by other commits, so filter out those files
 #releases=`git grep ${id} | grep -v -i "Fixes:" | cut -f 1 -d ':'`
 for release in ${releases}; do
@@ -48,8 +48,8 @@ for release in ${releases}; do
 done
 
 # Then look in the stable queue patches themselves
-cd ${STABLE_QUEUE}
-releases=`git grep -l -i ${id}`
+cd ${STABLE_QUEUE} || exit
+releases=$(git grep -l -i "${id}")
 for release in ${releases}; do
 	release=${release#releases\/}	# delete "releases/" off of the front of any match
 	release=${release%\/*}		# only keep the front kernel release directory of a match, not the patch itself
@@ -60,9 +60,9 @@ done
 # if we have found nothing, let's try the fallback and do the old and
 # slow 'git describe --contains' to try to find at least some hint of
 # where this commit might be at.
-if [ "${output}" == "" ] ; then
-	cd "${LATEST_TREE}"
-	output=$(git describe --contains ${id})
+if [ "${output[0]}" == "" ] ; then
+	cd "${LATEST_TREE}" || exit
+	output=$(git describe --contains "${id}")
 fi
 
 # sort the list of releases and put them in a new array called "sorted"

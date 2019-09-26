@@ -19,7 +19,7 @@ find_fix() {
 		id=${BASH_REMATCH}
 	else
 		echo "${txtred}try 2${txtrst}"
-		id=`echo ${FIX} | sed -e 's/^[ \t]*//' | cut -f 2 -d ':' | sed -e 's/^[ \t]*//' | cut -f 1 -d ' '`
+		id=$(echo "${FIX}" | sed -e 's/^[ \t]*//' | cut -f 2 -d ':' | sed -e 's/^[ \t]*//' | cut -f 1 -d ' ')
 	fi
 
 	if [ "${id}" == "" ] ; then
@@ -43,7 +43,7 @@ find_fix() {
 
 	#git describe --contains ${COMMIT_ID}
 	#release=`git describe --contains ${id} | cut -f 1 -d '~'`
-	release=$(/home/gregkh/linux/scripts/fix_in_what_release ${id})
+	release=$(/home/gregkh/linux/scripts/fix_in_what_release "${id}")
 	echo "${txtcyn}${release}${txtrst}"
 	echo ""
 }
@@ -58,7 +58,7 @@ echo ""
 #	exit 1
 #fi
 
-lines=`cat - | grep -i "fixes:" | sed -e 's/^[ \t]*//' | cut -f 2 -d ':' | sed -e 's/^[ \t]*//' | cut -f 1 -d ' '`
+lines=$(cat - | grep -i "fixes:" | sed -e 's/^[ \t]*//' | cut -f 2 -d ':' | sed -e 's/^[ \t]*//' | cut -f 1 -d ' ')
 #echo "lines=${lines}"
 if [ "${lines}" == "" ] ; then
 	echo "${txtpur}No \"Fixes:\" line found :(${txtrst}"
