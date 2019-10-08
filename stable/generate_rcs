@@ -11,7 +11,6 @@ create_kernel "4.4" &
 create_kernel "4.9" &
 create_kernel "4.14" &
 create_kernel "4.19" &
-create_kernel "5.2" &
 create_kernel "5.3" &
 wait
 echo "finished"
