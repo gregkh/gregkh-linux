@@ -18,7 +18,7 @@
 
 # Only thing you might want to change here, the location of where Linus's git
 # tree is on your system:
-Linus_tree=/home/gregkh/linux/work/torvalds/
+Linus_tree="/home/gregkh/linux/work/torvalds/"
 
 ##########################################
 # No need to touch anything below here
