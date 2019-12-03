@@ -1,0 +1,30 @@
+#!/bin/bash
+
+tmux \
+	new-session "cd linux-4.4.y && ../stable-queue/scripts/quilt-mail mbox ; read" \; \
+	split-window "cd linux-4.9.y && ../stable-queue/scripts/quilt-mail mbox ; read" \; \
+	split-window "cd linux-4.14.y && ../stable-queue/scripts/quilt-mail mbox ; read" \; \
+	split-window "cd linux-4.19.y && ../stable-queue/scripts/quilt-mail mbox ; read" \; \
+	split-window "cd linux-5.3.y && ../stable-queue/scripts/quilt-mail mbox ; read" \; \
+	split-window "cd linux-5.4.y && ../stable-queue/scripts/quilt-mail mbox ; read" \; \
+	select-layout even-vertical
+
+#
+#
+#
+#create_kernel() {
+#	VERSION=$1
+#	echo "building kernel ${VERSION}"
+#	cd linux-${VERSION}.y
+#	../stable-queue/scripts/quilt-mail mbox
+#}
+#
+#create_kernel "4.4" &
+#create_kernel "4.9" &
+#create_kernel "4.14" &
+#create_kernel "4.19" &
+#create_kernel "5.3" &
+#create_kernel "5.4" &
+#wait
+#echo "finished"
+
