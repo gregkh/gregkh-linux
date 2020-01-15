@@ -17,12 +17,22 @@
 HOME="/home/gregkh/linux"
 TMPDIR="/home/gregkh/tmp"
 PREFIX="fixes_search_"
-FIXED_IN="/home/gregkh/linux/scripts/fix_in_what_release"
 
+
+txtund=$(tput sgr 0 1)    # Underline
+txtbld=$(tput bold)       # Bold
+txtred=$(tput setaf 1)    # Red
+txtgrn=$(tput setaf 2)    # Green
+txtylw=$(tput setaf 3)    # Yellow
+txtblu=$(tput setaf 4)    # Blue
+txtpur=$(tput setaf 5)    # Purple
+txtcyn=$(tput setaf 6)    # Cyan
+txtwht=$(tput setaf 7)    # White
+txtrst=$(tput sgr0)       # Text reset
 
 TMP_PREFIX="${TMPDIR}/${PREFIX}"
 
-BASE_KERNEL="4.19"
+BASE_KERNEL="5.4"
 
 #KERNEL_RANGE="v4.9..v4.10"
 #KERNEL_RANGE="v4.14..v4.15"
@@ -31,78 +41,129 @@ BASE_KERNEL="4.19"
 #KERNEL_RANGE="v5.0..v5.1"
 #KERNEL_RANGE="v5.1..v5.2"
 #KERNEL_RANGE="v5.2..v5.3"
-KERNEL_RANGE="v4.19..v5.3"
+#KERNEL_RANGE="v4.19..v5.3"
 #KERNEL_RANGE="v5.3-rc3..v5.3-rc4"
+KERNEL_RANGE="v5.4..HEAD"
+#KERNEL_RANGE="v5.5-rc1..HEAD"
 
 STABLE_KERNEL="${HOME}/stable/linux-${BASE_KERNEL}.y"
 #STABLE_KERNEL="${HOME}/stable/linux-4.14.y"
 LATEST_KERNEL="${HOME}/gregkh"
 
-cd "${STABLE_KERNEL}"
-STABLE_LOG=`mktemp ${TMP_PREFIX}stable_log.XXXXXX` || exit 1
-git log v${BASE_KERNEL}..HEAD > "${STABLE_LOG}"
+STABLE_QUEUE="${HOME}/stable/stable-queue"
 
-cd -
+DEBUG=1
+
+i=1
+sp="/-\|"
+spin()
+{
+	printf "\b${sp:i++%${#sp}:1}"
+}
+
+logn()
+{
+	line=$1
+	if [[ ${DEBUG} -eq 1 ]] ; then
+		echo -n "$1"
+	else
+		spin
+	fi
+}
+log()
+{
+	line=$1
+	if [[ ${DEBUG} -eq 1 ]] ; then
+		echo "$1"
+	else
+		spin
+	fi
+}
+
+
+cd "${STABLE_KERNEL}"
+stable_log=$(git log v${BASE_KERNEL}..HEAD)
+
+cd "${STABLE_QUEUE}"
+queue_data=$(cat queue*/*)
+
+log "Building releases file..."
+RELEASES=`mktemp ${TMP_PREFIX}releases.XXXXXX` || exit 1
+git grep "commit" releases/ >> ${RELEASES}
 
 cd "${LATEST_KERNEL}"
-GIT_LOG=`mktemp ${TMP_PREFIX}git_log.XXXXXX` || exit 1
-git log --reverse --no-merges --format='%h' "${KERNEL_RANGE}" > ${GIT_LOG}
-
-FIX_COMMITS=`mktemp ${TMP_PREFIX}fixes.XXXXXX` || exit 1
-STABLE_COMMITS=`mktemp ${TMP_PREFIX}stable.XXXXXX` || exit 1
 MBOX=`mktemp ${TMP_PREFIX}mbox.XXXXXX` || exit 1
 
-COMMIT_LOG=`mktemp ${TMP_PREFIX}tmp_log.XXXXX` || exit 1
 
-# find all commits that say they fix something in the tree that are not already
-# in the stable tree
-while read -r commit
-do
-	echo "commit = ${commit}"
+# process of digging stuff out:
+# loop through all commits in ${KERNEL_RANGE}
+#   if commit is already in stable log, ignore
+#   if commit has a "Fixes:" tag
+#      see if Fixes: is for something in a released .y
+#        if so, save it
+#      see if Fixes: is for a .0 release
+#        if so, save it
 
-	# is it in the log already?
-	present=`grep -i "${commit}" "${STABLE_LOG}"`
-	if [ "${present}" == "" ] ; then
-		echo "	commit ${commit} is not present!"
+cd "${LATEST_KERNEL}"
+for commit in $(git rev-list --reverse --no-merges "${KERNEL_RANGE}"); do
+	logn "commit = ${txtgrn}${commit}${txtrst}	"
 
-		git log -1 --format='%b' ${commit} > ${COMMIT_LOG}
+	# see if commit is already in the stable log
+	if [[ "${stable_log}" =~ "${commit}" ]] ; then
+		log "${txtred}present in stable, ignoring${txtrst}"
+		continue
+	fi
 
-		# is this commit a "fix" for something already in this release?
-		# fixme...
-		fixes=`grep -i '^[[:space:]]*Fixes:' ${COMMIT_LOG}`
-		if [[ ${fixes} =~ [[:xdigit:]]{12} ]] ; then
-			fix_commit=${BASH_REMATCH}
-			fix_full_commit=$(git log --pretty=format:"%H" ${fix_commit}^..${fix_commit})
-#			fix_commit=`echo ${fixes} | sed -e 's/^[ \t]*//' | cut -f 2 -d ':' | sed -e 's/^[ \t]*//' | cut -f 1 -d ' '`
-			echo "	fixes='${fixes}'"
-			echo "	fix_commit='${fix_commit}'"
-			echo "	fix_full_commit='${fix_full_commit}'"
+	# see if it already is in the current queue
+	if [[ "${queue_data}" =~ "${commit}" ]] ; then
+		log "${txtred}present in stable queue, ignoring${txtrst}"
+		continue
+	fi
+	log "${txtpur}not present${txtrst}"
 
-
-			# see if this fixes something we have already queued up in the stable tree
-			#stable_included=$(cd /home/gregkh/linux/stable/stable-queue && git grep ${fix_commit})
-			stable_included=$(cd /home/gregkh/linux/stable/stable-queue && git grep ${fix_full_commit})
-			cd "${LATEST_KERNEL}"
-			if [ "${stable_included}" != "" ] ; then
-				echo "	stable_included='${stable_included}'"
-				git show --pretty=email ${commit} >> "${MBOX}"
-			fi
+	# Try to find "Fixes" tag in commit
+	fixes_lines=$(git log -1 --format='%B' "${commit}" | grep -i '^[[:space:]]*Fixes:')
+	if [ "${fixes_lines}" == "" ] ; then
+		continue
+	fi
+	log "	fixes_lines=		${txtblu}'${fixes_lines}'${txtrst}"
+	while read -r fix_line; do
+		[[ ${fix_line} =~ [[:xdigit:]]{12} ]]
+		fix_commit="${BASH_REMATCH}"
+		fix_commit_full=$(git log -1 --format="%H" ${fix_commit})
+		log "	fix_commit=		${txtblu}'${fix_commit}'${txtrst}"
+		log "	fix_commit_full=	${txtblu}'${fix_commit_full}'${txtrst}"
+		if [ "${fix_commit_full}" == "" ] ; then
+			log "	invalid fix_commit_full"
+			continue
 		fi
 
+		# we have a commit id that this commit "fixes" so now we need to see if what it fixes is in a .y release
+		#stable_included=$(cd /home/gregkh/linux/stable/stable-queue && git grep "${fix_commit_full}")
+		#cd "${LATEST_KERNEL}"
+		stable_included=$(grep "${fix_commit_full}" "${RELEASES}")
+		log "	stable_included=	${txtblu}'${stable_included}'${txtrst}"
+		if [ "${stable_included}" != "" ] ; then
+			log "	${txtylw}SAVING ${commit}!${txtrst}"
+			git show --pretty=email ${commit} >> "${MBOX}"
+			continue
+		fi
 
-		# is it a syzkaller reported patch?
-#		git log -1 --format='%b' ${commit} | grep -i -E "(syzkaller|syzbot)" &> /dev/null
-#		if [ $? -eq 0 ] ; then
-#			#echo "${commit}" >> "${MBOX}"
-#			git show --pretty=email ${commit} >> "${MBOX}"
-#			echo "commit ${commit} is a syzkaller one!"
-#		fi
-	fi
-done < "${GIT_LOG}"
+		# see if commit id it fixes is in a .0 release
+		real_release=$(cd /home/gregkh/kernel-history/logs && git grep "${fix_commit_full}")
+		cd "${LATEST_KERNEL}"
+		log "	real_release=		'${real_release}'"
+		if [ "${real_release}" != "" ] ; then
+			log "	${txtylw}SAVING ${commit}!${txtrst}"
+			git show --pretty=email ${commit} >> "${MBOX}"
+			continue
+		fi
 
-rm ${GIT_LOG}
-rm ${COMMIT_LOG}
-rm ${FIX_COMMITS}
-rm ${STABLE_COMMITS}
-rm ${STABLE_LOG}
+	done <<< "${fixes_lines}"
 
+done
+
+rm ${RELEASES}
+
+echo "# commits are in ${MBOX}"
+echo "mutt -f ${MBOX}"
