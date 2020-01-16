@@ -44,7 +44,8 @@ BASE_KERNEL="5.4"
 #KERNEL_RANGE="v4.19..v5.3"
 #KERNEL_RANGE="v5.3-rc3..v5.3-rc4"
 KERNEL_RANGE="v5.4..HEAD"
-#KERNEL_RANGE="v5.5-rc1..HEAD"
+#KERNEL_RANGE="v5.5-rc3..HEAD"
+#KERNEL_RANGE="v5.5-rc1..v5.5-rc2"
 
 STABLE_KERNEL="${HOME}/stable/linux-${BASE_KERNEL}.y"
 #STABLE_KERNEL="${HOME}/stable/linux-4.14.y"
@@ -54,10 +55,20 @@ STABLE_QUEUE="${HOME}/stable/stable-queue"
 
 DEBUG=1
 
+git_range=$1
+
+if [ "${git_range}" == "" ] ; then
+	echo "error, git range not found"
+	echo "usage:"
+	echo "	$0 GIT_RANGE"
+	exit 1
+fi
+
+
 i=1
-sp="/-\|"
 spin()
 {
+	sp="/-\|"
 	printf "\b${sp:i++%${#sp}:1}"
 }
 
@@ -96,7 +107,7 @@ MBOX=`mktemp ${TMP_PREFIX}mbox.XXXXXX` || exit 1
 
 
 # process of digging stuff out:
-# loop through all commits in ${KERNEL_RANGE}
+# loop through all commits in ${git_range}
 #   if commit is already in stable log, ignore
 #   if commit has a "Fixes:" tag
 #      see if Fixes: is for something in a released .y
@@ -105,7 +116,7 @@ MBOX=`mktemp ${TMP_PREFIX}mbox.XXXXXX` || exit 1
 #        if so, save it
 
 cd "${LATEST_KERNEL}"
-for commit in $(git rev-list --reverse --no-merges "${KERNEL_RANGE}"); do
+for commit in $(git rev-list --reverse --no-merges "${git_range}"); do
 	logn "commit = ${txtgrn}${commit}${txtrst}	"
 
 	# see if commit is already in the stable log
