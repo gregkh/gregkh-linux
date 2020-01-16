@@ -43,7 +43,7 @@ BASE_KERNEL="5.4"
 #KERNEL_RANGE="v5.2..v5.3"
 #KERNEL_RANGE="v4.19..v5.3"
 #KERNEL_RANGE="v5.3-rc3..v5.3-rc4"
-KERNEL_RANGE="v5.4..HEAD"
+#KERNEL_RANGE="v5.4..HEAD"
 #KERNEL_RANGE="v5.5-rc3..HEAD"
 #KERNEL_RANGE="v5.5-rc1..v5.5-rc2"
 
@@ -74,7 +74,6 @@ spin()
 
 logn()
 {
-	line=$1
 	if [[ ${DEBUG} -eq 1 ]] ; then
 		echo -n "$1"
 	else
@@ -83,7 +82,6 @@ logn()
 }
 log()
 {
-	line=$1
 	if [[ ${DEBUG} -eq 1 ]] ; then
 		echo "$1"
 	else
@@ -92,18 +90,18 @@ log()
 }
 
 
-cd "${STABLE_KERNEL}"
+cd "${STABLE_KERNEL}" || exit 1
 stable_log=$(git log v${BASE_KERNEL}..HEAD)
 
-cd "${STABLE_QUEUE}"
+cd "${STABLE_QUEUE}" || exit 1
 queue_data=$(cat queue*/*)
 
 log "Building releases file..."
-RELEASES=`mktemp ${TMP_PREFIX}releases.XXXXXX` || exit 1
-git grep "commit" releases/ >> ${RELEASES}
+RELEASES=$(mktemp ${TMP_PREFIX}releases.XXXXXX) || exit 1
+git grep "commit" releases/ >> "${RELEASES}"
 
-cd "${LATEST_KERNEL}"
-MBOX=`mktemp ${TMP_PREFIX}mbox.XXXXXX` || exit 1
+cd "${LATEST_KERNEL}" || exit 1
+MBOX=$(mktemp ${TMP_PREFIX}mbox.XXXXXX) || exit 1
 
 
 # process of digging stuff out:
@@ -115,7 +113,7 @@ MBOX=`mktemp ${TMP_PREFIX}mbox.XXXXXX` || exit 1
 #      see if Fixes: is for a .0 release
 #        if so, save it
 
-cd "${LATEST_KERNEL}"
+cd "${LATEST_KERNEL}" || exit 1
 for commit in $(git rev-list --reverse --no-merges "${git_range}"); do
 	logn "commit = ${txtgrn}${commit}${txtrst}	"
 
@@ -140,8 +138,8 @@ for commit in $(git rev-list --reverse --no-merges "${git_range}"); do
 	log "	fixes_lines=		${txtblu}'${fixes_lines}'${txtrst}"
 	while read -r fix_line; do
 		[[ ${fix_line} =~ [[:xdigit:]]{12} ]]
-		fix_commit="${BASH_REMATCH}"
-		fix_commit_full=$(git log -1 --format="%H" ${fix_commit})
+		fix_commit="${BASH_REMATCH[0]}"
+		fix_commit_full=$(git log -1 --format="%H" "${fix_commit}")
 		log "	fix_commit=		${txtblu}'${fix_commit}'${txtrst}"
 		log "	fix_commit_full=	${txtblu}'${fix_commit_full}'${txtrst}"
 		if [ "${fix_commit_full}" == "" ] ; then
@@ -156,17 +154,17 @@ for commit in $(git rev-list --reverse --no-merges "${git_range}"); do
 		log "	stable_included=	${txtblu}'${stable_included}'${txtrst}"
 		if [ "${stable_included}" != "" ] ; then
 			log "	${txtylw}SAVING ${commit}!${txtrst}"
-			git show --pretty=email ${commit} >> "${MBOX}"
+			git show --pretty=email "${commit}" >> "${MBOX}"
 			continue
 		fi
 
 		# see if commit id it fixes is in a .0 release
 		real_release=$(cd /home/gregkh/kernel-history/logs && git grep "${fix_commit_full}")
-		cd "${LATEST_KERNEL}"
+		cd "${LATEST_KERNEL}" || exit 1
 		log "	real_release=		'${real_release}'"
 		if [ "${real_release}" != "" ] ; then
 			log "	${txtylw}SAVING ${commit}!${txtrst}"
-			git show --pretty=email ${commit} >> "${MBOX}"
+			git show --pretty=email "${commit}" >> "${MBOX}"
 			continue
 		fi
 
@@ -174,7 +172,7 @@ for commit in $(git rev-list --reverse --no-merges "${git_range}"); do
 
 done
 
-rm ${RELEASES}
+rm "${RELEASES}"
 
 echo "# commits are in ${MBOX}"
 echo "mutt -f ${MBOX}"
