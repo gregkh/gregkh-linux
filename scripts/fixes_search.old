@@ -1,0 +1,208 @@
+#!/bin/bash
+# SPDX-License-Identifier: GPL-2.0
+#
+# Copyright 2018 Greg Kroah-Hartman <gregkh@linuxfoundation.org>
+#
+# Dig out patches that are created based on the "Fixes:" tag to match up with
+# stuff that is also in the stable trees already.
+#
+# horribly messy right now, probably really inefficient and slow, and requires
+# lots of manual setup and poking around in a mbox file afterward.  Use at your
+# own risk...
+#
+# also is overly-enthusiastic, catching stuff that might not only be fixes in
+# stable trees, but that's a good thing for now, we can live with that :)
+#
+
+HOME="/home/gregkh/linux"
+TMPDIR="/home/gregkh/tmp"
+PREFIX="fixes_search_"
+FIXED_IN="/home/gregkh/linux/scripts/fix_in_what_release"
+
+
+TMP_PREFIX="${TMPDIR}/${PREFIX}"
+
+BASE_KERNEL="5.4"
+
+#KERNEL_RANGE="v4.9..v4.10"
+#KERNEL_RANGE="v4.14..v4.15"
+#KERNEL_RANGE="v4.17..v4.18"
+#KERNEL_RANGE="v4.15..v4.16"
+#KERNEL_RANGE="v5.0..v5.1"
+#KERNEL_RANGE="v5.1..v5.2"
+#KERNEL_RANGE="v5.2..v5.3"
+#KERNEL_RANGE="v4.19..v5.3"
+#KERNEL_RANGE="v5.3-rc3..v5.3-rc4"
+#KERNEL_RANGE="v5.4..HEAD"
+KERNEL_RANGE="v5.5-rc5..HEAD"
+
+STABLE_KERNEL="${HOME}/stable/linux-${BASE_KERNEL}.y"
+#STABLE_KERNEL="${HOME}/stable/linux-4.14.y"
+LATEST_KERNEL="${HOME}/gregkh"
+
+DEBUG=1
+
+i=1
+sp="/-\|"
+spin()
+{
+	printf "\b${sp:i++%${#sp}:1}"
+}
+
+logn()
+{
+	line=$1
+	if [[ ${DEBUG} -eq 1 ]] ; then
+		echo -n "$1"
+	else
+		spin
+	fi
+}
+log()
+{
+	line=$1
+	if [[ ${DEBUG} -eq 1 ]] ; then
+		echo "$1"
+	else
+		spin
+	fi
+}
+
+
+cd "${STABLE_KERNEL}"
+STABLE_LOG=`mktemp ${TMP_PREFIX}stable_log.XXXXXX` || exit 1
+git log v${BASE_KERNEL}..HEAD > "${STABLE_LOG}"
+s_log=$(git log v${BASE_KERNEL}..HEAD)
+
+#cd -
+
+cd "${LATEST_KERNEL}"
+GIT_LOG=`mktemp ${TMP_PREFIX}git_log.XXXXXX` || exit 1
+git log --reverse --no-merges --format='%h' "${KERNEL_RANGE}" > ${GIT_LOG}
+
+MBOX=`mktemp ${TMP_PREFIX}mbox.XXXXXX` || exit 1
+
+COMMIT_LOG=`mktemp ${TMP_PREFIX}tmp_log.XXXXX` || exit 1
+
+# process of digging stuff out:
+# loop through all commits in ${KERNEL_RANGE}
+#   if commit is already in stable log, ignore
+#   if commit has a "Fixes:" tag
+#      see if Fixes: is for something in a released .y
+#        if so, save it
+#      see if Fixes: is for a .0 release
+#        if so, save it
+
+cd "${LATEST_KERNEL}"
+
+for commit in $(git rev-list --reverse --no-merges "${KERNEL_RANGE}"); do
+	logn "commit = ${commit}	"
+
+	# see if commit is already in the stable log
+#	present=$(grep -i "${commit}" "${STABLE_LOG}")
+	if [[ "${s_log}" =~ "${commit}" ]] ; then
+#	if [ "${present}" != "" ] ; then
+		log "present"
+		continue
+	fi
+	log "not present"
+
+	# see if it already is in the current queue
+
+	# Try to find "Fixes" tag in commit
+	fixes_lines=$(git log -1 --format='%B' "${commit}" | grep -i '^[[:space:]]*Fixes:')
+	if [ "${fixes_lines}" == "" ] ; then
+		continue
+	fi
+	log "	fixes_lines=	'${fixes_lines}'"
+	while read -r fix_line; do
+		[[ ${fix_line} =~ [[:xdigit:]]{12} ]]
+		fix_commit="${BASH_REMATCH}"
+		fix_commit_full=$(git log -1 --format="%H" ${fix_commit})
+		log "	fix_commit=		'${fix_commit}'"
+		log "	fix_commit_full=	'${fix_commit_full}'"
+		if [ "${fix_commit_full}" == "" ] ; then
+			log "	invalid fix_commit_full"
+			continue
+		fi
+
+		# we have a commit id that this commit "fixes" so now we need to see if what it fixes is in a .y release
+		stable_included=$(cd /home/gregkh/linux/stable/stable-queue && git grep "${fix_commit_full}")
+		cd "${LATEST_KERNEL}"
+		log "	stable_included=	'${stable_included}'"
+		if [ "${stable_included}" != "" ] ; then
+			log "	SAVING ${commit}!"
+			git show --pretty=email ${commit} >> "${MBOX}"
+			continue
+		fi
+
+		# see if commit id it fixes is in a .0 release
+		real_release=$(cd /home/gregkh/kernel-history/logs && git grep "${fix_commit_full}")
+		cd "${LATEST_KERNEL}"
+		log "	real_release=		'${real_release}'"
+		if [ "${real_release}" != "" ] ; then
+			log "	SAVING ${commit}!"
+			git show --pretty=email ${commit} >> "${MBOX}"
+			continue
+		fi
+
+	done <<< "${fixes_lines}"
+
+done
+
+exit
+
+
+# find all commits that say they fix something in the tree that are not already
+# in the stable tree
+while read -r commit
+do
+	echo "commit = ${commit}"
+
+	# is it in the log already?
+	present=`grep -i "${commit}" "${STABLE_LOG}"`
+	if [ "${present}" == "" ] ; then
+		echo "	commit ${commit} is not present!"
+
+		git log -1 --format='%b' ${commit} > ${COMMIT_LOG}
+
+		# is this commit a "fix" for something already in this release?
+		# fixme...
+		fixes=`grep -i '^[[:space:]]*Fixes:' ${COMMIT_LOG}`
+		if [[ ${fixes} =~ [[:xdigit:]]{12} ]] ; then
+			fix_commit=${BASH_REMATCH}
+			fix_full_commit=$(git log --pretty=format:"%H" ${fix_commit}^..${fix_commit})
+#			fix_commit=`echo ${fixes} | sed -e 's/^[ \t]*//' | cut -f 2 -d ':' | sed -e 's/^[ \t]*//' | cut -f 1 -d ' '`
+			echo "	fixes='${fixes}'"
+			echo "	fix_commit='${fix_commit}'"
+			echo "	fix_full_commit='${fix_full_commit}'"
+
+			# FIXME make sure fix_commit is NOT a merge.  huge cpu cycles are wasted if it is...
+
+
+			# see if this fixes something we have already queued up in the stable tree
+			#stable_included=$(cd /home/gregkh/linux/stable/stable-queue && git grep ${fix_commit})
+			stable_included=$(cd /home/gregkh/linux/stable/stable-queue && git grep ${fix_full_commit})
+			cd "${LATEST_KERNEL}"
+			if [ "${stable_included}" == "" ] ; then
+				git show --pretty=email ${commit} >> "${MBOX}"
+			else
+				echo "	stable_included='${stable_included}'"
+			fi
+		fi
+
+
+		# is it a syzkaller reported patch?
+#		git log -1 --format='%b' ${commit} | grep -i -E "(syzkaller|syzbot)" &> /dev/null
+#		if [ $? -eq 0 ] ; then
+#			#echo "${commit}" >> "${MBOX}"
+#			git show --pretty=email ${commit} >> "${MBOX}"
+#			echo "commit ${commit} is a syzkaller one!"
+#		fi
+	fi
+done < "${GIT_LOG}"
+
+rm ${GIT_LOG}
+rm ${COMMIT_LOG}
+rm ${STABLE_LOG}
+
