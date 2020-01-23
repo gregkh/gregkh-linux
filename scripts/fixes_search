@@ -32,6 +32,7 @@ txtrst=$(tput sgr0)       # Text reset
 
 TMP_PREFIX="${TMPDIR}/${PREFIX}"
 
+#BASE_KERNEL="4.19"
 BASE_KERNEL="5.4"
 
 #KERNEL_RANGE="v4.9..v4.10"
@@ -88,6 +89,12 @@ log()
 		spin
 	fi
 }
+dbg()
+{
+	if [[ ${DEBUG} -eq 2 ]] ; then
+		log "$1"
+	fi
+}
 
 
 cd "${STABLE_KERNEL}" || exit 1
@@ -115,7 +122,8 @@ MBOX=$(mktemp ${TMP_PREFIX}mbox.XXXXXX) || exit 1
 
 cd "${LATEST_KERNEL}" || exit 1
 for commit in $(git rev-list --reverse --no-merges "${git_range}"); do
-	logn "commit = ${txtgrn}${commit}${txtrst}	"
+	# logn "commit = ${txtgrn}${commit}${txtrst}	"
+	logn "${txtgrn}${commit}${txtrst}	"
 
 	# see if commit is already in the stable log
 	if [[ "${stable_log}" =~ "${commit}" ]] ; then
@@ -128,22 +136,23 @@ for commit in $(git rev-list --reverse --no-merges "${git_range}"); do
 		log "${txtred}present in stable queue, ignoring${txtrst}"
 		continue
 	fi
-	log "${txtpur}not present${txtrst}"
 
 	# Try to find "Fixes" tag in commit
 	fixes_lines=$(git log -1 --format='%B' "${commit}" | grep -i '^[[:space:]]*Fixes:')
 	if [ "${fixes_lines}" == "" ] ; then
+		log "${txtblu}no Fixes:${txtrst}"
 		continue
 	fi
-	log "	fixes_lines=		${txtblu}'${fixes_lines}'${txtrst}"
+
+	dbg "	fixes_lines=		${txtblu}'${fixes_lines}'${txtrst}"
 	while read -r fix_line; do
 		[[ ${fix_line} =~ [[:xdigit:]]{12} ]]
 		fix_commit="${BASH_REMATCH[0]}"
 		fix_commit_full=$(git log -1 --format="%H" "${fix_commit}")
-		log "	fix_commit=		${txtblu}'${fix_commit}'${txtrst}"
-		log "	fix_commit_full=	${txtblu}'${fix_commit_full}'${txtrst}"
+		dbg "	fix_commit=		${txtblu}'${fix_commit}'${txtrst}"
+		dbg "	fix_commit_full=	${txtblu}'${fix_commit_full}'${txtrst}"
 		if [ "${fix_commit_full}" == "" ] ; then
-			log "	invalid fix_commit_full"
+			log "	${txtred}invalid fix_commit_full${txtrst}"
 			continue
 		fi
 
@@ -151,9 +160,9 @@ for commit in $(git rev-list --reverse --no-merges "${git_range}"); do
 		#stable_included=$(cd /home/gregkh/linux/stable/stable-queue && git grep "${fix_commit_full}")
 		#cd "${LATEST_KERNEL}"
 		stable_included=$(grep "${fix_commit_full}" "${RELEASES}")
-		log "	stable_included=	${txtblu}'${stable_included}'${txtrst}"
+		dbg "	stable_included=	${txtblu}'${stable_included}'${txtrst}"
 		if [ "${stable_included}" != "" ] ; then
-			log "	${txtylw}SAVING ${commit}!${txtrst}"
+			log "${txtylw}in .y release, SAVING!${txtrst}"
 			git show --pretty=email "${commit}" >> "${MBOX}"
 			continue
 		fi
@@ -161,12 +170,14 @@ for commit in $(git rev-list --reverse --no-merges "${git_range}"); do
 		# see if commit id it fixes is in a .0 release
 		real_release=$(cd /home/gregkh/kernel-history/logs && git grep "${fix_commit_full}")
 		cd "${LATEST_KERNEL}" || exit 1
-		log "	real_release=		'${real_release}'"
+		dbg "	real_release=		'${real_release}'"
 		if [ "${real_release}" != "" ] ; then
-			log "	${txtylw}SAVING ${commit}!${txtrst}"
+			log "${txtylw}in .0 release, SAVING!${txtrst}"
 			git show --pretty=email "${commit}" >> "${MBOX}"
 			continue
 		fi
+
+		log "${txtpur}Fix not present in released kernel${txtrst}"
 
 	done <<< "${fixes_lines}"
 
