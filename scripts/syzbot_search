@@ -29,7 +29,7 @@ BASE_KERNEL="5.4"
 #KERNEL_RANGE="v5.1..v5.2"
 #KERNEL_RANGE="v5.3..v5.4"
 #KERNEL_RANGE="v5.4..HEAD"
-KERNEL_RANGE="v5.5-rc2..HEAD"
+KERNEL_RANGE="v5.5..HEAD"
 
 STABLE_KERNEL="${HOME}/stable/linux-${BASE_KERNEL}.y"
 #STABLE_KERNEL="${HOME}/stable/linux-4.14.y"
@@ -92,3 +92,5 @@ rm ${NOT_STABLE_YET}
 rm ${GIT_LOG}
 rm ${STABLE_LOG}
 
+echo "# commits are in ${SYZ_MBOX}"
+echo "mutt -f ${SYZ_MBOX}"
