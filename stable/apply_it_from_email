@@ -16,17 +16,17 @@ TMPDIR="/home/gregkh/tmp"
 
 EMAIL=$(mktemp ${TMPDIR}/apply_it.XXXXX) || exit 1
 
-cat - > ${EMAIL}
+cat - > "${EMAIL}"
 
 #COMMIT_ID=`cat - | ~/bin/get_commit_id.sh`
-COMMIT_ID=`cat ${EMAIL} | grep -i "commit:" | head -n 1 | sed -s 's/ //g' | cut -f 2 -d ':'`
+COMMIT_ID=$(cat "${EMAIL}" | grep -i "commit:" | head -n 1 | sed -s 's/ //g' | cut -f 2 -d ':')
 
 if [ "${COMMIT_ID}" == "" ] ; then
 	# try to find it on the first line
-	COMMIT_ID=$(head -n 1 ${EMAIL} | cut -f 2 -d ' ')
+	COMMIT_ID=$(head -n 1 "${EMAIL}" | cut -f 2 -d ' ')
 fi
 
-rm ${EMAIL}
+rm "${EMAIL}"
 if [ "${COMMIT_ID}" == "" ] ; then
 	echo "${txtred}commit id not found!${txtrst}"
 	exit 1
@@ -34,7 +34,7 @@ fi
 
 echo "${txtgrn}$COMMIT_ID${txtrst}"
 
-C2P=`which c2p`
+C2P=$(command -v c2p)
 
 echo "${txtblu}c2p $COMMIT_ID${txtrst}"
 #gnome-terminal --command="${C2P} $COMMIT_ID" --geometry=120x30 &
