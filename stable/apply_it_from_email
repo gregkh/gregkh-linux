@@ -12,10 +12,27 @@ txtcyn=$(tput setaf 6)    # Cyan
 txtwht=$(tput setaf 7)    # White
 txtrst=$(tput sgr0)       # Text reset
 
+TMPDIR="/home/gregkh/tmp"
+
+EMAIL=$(mktemp ${TMPDIR}/apply_it.XXXXX) || exit 1
+
+cat - > ${EMAIL}
+
 #COMMIT_ID=`cat - | ~/bin/get_commit_id.sh`
-COMMIT_ID=`cat - | grep -i "commit:" | head -n 1 | sed -s 's/ //g' | cut -f 2 -d ':'`
-#echo "$COMMIT_ID"
-#exit
+COMMIT_ID=`cat ${EMAIL} | grep -i "commit:" | head -n 1 | sed -s 's/ //g' | cut -f 2 -d ':'`
+
+if [ "${COMMIT_ID}" == "" ] ; then
+	# try to find it on the first line
+	COMMIT_ID=$(head -n 1 ${EMAIL} | cut -f 2 -d ' ')
+fi
+
+rm ${EMAIL}
+if [ "${COMMIT_ID}" == "" ] ; then
+	echo "${txtred}commit id not found!${txtrst}"
+	exit 1
+fi
+
+echo "${txtgrn}$COMMIT_ID${txtrst}"
 
 C2P=`which c2p`
 
