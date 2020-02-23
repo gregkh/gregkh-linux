@@ -33,7 +33,7 @@ txtrst=$(tput sgr0)       # Text reset
 TMP_PREFIX="${TMPDIR}/${PREFIX}"
 
 #BASE_KERNEL="4.19"
-BASE_KERNEL="5.4"
+BASE_KERNEL="5.5"
 
 #KERNEL_RANGE="v4.9..v4.10"
 #KERNEL_RANGE="v4.14..v4.15"
