@@ -109,6 +109,7 @@ git grep "commit" releases/ >> "${RELEASES}"
 
 cd "${LATEST_KERNEL}" || exit 1
 MBOX=$(mktemp ${TMP_PREFIX}mbox.XXXXXX) || exit 1
+MBOX_Y=$(mktemp ${TMP_PREFIX}mbox.XXXXXX) || exit 1
 
 
 # process of digging stuff out:
@@ -163,7 +164,7 @@ for commit in $(git rev-list --reverse --no-merges "${git_range}"); do
 		dbg "	stable_included=	${txtblu}'${stable_included}'${txtrst}"
 		if [ "${stable_included}" != "" ] ; then
 			log "${txtylw}in .y release, SAVING!${txtrst}"
-			git show --pretty=email "${commit}" >> "${MBOX}"
+			git show --pretty=email "${commit}" >> "${MBOX_Y}"
 			continue
 		fi
 
@@ -185,5 +186,7 @@ done
 
 rm "${RELEASES}"
 
-echo "# commits are in ${MBOX}"
+echo "# .0 commits are in ${MBOX}"
 echo "mutt -f ${MBOX}"
+echo "# .y commits are in ${MBOX_Y}"
+echo "mutt -f ${MBOX_Y}"
