@@ -75,7 +75,7 @@ spin()
 
 logn()
 {
-	if [[ ${DEBUG} -eq 1 ]] ; then
+	if [[ ${DEBUG} -ge 1 ]] ; then
 		echo -n "$1"
 	else
 		spin
@@ -83,7 +83,7 @@ logn()
 }
 log()
 {
-	if [[ ${DEBUG} -eq 1 ]] ; then
+	if [[ ${DEBUG} -ge 1 ]] ; then
 		echo "$1"
 	else
 		spin
@@ -91,7 +91,7 @@ log()
 }
 dbg()
 {
-	if [[ ${DEBUG} -eq 2 ]] ; then
+	if [[ ${DEBUG} -ge 2 ]] ; then
 		log "$1"
 	fi
 }
@@ -147,8 +147,18 @@ for commit in $(git rev-list --reverse --no-merges "${git_range}"); do
 
 	dbg "	fixes_lines=		${txtblu}'${fixes_lines}'${txtrst}"
 	while read -r fix_line; do
-		[[ ${fix_line} =~ [[:xdigit:]]{12} ]]
-		fix_commit="${BASH_REMATCH[0]}"
+		# Grab the fix commit id out of the line
+		if [[ ${fix_line} =~ [[:xdigit:]]{12} ]] ; then
+			fix_commit="${BASH_REMATCH[0]}"
+		else
+			dbg "	${txtred}try 2 to find the fixes line!"
+			fix_commit=$(echo "${fix_line}" | sed -e 's/^[ \t]*//' | cut -f 2 -d ':' | sed -e 's/^[ \t]*//' | cut -f 1 -d ' ')
+		fi
+		if [ "${fix_commit}" == "" ] ; then
+			log "	${txtred}Can not find fix commit id in ${fix_line}"
+			continue
+		fi
+
 		fix_commit_full=$(git log -1 --format="%H" "${fix_commit}")
 		dbg "	fix_commit=		${txtblu}'${fix_commit}'${txtrst}"
 		dbg "	fix_commit_full=	${txtblu}'${fix_commit_full}'${txtrst}"
