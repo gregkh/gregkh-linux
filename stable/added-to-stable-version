@@ -110,6 +110,11 @@ fast_author()
 			continue
 		fi
 
+		# skip the Link: line so we don't send email to the wrong place
+		if [[ $l =~ ^Link: ]] ; then
+			continue
+		fi
+
 		# if this is the start of the diff, then it's time to stop looking
 		if [[ $l =~ ^--- ]] ; then
 			break;
