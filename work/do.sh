@@ -63,6 +63,12 @@ author()
 		then
 			continue
 		fi
+		# skip the Link: line so we don't send email to the wrong place
+		reply=$(echo "$l" | grep -a -i Link:)
+		if [ x"$reply" != x ]
+		then
+			continue
+		fi
 
 		# if this is the start of the diff, then it's time to stop looking
 		diff=$(echo "$l" | grep -a "^---")
