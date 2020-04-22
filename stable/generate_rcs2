@@ -14,7 +14,6 @@ tmux \
 	split-window "cd linux-4.14.y && ../stable-queue/scripts/quilt-mail mbox" \; \
 	split-window "cd linux-4.19.y && ../stable-queue/scripts/quilt-mail mbox" \; \
 	split-window "cd linux-5.4.y && ../stable-queue/scripts/quilt-mail mbox" \; \
-	split-window "cd linux-5.5.y && ../stable-queue/scripts/quilt-mail mbox" \; \
 	split-window "cd linux-5.6.y && ../stable-queue/scripts/quilt-mail mbox" \; \
 	select-layout even-vertical
 
