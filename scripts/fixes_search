@@ -96,6 +96,16 @@ dbg()
 	fi
 }
 
+save_commit()
+{
+	local commit version mbox
+	commit=$1
+	version=$2
+	mbox=$3
+
+	log "${txtylw}in ${version} release, SAVING!${txtrst}"
+	git show --pretty=email "${commit}" | sed -e "s/\[PATCH\]/\[PATCH ${version}\]/" >> "${mbox}"
+}
 
 cd "${STABLE_KERNEL}" || exit 1
 stable_log=$(git log v${BASE_KERNEL}..HEAD)
@@ -109,7 +119,6 @@ git grep "commit" releases/ >> "${RELEASES}"
 
 cd "${LATEST_KERNEL}" || exit 1
 MBOX=$(mktemp ${TMP_PREFIX}mbox.XXXXXX) || exit 1
-MBOX_Y=$(mktemp ${TMP_PREFIX}mbox.XXXXXX) || exit 1
 
 
 # process of digging stuff out:
@@ -127,13 +136,13 @@ for commit in $(git rev-list --reverse --no-merges "${git_range}"); do
 	logn "${txtgrn}${commit}${txtrst}	"
 
 	# see if commit is already in the stable log
-	if [[ "${stable_log}" =~ "${commit}" ]] ; then
+	if [[ "${stable_log}" =~ ${commit} ]] ; then
 		log "${txtred}present in stable, ignoring${txtrst}"
 		continue
 	fi
 
 	# see if it already is in the current queue
-	if [[ "${queue_data}" =~ "${commit}" ]] ; then
+	if [[ "${queue_data}" =~ ${commit} ]] ; then
 		log "${txtred}present in stable queue, ignoring${txtrst}"
 		continue
 	fi
@@ -173,18 +182,29 @@ for commit in $(git rev-list --reverse --no-merges "${git_range}"); do
 		stable_included=$(grep "${fix_commit_full}" "${RELEASES}")
 		dbg "	stable_included=	${txtblu}'${stable_included}'${txtrst}"
 		if [ "${stable_included}" != "" ] ; then
-			log "${txtylw}in .y release, SAVING!${txtrst}"
-			git show --pretty=email "${commit}" >> "${MBOX_Y}"
-			continue
+			# stable_included is X number of lines, of format
+			# "releases/X.Y.Z/filename.patch:more and more text"
+			# split it up so we can just fine X.Y.Z
+			while IFS= read -r version; do
+				v=$(echo "${version}" | cut -f 2 -d '/')
+				echo "v=\"${v}\""
+				save_commit "${commit}" "${v}" "${MBOX}"
+			done <<< "${stable_included}"
+			# don't call continue here, we want to see if they are
+			# in a .0 release as well.
 		fi
 
 		# see if commit id it fixes is in a .0 release
-		real_release=$(cd /home/gregkh/kernel-history/logs && git grep "${fix_commit_full}")
+		real_release=$(cd /home/gregkh/kernel-history/logs && git grep -l "${fix_commit_full}")
 		cd "${LATEST_KERNEL}" || exit 1
 		dbg "	real_release=		'${real_release}'"
 		if [ "${real_release}" != "" ] ; then
-			log "${txtylw}in .0 release, SAVING!${txtrst}"
-			git show --pretty=email "${commit}" >> "${MBOX}"
+			# "real_release" multiple lines in format "log-X.Y" so let's grab
+			# the kernel version out so we can use it
+			while IFS= read -r version; do
+				v=$(echo "${version}" | cut -f 2 -d '-')
+				save_commit "${commit}" "${v}" "${MBOX}"
+			done <<< "${real_release}"
 			continue
 		fi
 
@@ -196,7 +216,5 @@ done
 
 rm "${RELEASES}"
 
-echo "# .0 commits are in ${MBOX}"
+echo "# commits are in ${MBOX}"
 echo "mutt -f ${MBOX}"
-echo "# .y commits are in ${MBOX_Y}"
-echo "mutt -f ${MBOX_Y}"
