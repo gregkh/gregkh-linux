@@ -131,6 +131,13 @@ for commit in $(git rev-list --reverse --no-merges "${git_range}"); do
 	# logn "commit = ${txtgrn}${commit}${txtrst}	"
 	logn "${txtgrn}${commit}${txtrst}	"
 
+	# Try to find "Fixes" tag in commit
+	fixes_lines=$(git log -1 --format='%B' "${commit}" | grep -i '^[[:space:]]*Fixes:')
+	if [ "${fixes_lines}" == "" ] ; then
+		log "${txtblu}no Fixes:${txtrst}"
+		continue
+	fi
+
 	# see if commit is already in the stable log
 	if [[ "${stable_log}" =~ ${commit} ]] ; then
 		log "${txtred}present in stable, ignoring${txtrst}"
@@ -140,13 +147,6 @@ for commit in $(git rev-list --reverse --no-merges "${git_range}"); do
 	# see if it already is in the current queue
 	if [[ "${queue_data}" =~ ${commit} ]] ; then
 		log "${txtred}present in stable queue, ignoring${txtrst}"
-		continue
-	fi
-
-	# Try to find "Fixes" tag in commit
-	fixes_lines=$(git log -1 --format='%B' "${commit}" | grep -i '^[[:space:]]*Fixes:')
-	if [ "${fixes_lines}" == "" ] ; then
-		log "${txtblu}no Fixes:${txtrst}"
 		continue
 	fi
 
