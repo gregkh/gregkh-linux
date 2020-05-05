@@ -19,58 +19,52 @@ TMPDIR="/home/gregkh/tmp"
 PREFIX="fixes_search_"
 
 
-txtund=$(tput sgr 0 1)    # Underline
-txtbld=$(tput bold)       # Bold
+#txtund=$(tput sgr 0 1)    # Underline
+#txtbld=$(tput bold)       # Bold
 txtred=$(tput setaf 1)    # Red
 txtgrn=$(tput setaf 2)    # Green
 txtylw=$(tput setaf 3)    # Yellow
 txtblu=$(tput setaf 4)    # Blue
 txtpur=$(tput setaf 5)    # Purple
 txtcyn=$(tput setaf 6)    # Cyan
-txtwht=$(tput setaf 7)    # White
+#txtwht=$(tput setaf 7)    # White
 txtrst=$(tput sgr0)       # Text reset
 
-TMP_PREFIX="${TMPDIR}/${PREFIX}"
-
-#BASE_KERNEL="4.19"
-BASE_KERNEL="5.6"
-
-#KERNEL_RANGE="v4.9..v4.10"
-#KERNEL_RANGE="v4.14..v4.15"
-#KERNEL_RANGE="v4.17..v4.18"
-#KERNEL_RANGE="v4.15..v4.16"
-#KERNEL_RANGE="v5.0..v5.1"
-#KERNEL_RANGE="v5.1..v5.2"
-#KERNEL_RANGE="v5.2..v5.3"
-#KERNEL_RANGE="v4.19..v5.3"
-#KERNEL_RANGE="v5.3-rc3..v5.3-rc4"
-#KERNEL_RANGE="v5.4..HEAD"
-#KERNEL_RANGE="v5.5-rc3..HEAD"
-#KERNEL_RANGE="v5.5-rc1..v5.5-rc2"
-
-STABLE_KERNEL="${HOME}/stable/linux-${BASE_KERNEL}.y"
-#STABLE_KERNEL="${HOME}/stable/linux-4.14.y"
-LATEST_KERNEL="${HOME}/gregkh"
-
-STABLE_QUEUE="${HOME}/stable/stable-queue"
 
 DEBUG=1
 
-git_range=$1
+BASE_KERNEL=$1
+git_range=$2
+
+usage()
+{
+	echo "$0: error, wrong arguments"
+	echo "usage:"
+	echo "	$0 BASE_KERNEL_VERSION GIT_RANGE"
+	exit 1
+}
+
+if [ "${BASE_KERNEL}" == "" ] ; then
+	usage
+fi
 
 if [ "${git_range}" == "" ] ; then
-	echo "error, git range not found"
-	echo "usage:"
-	echo "	$0 GIT_RANGE"
-	exit 1
+	usage
 fi
 
 
-i=1
+
+TMP_PREFIX="${TMPDIR}/${PREFIX}"
+STABLE_KERNEL="${HOME}/stable/linux-${BASE_KERNEL}.y"
+LATEST_KERNEL="${HOME}/gregkh"
+STABLE_QUEUE="${HOME}/stable/stable-queue"
+
+
+spin_i=1
 spin()
 {
 	sp="/-\|"
-	printf "\b${sp:i++%${#sp}:1}"
+	printf "\b${sp:spin_i++%${#sp}:1}"
 }
 
 logn()
@@ -108,12 +102,14 @@ save_commit()
 }
 
 cd "${STABLE_KERNEL}" || exit 1
-stable_log=$(git log v${BASE_KERNEL}..HEAD)
+stable_log=$(git log v"${BASE_KERNEL}"..HEAD)
 
 cd "${STABLE_QUEUE}" || exit 1
 queue_data=$(cat queue*/*)
 
-log "Building releases file..."
+log "${txtcyn}Looking at ${txtylw}${BASE_KERNEL}${txtcyn} for fixes in range from ${txtylw}${git_range}${txtrst}"
+
+log "${txtcyn}Building releases file...${txtrst}"
 RELEASES=$(mktemp ${TMP_PREFIX}releases.XXXXXX) || exit 1
 git grep "commit" releases/ >> "${RELEASES}"
 
