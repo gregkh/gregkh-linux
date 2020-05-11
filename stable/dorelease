@@ -175,9 +175,9 @@ fi
 
 # create the email
 
-cat << __EOF__ > ${RELDIR}/email
-Subject: Linux ${RELEASE}
+#Subject: Linux ${RELEASE}
 
+cat << __EOF__ > ${RELDIR}/email
 I'm announcing the release of the ${RELEASE} kernel.
 
 All users of the ${BASE} kernel series must upgrade.
@@ -203,4 +203,41 @@ fi
 
 echo "" >> ${RELDIR}/email
 cat $RELDIR/shortlog-$RELEASE >> ${RELDIR}/email
+
+
+# create script to send email out
+
+cat << __EOF__ > ${RELDIR}/send_email
+#!/bin/bash
+
+FROM="Greg Kroah-Hartman <gregkh@linuxfoundation.org>"
+TO="linux-kernel@vger.kernel.org, akpm@linux-foundation.org, torvalds@linux-foundation.org, stable@vger.kernel.org"
+CC="lwn@lwn.net, jslaby@suse.cz"
+SUBJECT="Linux ${RELEASE}"
+ID=\$(make_message_id)
+
+cat email | 				\\
+	makemail -to="\${TO}"		\\
+		-from="\${FROM}"		\\
+		-cc="\${CC}"		\\
+		-subject="\${SUBJECT}"	\\
+		-message_id="\${ID}"	\\
+		-date="\$(date -R)"	\\
+	| ~/bin/msmtp-enqueue.sh "\${TO}"
+
+PATCH_ID=\$(make_message_id)
+cat patch-${LAST_REL}-${REL} |				\\
+	makemail -to="\${TO}"			\\
+		-from="\${FROM}"			\\
+		-cc="\${CC}"			\\
+		-subject="Re: \${SUBJECT}"	\\
+		-message_id="\${PATCH_ID}"	\\
+		-reply_to="\${ID}"		\\
+		-date="\$(date -R)"		\\
+	| ~/bin/msmtp-enqueue.sh "\${TO}"
+
+__EOF__
+
+chmod 755 ${RELDIR}/send_email
+
 
