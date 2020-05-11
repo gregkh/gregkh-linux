@@ -31,3 +31,5 @@ Things I don't want to forget, might as well track them here.
 
   kernel_fpu_begin()/end
 	- only do it once, and then restore on return to userspace only if set.
+
+ - move more function pointers into read-only structures.  Like tty ops and usb and others.
