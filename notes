@@ -7,6 +7,9 @@ qemu kernel image:
 	qemu-system-x86_64 -kernel arch/x86_64/boot/bzImage -initrd ../tools/initramfs-busybox-x86.cpio.gz -nographic -append "console=ttyS0" -enable-kvm
 
 
+cross-compile:
+	$ CROSS_COMPILE=mipsel-linux-gnu- ARCH=mips make
+
 
 Intel patch review complaints:
 	x86-patch-review@intel.com
