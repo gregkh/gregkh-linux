@@ -50,7 +50,8 @@ find_fix() {
 
 	#git describe --contains ${COMMIT_ID}
 	#release=`git describe --contains ${long_id} | cut -f 1 -d '~'`
-	release=$(/home/gregkh/linux/scripts/fix_in_what_release "${long_id}")
+	#release=$(/home/gregkh/linux/scripts/fix_in_what_release "${long_id}")
+	release=$(/home/gregkh/linux/stable/commit_tree/id_found_in "${long_id}")
 	echo "${txtcyn}${release}${txtrst}"
 	echo ""
 }
