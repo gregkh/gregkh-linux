@@ -223,7 +223,7 @@ cat email | 				\\
 		-subject="\${SUBJECT}"	\\
 		-message_id="\${ID}"	\\
 		-date="\$(date -R)"	\\
-	| ~/bin/msmtp-enqueue.sh "\${TO}"
+	> msg.000
 
 PATCH_ID=\$(make_message_id)
 cat patch-${LAST_REL}-${REL} |				\\
@@ -234,8 +234,9 @@ cat patch-${LAST_REL}-${REL} |				\\
 		-message_id="\${PATCH_ID}"	\\
 		-reply_to="\${ID}"		\\
 		-date="\$(date -R)"		\\
-	| ~/bin/msmtp-enqueue.sh "\${TO}"
+	> msg.001
 
+git send-email msg.000 msg.001
 __EOF__
 
 chmod 755 ${RELDIR}/send_email
