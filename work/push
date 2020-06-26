@@ -14,12 +14,12 @@ txtrst=$(tput sgr0)       # Text reset
 
 BRANCH=$1
 if [ "$BRANCH" == "" ] ; then
-	echo "must specify branch (linus, testing, next, master), or 'all' or 'tags'"
+	echo "must specify branch (linus, testing, next, main), or 'all' or 'tags'"
 	exit 1
 fi
 
 if [ "${BRANCH}" == "help" ] ; then
-	echo "linus testing next master all tags"
+	echo "linus testing next main all tags"
 	exit 0
 fi
 
@@ -39,15 +39,15 @@ fi
 
 # push all branches
 if [ "${BRANCH}" == "all" ] ; then
-	${BASH_SOURCE[0]} master
+	${BASH_SOURCE[0]} main
 	${BASH_SOURCE[0]} linus
 	${BASH_SOURCE[0]} next
 	${BASH_SOURCE[0]} testing
 	exit
 fi
 
-if [ "${BRANCH}" == "master" ] ; then
-	TO_PUSH="master"
+if [ "${BRANCH}" == "main" ] ; then
+	TO_PUSH="main"
 else
 	TO_PUSH="${TREE}-${BRANCH}"
 fi

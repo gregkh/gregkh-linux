@@ -1,8 +1,8 @@
 #!/bin/bash
 
-git merge master
+git merge main
 for branch in $(git branch --list --no-color | cut -f 3 -d ' '); do
 	echo "Updating $branch"
 	git checkout "${branch}"
-	git merge master
+	git merge main
 done
