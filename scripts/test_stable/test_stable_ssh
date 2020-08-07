@@ -29,7 +29,8 @@
 # SSH_OPTIONS:		Options to pass to ssh to access the remote machine
 
 
-EMAIL="greg@kroah.com"
+#EMAIL="greg@kroah.com"
+EMAIL="gregkh@kernel.org"
 
 LOCAL_WORK="/tmp/"
 LOCAL_WORK=${TMPDIR}
