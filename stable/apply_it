@@ -59,11 +59,8 @@ if [ "$VERSION" != "" ] ; then
 		apply_it ${VERSION}
 	done
 else
-	# no versions, use these as the "default"
-	apply_it 5.7
-	apply_it 5.4
-	apply_it 4.19
-	apply_it 4.14
-	apply_it 4.9
-	apply_it 4.4
+	# no version specified, so get the list of active kernels
+	for VERSION in $(cat active_kernel_versions); do
+		apply_it ${VERSION}
+	done
 fi

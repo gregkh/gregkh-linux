@@ -7,12 +7,11 @@ create_kernel() {
 	../stable-queue/scripts/quilt-mail mbox
 }
 
-create_kernel "4.4" &
-create_kernel "4.9" &
-create_kernel "4.14" &
-create_kernel "4.19" &
-create_kernel "5.4" &
-create_kernel "5.7" &
+for VERSION in $(cat active_kernel_versions); do
+	create_kernel "${VERSION}" &
+done
+
 wait
+
 echo "finished"
 
