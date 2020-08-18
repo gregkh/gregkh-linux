@@ -1,0 +1,17 @@
+#!/bin/bash
+
+source ./.git-prompt.sh
+
+export GIT_PS1_HIDE_IF_PWD_IGNORED=1
+BLUE="01;34m"
+GREEN="01;32m"
+RED="01;31m"
+PURPLE="01;35m"
+YELLOW="01;33m"
+WHITE="01;37m"
+
+COLOR=$BLUE
+#PS1='$(prompt_foo \l)\[\033[${COLOR}\]\w \$\[\033[00m\] '
+#PS1='\[\033[01;34m\]\w \$\[\033[00m\] '
+PS1='\[\033[${COLOR}\]\w $(__git_ps1 "(%s)")\$ \[\033[00m\]'
+
