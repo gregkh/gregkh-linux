@@ -1,6 +1,7 @@
 #!/bin/bash
 
-ROOT="master"
+#ROOT="master"
+ROOT="main"
 #ROOT="origin"
 #ROOT="c8ddb2713c624f432fa5fe3c7ecffcdda46ea0d4"
 #ROOT="cf7d7e5a1980d1116ee152d25dac382b112b9c17"
