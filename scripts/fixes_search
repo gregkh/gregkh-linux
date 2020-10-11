@@ -183,7 +183,7 @@ for commit in $(git rev-list --reverse --no-merges "${git_range}"); do
 			# split it up so we can just fine X.Y.Z
 			while IFS= read -r version; do
 				v=$(echo "${version}" | cut -f 2 -d '/')
-				echo "v=\"${v}\""
+				#echo "v=\"${v}\""
 				save_commit "${commit}" "${v}" "${MBOX}"
 			done <<< "${stable_included}"
 			# don't call continue here, we want to see if they are
