@@ -1,6 +1,6 @@
 #
 # Automatically generated file; DO NOT EDIT.
-# Linux/x86 4.4.224-rc1 Kernel Configuration
+# Linux/x86 4.4.239-rc1 Kernel Configuration
 #
 CONFIG_64BIT=y
 CONFIG_X86_64=y
@@ -5847,8 +5847,6 @@ CONFIG_HDMI=y
 # Console display driver support
 #
 CONFIG_VGA_CONSOLE=y
-CONFIG_VGACON_SOFT_SCROLLBACK=y
-CONFIG_VGACON_SOFT_SCROLLBACK_SIZE=64
 CONFIG_DUMMY_CONSOLE=y
 CONFIG_DUMMY_CONSOLE_COLUMNS=80
 CONFIG_DUMMY_CONSOLE_ROWS=25
