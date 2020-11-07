@@ -98,10 +98,11 @@ foreach my $patch (@patches) {
 		# 	- add the "From:" line of who wrote the patch
 		# 	- add our signed off by
 
-		# clean up the subject line?
-		$line =~ s/^Subject: \[PATCH \d\/\d\]/Subject:/;
-		$line =~ s/^Subject: \[PATCH \d\d\/\d\d\]/Subject:/;
-		$line =~ s/^Subject: \[PATCH \d\d\d\/\d\d\d\]/Subject:/;
+		# clean up the subject line by removing anything in []
+#		$line =~ s/^Subject: \[PATCH \d\/\d\]/Subject:/;
+#		$line =~ s/^Subject: \[PATCH \d\d\/\d\d\]/Subject:/;
+#		$line =~ s/^Subject: \[PATCH \d\d\d\/\d\d\d\]/Subject:/;
+		$line =~ s/^Subject: \[[^()]*\]/Subject:/;
 
 		# add our signed off by if this is the last line in the header
 		if ($line =~ m/^---$/) {
