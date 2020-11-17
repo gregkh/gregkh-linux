@@ -1,5 +1,7 @@
 Things I don't want to forget, might as well track them here.
 
+ - kernfs_mutex should be pushed down, multi-threaded reads from sysfs is hitting this.
+
  - cdev stuff
 
  - buy a power controller for ktest:
