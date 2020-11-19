@@ -1,0 +1,32 @@
+#!/bin/bash
+
+sysfs_file="/sys/devices/system/cpu/cpu0/topology/die_id"
+
+read_file() {
+	foo=$(<${sysfs_file})
+}
+
+loop() {
+	num_loops=$1
+
+	for ((i=0;i<=num_loops;i++)); do
+		read_file
+	done
+}
+
+if [ "$#" -ne 2 ]; then
+	echo "${0} NUM_LOOPS NUM_PROCESSES"
+	exit 1
+fi
+
+num_loops=$1
+num_processes=$2
+
+echo "Creating ${num_processes} processes that will read ${sysfs_file} ${num_loops} times"
+
+for ((process=0;process<=num_processes;process++)); do
+	loop "${num_loops}" &
+done
+
+wait
+exit
