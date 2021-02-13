@@ -2,6 +2,8 @@
 
 source ./.git-prompt.sh
 
+source ./push.sh
+
 export GIT_PS1_HIDE_IF_PWD_IGNORED=1
 BLUE="01;34m"
 GREEN="01;32m"
