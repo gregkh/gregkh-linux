@@ -1,0 +1,259 @@
+sets:
+  - name: all
+    builds:
+
+      # arc
+      - {target_arch: arc,      toolchain: gcc-8,     kconfig: allnoconfig}
+      - {target_arch: arc,      toolchain: gcc-8,     kconfig: defconfig}
+      - {target_arch: arc,      toolchain: gcc-8,     kconfig: tinyconfig}
+      - {target_arch: arc,      toolchain: gcc-8,     kconfig: axs103_defconfig}
+      - {target_arch: arc,      toolchain: gcc-8,     kconfig: vdk_hs38_smp_defconfig}
+      - {target_arch: arc,      toolchain: gcc-9,     kconfig: allnoconfig}
+      - {target_arch: arc,      toolchain: gcc-9,     kconfig: defconfig}
+      - {target_arch: arc,      toolchain: gcc-9,     kconfig: tinyconfig}
+      - {target_arch: arc,      toolchain: gcc-9,     kconfig: axs103_defconfig}
+      - {target_arch: arc,      toolchain: gcc-9,     kconfig: vdk_hs38_smp_defconfig}
+
+      # arm
+      - {target_arch: arm,      toolchain: gcc-8,     kconfig: allnoconfig}
+      - {target_arch: arm,      toolchain: gcc-8,     kconfig: defconfig}
+      - {target_arch: arm,      toolchain: gcc-8,     kconfig: tinyconfig}
+      - {target_arch: arm,      toolchain: gcc-8,     kconfig: multi_v5_defconfig}
+      - {target_arch: arm,      toolchain: gcc-8,     kconfig: omap2plus_defconfig}
+      - {target_arch: arm,      toolchain: gcc-9,     kconfig: allnoconfig}
+      - {target_arch: arm,      toolchain: gcc-9,     kconfig: defconfig}
+      - {target_arch: arm,      toolchain: gcc-9,     kconfig: tinyconfig}
+      - {target_arch: arm,      toolchain: gcc-9,     kconfig: multi_v5_defconfig}
+      - {target_arch: arm,      toolchain: gcc-9,     kconfig: omap2plus_defconfig}
+      - {target_arch: arm,      toolchain: gcc-10,    kconfig: allnoconfig}
+      - {target_arch: arm,      toolchain: gcc-10,    kconfig: defconfig}
+      - {target_arch: arm,      toolchain: gcc-10,    kconfig: tinyconfig}
+      - {target_arch: arm,      toolchain: gcc-10,    kconfig: multi_v5_defconfig}
+      - {target_arch: arm,      toolchain: gcc-10,    kconfig: omap2plus_defconfig}
+      - {target_arch: arm,      toolchain: clang-12,  kconfig: allnoconfig}
+      - {target_arch: arm,      toolchain: clang-12,  kconfig: defconfig}
+      - {target_arch: arm,      toolchain: clang-12,  kconfig: tinyconfig}
+      - {target_arch: arm,      toolchain: clang-12,  kconfig: multi_v5_defconfig}
+      - {target_arch: arm,      toolchain: clang-12,  kconfig: omap2plus_defconfig}
+      - {target_arch: arm,      toolchain: clang-11,  kconfig: allnoconfig}
+      - {target_arch: arm,      toolchain: clang-11,  kconfig: defconfig}
+      - {target_arch: arm,      toolchain: clang-11,  kconfig: tinyconfig}
+      - {target_arch: arm,      toolchain: clang-11,  kconfig: multi_v5_defconfig}
+      - {target_arch: arm,      toolchain: clang-11,  kconfig: omap2plus_defconfig}
+      - {target_arch: arm,      toolchain: clang-10,  kconfig: allnoconfig}
+      - {target_arch: arm,      toolchain: clang-10,  kconfig: defconfig}
+      - {target_arch: arm,      toolchain: clang-10,  kconfig: tinyconfig}
+      - {target_arch: arm,      toolchain: clang-10,  kconfig: multi_v5_defconfig}
+      - {target_arch: arm,      toolchain: clang-10,  kconfig: omap2plus_defconfig}
+
+      # arm64
+      - {target_arch: arm64,    toolchain: gcc-8,     kconfig: allnoconfig}
+      - {target_arch: arm64,    toolchain: gcc-8,     kconfig: defconfig}
+      - {target_arch: arm64,    toolchain: gcc-8,     kconfig: tinyconfig}
+      - {target_arch: arm64,    toolchain: gcc-9,     kconfig: allnoconfig}
+      - {target_arch: arm64,    toolchain: gcc-9,     kconfig: defconfig}
+      - {target_arch: arm64,    toolchain: gcc-9,     kconfig: tinyconfig}
+      - {target_arch: arm64,    toolchain: gcc-10,    kconfig: allnoconfig}
+      - {target_arch: arm64,    toolchain: gcc-10,    kconfig: defconfig}
+      - {target_arch: arm64,    toolchain: gcc-10,    kconfig: tinyconfig}
+      - {target_arch: arm64,    toolchain: clang-10,  kconfig: allnoconfig}
+      - {target_arch: arm64,    toolchain: clang-10,  kconfig: defconfig}
+      - {target_arch: arm64,    toolchain: clang-10,  kconfig: tinyconfig}
+      - {target_arch: arm64,    toolchain: clang-11,  kconfig: allnoconfig}
+      - {target_arch: arm64,    toolchain: clang-11,  kconfig: defconfig}
+      - {target_arch: arm64,    toolchain: clang-11,  kconfig: tinyconfig}
+      - {target_arch: arm64,    toolchain: clang-12,  kconfig: allnoconfig}
+      - {target_arch: arm64,    toolchain: clang-12,  kconfig: defconfig}
+      - {target_arch: arm64,    toolchain: clang-12,  kconfig: tinyconfig}
+
+      # i386
+      - {target_arch: i386,     toolchain: gcc-8,     kconfig: allnoconfig}
+      - {target_arch: i386,     toolchain: gcc-8,     kconfig: i386_defconfig}
+      - {target_arch: i386,     toolchain: gcc-8,     kconfig: tinyconfig}
+      - {target_arch: i386,     toolchain: gcc-9,     kconfig: allnoconfig}
+      - {target_arch: i386,     toolchain: gcc-9,     kconfig: i386_defconfig}
+      - {target_arch: i386,     toolchain: gcc-9,     kconfig: tinyconfig}
+      - {target_arch: i386,     toolchain: gcc-10,    kconfig: allnoconfig}
+      - {target_arch: i386,     toolchain: gcc-10,    kconfig: defconfig}
+      - {target_arch: i386,     toolchain: gcc-10,    kconfig: tinyconfig}
+      - {target_arch: i386,     toolchain: clang-12,  kconfig: allnoconfig}
+      - {target_arch: i386,     toolchain: clang-12,  kconfig: defconfig}
+      - {target_arch: i386,     toolchain: clang-12,  kconfig: tinyconfig}
+      - {target_arch: i386,     toolchain: clang-11,  kconfig: allnoconfig}
+      - {target_arch: i386,     toolchain: clang-11,  kconfig: defconfig}
+      - {target_arch: i386,     toolchain: clang-11,  kconfig: tinyconfig}
+      - {target_arch: i386,     toolchain: clang-10,  kconfig: allnoconfig}
+      - {target_arch: i386,     toolchain: clang-10,  kconfig: defconfig}
+      - {target_arch: i386,     toolchain: clang-10,  kconfig: tinyconfig}
+
+      # mips
+      - {target_arch: mips,     toolchain: gcc-8,     kconfig: allnoconfig}
+      - {target_arch: mips,     toolchain: gcc-8,     kconfig: defconfig}
+      - {target_arch: mips,     toolchain: gcc-8,     kconfig: tinyconfig}
+      - {target_arch: mips,     toolchain: gcc-8,     kconfig: ar7_defconfig}
+      - {target_arch: mips,     toolchain: gcc-8,     kconfig: ath79_defconfig}
+      - {target_arch: mips,     toolchain: gcc-8,     kconfig: bcm47xx_defconfig}
+      - {target_arch: mips,     toolchain: gcc-8,     kconfig: bcm63xx_defconfig}
+      - {target_arch: mips,     toolchain: gcc-8,     kconfig: cavium_octeon_defconfig}
+      - {target_arch: mips,     toolchain: gcc-8,     kconfig: e55_defconfig}
+      - {target_arch: mips,     toolchain: gcc-8,     kconfig: malta_defconfig}
+      - {target_arch: mips,     toolchain: gcc-8,     kconfig: nlm_xlp_defconfig}
+      - {target_arch: mips,     toolchain: gcc-8,     kconfig: rt305x_defconfig}
+      - {target_arch: mips,     toolchain: gcc-9,     kconfig: allnoconfig}
+      - {target_arch: mips,     toolchain: gcc-9,     kconfig: defconfig}
+      - {target_arch: mips,     toolchain: gcc-9,     kconfig: tinyconfig}
+      - {target_arch: mips,     toolchain: gcc-9,     kconfig: ar7_defconfig}
+      - {target_arch: mips,     toolchain: gcc-9,     kconfig: ath79_defconfig}
+      - {target_arch: mips,     toolchain: gcc-9,     kconfig: bcm47xx_defconfig}
+      - {target_arch: mips,     toolchain: gcc-9,     kconfig: bcm63xx_defconfig}
+      - {target_arch: mips,     toolchain: gcc-9,     kconfig: cavium_octeon_defconfig}
+      - {target_arch: mips,     toolchain: gcc-9,     kconfig: e55_defconfig}
+      - {target_arch: mips,     toolchain: gcc-9,     kconfig: malta_defconfig}
+      - {target_arch: mips,     toolchain: gcc-9,     kconfig: nlm_xlp_defconfig}
+      - {target_arch: mips,     toolchain: gcc-9,     kconfig: rt305x_defconfig}
+      - {target_arch: mips,     toolchain: gcc-10,    kconfig: allnoconfig}
+      - {target_arch: mips,     toolchain: gcc-10,    kconfig: defconfig}
+      - {target_arch: mips,     toolchain: gcc-10,    kconfig: tinyconfig}
+      - {target_arch: mips,     toolchain: gcc-10,    kconfig: ar7_defconfig}
+      - {target_arch: mips,     toolchain: gcc-10,    kconfig: ath79_defconfig}
+      - {target_arch: mips,     toolchain: gcc-10,    kconfig: bcm47xx_defconfig}
+      - {target_arch: mips,     toolchain: gcc-10,    kconfig: bcm63xx_defconfig}
+      - {target_arch: mips,     toolchain: gcc-10,    kconfig: cavium_octeon_defconfig}
+      - {target_arch: mips,     toolchain: gcc-10,    kconfig: e55_defconfig}
+      - {target_arch: mips,     toolchain: gcc-10,    kconfig: malta_defconfig}
+      - {target_arch: mips,     toolchain: gcc-10,    kconfig: nlm_xlp_defconfig}
+      - {target_arch: mips,     toolchain: gcc-10,    kconfig: rt305x_defconfig}
+      - {target_arch: mips,     toolchain: clang-12,  kconfig: allnoconfig}
+      - {target_arch: mips,     toolchain: clang-12,  kconfig: defconfig}
+      - {target_arch: mips,     toolchain: clang-12,  kconfig: tinyconfig}
+      - {target_arch: mips,     toolchain: clang-11,  kconfig: allnoconfig}
+      - {target_arch: mips,     toolchain: clang-11,  kconfig: defconfig}
+      - {target_arch: mips,     toolchain: clang-11,  kconfig: tinyconfig}
+      - {target_arch: mips,     toolchain: clang-10,  kconfig: allnoconfig}
+      - {target_arch: mips,     toolchain: clang-10,  kconfig: defconfig}
+      - {target_arch: mips,     toolchain: clang-10,  kconfig: tinyconfig}
+
+      # riscv
+      - {target_arch: riscv,    toolchain: gcc-8,     kconfig: allnoconfig}
+      - {target_arch: riscv,    toolchain: gcc-8,     kconfig: defconfig}
+      - {target_arch: riscv,    toolchain: gcc-8,     kconfig: tinyconfig}
+      - {target_arch: riscv,    toolchain: gcc-9,     kconfig: allnoconfig}
+      - {target_arch: riscv,    toolchain: gcc-9,     kconfig: defconfig}
+      - {target_arch: riscv,    toolchain: gcc-9,     kconfig: tinyconfig}
+      - {target_arch: riscv,    toolchain: gcc-10,    kconfig: allnoconfig}
+      - {target_arch: riscv,    toolchain: gcc-10,    kconfig: defconfig}
+      - {target_arch: riscv,    toolchain: gcc-10,    kconfig: tinyconfig}
+      - {target_arch: riscv,    toolchain: clang-10,  kconfig: allnoconfig}
+      - {target_arch: riscv,    toolchain: clang-10,  kconfig: defconfig}
+      - {target_arch: riscv,    toolchain: clang-10,  kconfig: tinyconfig}
+      - {target_arch: riscv,    toolchain: clang-12,  kconfig: allnoconfig}
+      - {target_arch: riscv,    toolchain: clang-12,  kconfig: defconfig}
+      - {target_arch: riscv,    toolchain: clang-12,  kconfig: tinyconfig}
+      - {target_arch: riscv,    toolchain: clang-11,  kconfig: allnoconfig}
+      - {target_arch: riscv,    toolchain: clang-11,  kconfig: defconfig}
+      - {target_arch: riscv,    toolchain: clang-11,  kconfig: tinyconfig}
+      - {target_arch: riscv,    toolchain: clang-10,  kconfig: allnoconfig}
+      - {target_arch: riscv,    toolchain: clang-10,  kconfig: defconfig}
+      - {target_arch: riscv,    toolchain: clang-10,  kconfig: tinyconfig}
+
+      # x86_64
+      - {target_arch: x86_64,   toolchain: gcc-8,     kconfig: allnoconfig}
+      - {target_arch: x86_64,   toolchain: gcc-8,     kconfig: tinyconfig}
+      - {target_arch: x86_64,   toolchain: gcc-8,     kconfig: x86_64_defconfig}
+      - {target_arch: x86_64,   toolchain: gcc-9,     kconfig: allnoconfig}
+      - {target_arch: x86_64,   toolchain: gcc-9,     kconfig: tinyconfig}
+      - {target_arch: x86_64,   toolchain: gcc-9,     kconfig: x86_64_defconfig}
+      - {target_arch: x86_64,   toolchain: gcc-10,    kconfig: allnoconfig}
+      - {target_arch: x86_64,   toolchain: gcc-10,    kconfig: defconfig}
+      - {target_arch: x86_64,   toolchain: gcc-10,    kconfig: tinyconfig}
+      - {target_arch: x86_64,   toolchain: clang-12,  kconfig: allnoconfig}
+      - {target_arch: x86_64,   toolchain: clang-12,  kconfig: tinyconfig}
+      - {target_arch: x86_64,   toolchain: clang-12,  kconfig: x86_64_defconfig}
+      - {target_arch: x86_64,   toolchain: clang-11,  kconfig: allnoconfig}
+      - {target_arch: x86_64,   toolchain: clang-11,  kconfig: tinyconfig}
+      - {target_arch: x86_64,   toolchain: clang-11,  kconfig: x86_64_defconfig}
+      - {target_arch: x86_64,   toolchain: clang-10,  kconfig: allnoconfig}
+      - {target_arch: x86_64,   toolchain: clang-10,  kconfig: defconfig}
+      - {target_arch: x86_64,   toolchain: clang-10,  kconfig: tinyconfig}
+
+      # powerpc
+      - {target_arch: powerpc,  toolchain: gcc-8,     kconfig: allnoconfig}
+      - {target_arch: powerpc,  toolchain: gcc-8,     kconfig: defconfig}
+      - {target_arch: powerpc,  toolchain: gcc-8,     kconfig: tinyconfig}
+      - {target_arch: powerpc,  toolchain: gcc-8,     kconfig: ppc64e_defconfig}
+      - {target_arch: powerpc,  toolchain: gcc-8,     kconfig: cell_defconfig}
+      - {target_arch: powerpc,  toolchain: gcc-8,     kconfig: maple_defconfig}
+      - {target_arch: powerpc,  toolchain: gcc-8,     kconfig: ppc6xx_defconfig}
+      - {target_arch: powerpc,  toolchain: gcc-8,     kconfig: mpc83xx_defconfig}
+      - {target_arch: powerpc,  toolchain: gcc-8,     kconfig: tqm8xx_defconfig}
+      - {target_arch: powerpc,  toolchain: gcc-9,     kconfig: allnoconfig}
+      - {target_arch: powerpc,  toolchain: gcc-9,     kconfig: defconfig}
+      - {target_arch: powerpc,  toolchain: gcc-9,     kconfig: tinyconfig}
+      - {target_arch: powerpc,  toolchain: gcc-9,     kconfig: ppc64e_defconfig}
+      - {target_arch: powerpc,  toolchain: gcc-9,     kconfig: cell_defconfig}
+      - {target_arch: powerpc,  toolchain: gcc-9,     kconfig: maple_defconfig}
+      - {target_arch: powerpc,  toolchain: gcc-9,     kconfig: ppc6xx_defconfig}
+      - {target_arch: powerpc,  toolchain: gcc-9,     kconfig: mpc83xx_defconfig}
+      - {target_arch: powerpc,  toolchain: gcc-9,     kconfig: tqm8xx_defconfig}
+      - {target_arch: powerpc,  toolchain: gcc-10,    kconfig: allnoconfig}
+      - {target_arch: powerpc,  toolchain: gcc-10,    kconfig: defconfig}
+      - {target_arch: powerpc,  toolchain: gcc-10,    kconfig: tinyconfig}
+      - {target_arch: powerpc,  toolchain: gcc-10,    kconfig: ppc64e_defconfig}
+      - {target_arch: powerpc,  toolchain: gcc-10,    kconfig: cell_defconfig}
+      - {target_arch: powerpc,  toolchain: gcc-10,    kconfig: maple_defconfig}
+      - {target_arch: powerpc,  toolchain: gcc-10,    kconfig: ppc6xx_defconfig}
+      - {target_arch: powerpc,  toolchain: gcc-10,    kconfig: mpc83xx_defconfig}
+      - {target_arch: powerpc,  toolchain: gcc-10,    kconfig: tqm8xx_defconfig}
+
+      # s390
+      - {target_arch: s390,     toolchain: gcc-8,     kconfig: allnoconfig}
+      - {target_arch: s390,     toolchain: gcc-8,     kconfig: defconfig}
+      - {target_arch: s390,     toolchain: gcc-8,     kconfig: tinyconfig}
+      - {target_arch: s390,     toolchain: gcc-9,     kconfig: allnoconfig}
+      - {target_arch: s390,     toolchain: gcc-9,     kconfig: defconfig}
+      - {target_arch: s390,     toolchain: gcc-9,     kconfig: tinyconfig}
+      - {target_arch: s390,     toolchain: gcc-10,    kconfig: allnoconfig}
+      - {target_arch: s390,     toolchain: gcc-10,    kconfig: defconfig}
+      - {target_arch: s390,     toolchain: gcc-10,    kconfig: tinyconfig}
+
+      # sparc
+      - {target_arch: sparc,    toolchain: gcc-8,     kconfig: allnoconfig}
+      - {target_arch: sparc,    toolchain: gcc-8,     kconfig: defconfig}
+      - {target_arch: sparc,    toolchain: gcc-8,     kconfig: tinyconfig}
+      - {target_arch: sparc,    toolchain: gcc-9,     kconfig: allnoconfig}
+      - {target_arch: sparc,    toolchain: gcc-9,     kconfig: defconfig}
+      - {target_arch: sparc,    toolchain: gcc-9,     kconfig: tinyconfig}
+      - {target_arch: sparc,    toolchain: gcc-10,    kconfig: allnoconfig}
+      - {target_arch: sparc,    toolchain: gcc-10,    kconfig: defconfig}
+      - {target_arch: sparc,    toolchain: gcc-10,    kconfig: tinyconfig}
+
+      # sh
+      - {target_arch: sh,       toolchain: gcc-8,     kconfig: allnoconfig}
+      - {target_arch: sh,       toolchain: gcc-8,     kconfig: defconfig}
+      - {target_arch: sh,       toolchain: gcc-8,     kconfig: tinyconfig}
+      - {target_arch: sh,       toolchain: gcc-8,     kconfig: dreamcast_defconfig}
+      - {target_arch: sh,       toolchain: gcc-8,     kconfig: microdev_defconfig}
+      - {target_arch: sh,       toolchain: gcc-8,     kconfig: shx3_defconfig}
+      - {target_arch: sh,       toolchain: gcc-9,     kconfig: allnoconfig}
+      - {target_arch: sh,       toolchain: gcc-9,     kconfig: defconfig}
+      - {target_arch: sh,       toolchain: gcc-9,     kconfig: tinyconfig}
+      - {target_arch: sh,       toolchain: gcc-9,     kconfig: dreamcast_defconfig}
+      - {target_arch: sh,       toolchain: gcc-9,     kconfig: microdev_defconfig}
+      - {target_arch: sh,       toolchain: gcc-9,     kconfig: shx3_defconfig}
+      - {target_arch: sh,       toolchain: gcc-10,    kconfig: allnoconfig}
+      - {target_arch: sh,       toolchain: gcc-10,    kconfig: defconfig}
+      - {target_arch: sh,       toolchain: gcc-10,    kconfig: tinyconfig}
+      - {target_arch: sh,       toolchain: gcc-10,    kconfig: dreamcast_defconfig}
+      - {target_arch: sh,       toolchain: gcc-10,    kconfig: microdev_defconfig}
+      - {target_arch: sh,       toolchain: gcc-10,    kconfig: shx3_defconfig}
+
+      # parisc
+      - {target_arch: parisc,   toolchain: gcc-8,     kconfig: allnoconfig}
+      - {target_arch: parisc,   toolchain: gcc-8,     kconfig: defconfig}
+      - {target_arch: parisc,   toolchain: gcc-8,     kconfig: tinyconfig}
+      - {target_arch: parisc,   toolchain: gcc-9,     kconfig: allnoconfig}
+      - {target_arch: parisc,   toolchain: gcc-9,     kconfig: defconfig}
+      - {target_arch: parisc,   toolchain: gcc-9,     kconfig: tinyconfig}
+      - {target_arch: parisc,   toolchain: gcc-10,    kconfig: allnoconfig}
+      - {target_arch: parisc,   toolchain: gcc-10,    kconfig: defconfig}
+      - {target_arch: parisc,   toolchain: gcc-10,    kconfig: tinyconfig}
