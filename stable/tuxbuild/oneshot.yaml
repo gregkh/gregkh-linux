@@ -1,0 +1,7 @@
+sets:
+  - name: one_x86
+    builds:
+
+      # x86_64
+      - {target_arch: x86_64,   toolchain: gcc-10,    kconfig: allmodconfig}
+
