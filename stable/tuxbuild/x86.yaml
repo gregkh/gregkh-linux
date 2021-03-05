@@ -1,0 +1,27 @@
+sets:
+  - name: x86
+    builds:
+
+      # x86_64
+      - {target_arch: x86_64,   toolchain: gcc-8,     kconfig: allnoconfig}
+#      - {target_arch: x86_64,   toolchain: gcc-8,     kconfig: tinyconfig}
+      - {target_arch: x86_64,   toolchain: gcc-8,     kconfig: x86_64_defconfig}
+      - {target_arch: x86_64,   toolchain: gcc-9,     kconfig: allnoconfig}
+#     - {target_arch: x86_64,   toolchain: gcc-9,     kconfig: tinyconfig}
+      - {target_arch: x86_64,   toolchain: gcc-9,     kconfig: x86_64_defconfig}
+      - {target_arch: x86_64,   toolchain: gcc-10,    kconfig: allnoconfig}
+      - {target_arch: x86_64,   toolchain: gcc-10,    kconfig: defconfig}
+#      - {target_arch: x86_64,   toolchain: gcc-10,    kconfig: tinyconfig}
+      - {target_arch: x86_64,   toolchain: clang-12,  kconfig: allnoconfig}
+#      - {target_arch: x86_64,   toolchain: clang-12,  kconfig: tinyconfig}
+      - {target_arch: x86_64,   toolchain: clang-12,  kconfig: x86_64_defconfig}
+      - {target_arch: x86_64,   toolchain: clang-11,  kconfig: allnoconfig}
+#      - {target_arch: x86_64,   toolchain: clang-11,  kconfig: tinyconfig}
+      - {target_arch: x86_64,   toolchain: clang-11,  kconfig: x86_64_defconfig}
+      - {target_arch: x86_64,   toolchain: clang-10,  kconfig: allnoconfig}
+      - {target_arch: x86_64,   toolchain: clang-10,  kconfig: defconfig}
+#     - {target_arch: x86_64,   toolchain: clang-10,  kconfig: tinyconfig}
+
+      - {target_arch: x86_64,   toolchain: clang-12,  kconfig: allmodconfig}
+      - {target_arch: x86_64,   toolchain: gcc-10,    kconfig: allmodconfig}
+
