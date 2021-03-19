@@ -50,6 +50,18 @@ case "${REMOTE}" in
 	REMOTE_SERVER="gregkh-builder"
 	REMOTE_USER="gregkh"
 	;;
+"rack")
+	REMOTE_STABLE_GIT="/var/lib/git/stable.git"
+	REMOTE_WORK="/dev/shm/"
+	REMOTE_SERVER="rack"
+	REMOTE_SERVER="145.40.68.85"
+	# packages I missed:  flex bison libelf-dev
+	#$ cat /etc/ccache.conf
+	#max_size = 15.0G
+	#cache_dir = /dev/shm/ccache/
+	REMOTE_USER="gregkh"
+	SSH_OPTIONS="-o StrictHostKeyChecking=no -o UserKnownHostsFile=/dev/null"
+	;;
 "jade")
 	REMOTE_STABLE_GIT="/home/guest/linux/stable/linux-stable/"
 	REMOTE_WORK="/home/guest/tmp/"
@@ -159,6 +171,11 @@ if [ -f ${REMOTE_DIR}/\${PATCHES} ] ; then
 	tar -zxvf ${REMOTE_DIR}/\${PATCHES}
 	cd ..
 
+	# we deal with some build systems that have no git config
+	# so set things up properly first so that we can apply changes
+	git config user.email "build_test@kroah.org"
+	git config user.name "Stable Build Test"
+
 	# Apply the patch queue
 	git quiltimport --patches patches
 	#QUILT_PATCHES=patches QUILT_SERIES=patches/series quilt push -aq --quiltrc
@@ -217,7 +234,7 @@ LOCALVERSION = -test
 BUILD_OPTIONS = -j${NUM_PROCESSORS}
 MACHINE = aws
 BUILD_DIR = \${PWD}
-MAKE_CMD = KBUILD_BUILD_TIMESTAMP='' CC=ccache make
+MAKE_CMD = KBUILD_BUILD_TIMESTAMP='' make CC="ccache gcc"
 __EOF__
 
 
