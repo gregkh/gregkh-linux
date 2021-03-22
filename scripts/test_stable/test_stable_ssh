@@ -54,7 +54,7 @@ case "${REMOTE}" in
 	REMOTE_STABLE_GIT="/var/lib/git/stable.git"
 	REMOTE_WORK="/dev/shm/"
 	REMOTE_SERVER="rack"
-	REMOTE_SERVER="145.40.68.85"
+	REMOTE_SERVER="145.40.68.87"
 	# packages I missed:  flex bison libelf-dev
 	#$ cat /etc/ccache.conf
 	#max_size = 15.0G
