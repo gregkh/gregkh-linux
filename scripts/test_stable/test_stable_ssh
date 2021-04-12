@@ -54,7 +54,10 @@ case "${REMOTE}" in
 	REMOTE_STABLE_GIT="/var/lib/git/stable.git"
 	REMOTE_WORK="/dev/shm/"
 	REMOTE_SERVER="rack"
-	REMOTE_SERVER="145.40.68.87"
+#	REMOTE_SERVER="145.40.68.85"
+#	REMOTE_SERVER="147.75.87.105"
+#	REMOTE_SERVER="145.40.68.7"
+	REMOTE_SERVER="145.40.68.91"
 	# packages I missed:  flex bison libelf-dev
 	#$ cat /etc/ccache.conf
 	#max_size = 15.0G
@@ -263,11 +266,17 @@ if [ "${VERSION}" == "" ] ; then
 	exit;
 fi
 
+if [ "${VERSION}" == "all" ] ; then
+	echo "testing all active kernel versions"
+	for VERSION in $(cat ~/linux/stable/active_kernel_versions); do
+		test_it ${VERSION}
+	done
+	exit
+fi
+
 for VERSION in $*
 do
 	test_it ${VERSION}
 done
 
 exit
-
-
