@@ -14,4 +14,4 @@ fi
 messageid=$(grep -i --max-count=1 "^Message-id:" "${mbox}" | cut -f 2 -d '<' | cut -f 1 -d '>')
 echo "Link: https://lore.kernel.org/r/${messageid}"
 
-grep -i "^Tested-by:" ${mbox}
+grep -i '^Tested-by:\|^Reviewed-by:' ${mbox}
