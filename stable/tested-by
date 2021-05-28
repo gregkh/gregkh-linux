@@ -1,0 +1,17 @@
+#!/bin/bash
+#
+# extract the initial "Link" for a stable -rc announcement and all of the
+# Tested-by lines to be added to the git commit for the release.
+#
+
+mbox=${1}
+
+if [ "${mbox}" == "" ] ; then
+	echo "$0 mbox"
+	exit 1
+fi
+
+messageid=$(grep -i --max-count=1 "^Message-id:" "${mbox}" | cut -f 2 -d '<' | cut -f 1 -d '>')
+echo "Link: https://lore.kernel.org/r/${messageid}"
+
+grep -i "^Tested-by:" ${mbox}
