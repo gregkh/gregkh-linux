@@ -1,13 +1,13 @@
 #
 # Automatically generated file; DO NOT EDIT.
-# Linux/x86 5.4.102-rc1 Kernel Configuration
+# Linux/x86 5.4.130-rc1 Kernel Configuration
 #
 
 #
-# Compiler: gcc (GCC) 10.2.0
+# Compiler: gcc (GCC) 11.1.0
 #
 CONFIG_CC_IS_GCC=y
-CONFIG_GCC_VERSION=100200
+CONFIG_GCC_VERSION=110100
 CONFIG_CLANG_VERSION=0
 CONFIG_CC_CAN_LINK=y
 CONFIG_CC_HAS_ASM_GOTO=y
@@ -882,11 +882,8 @@ CONFIG_ARCH_HAS_MEM_ENCRYPT=y
 CONFIG_ARCH_HAS_GCOV_PROFILE_ALL=y
 # end of GCOV-based kernel profiling
 
-CONFIG_PLUGIN_HOSTCC="g++"
+CONFIG_PLUGIN_HOSTCC=""
 CONFIG_HAVE_GCC_PLUGINS=y
-CONFIG_GCC_PLUGINS=y
-# CONFIG_GCC_PLUGIN_LATENT_ENTROPY is not set
-# CONFIG_GCC_PLUGIN_RANDSTRUCT is not set
 # end of General architecture-dependent options
 
 CONFIG_RT_MUTEXES=y
@@ -12320,8 +12317,6 @@ CONFIG_LSM="yama,loadpin,safesetid,integrity,selinux,smack,tomoyo,apparmor"
 # Memory initialization
 #
 CONFIG_INIT_STACK_NONE=y
-# CONFIG_GCC_PLUGIN_STRUCTLEAK_USER is not set
-# CONFIG_GCC_PLUGIN_STACKLEAK is not set
 CONFIG_INIT_ON_ALLOC_DEFAULT_ON=y
 CONFIG_INIT_ON_FREE_DEFAULT_ON=y
 # end of Memory initialization
@@ -12591,6 +12586,7 @@ CONFIG_SYSTEM_EXTRA_CERTIFICATE_SIZE=4096
 CONFIG_SECONDARY_TRUSTED_KEYRING=y
 CONFIG_SYSTEM_BLACKLIST_KEYRING=y
 CONFIG_SYSTEM_BLACKLIST_HASH_LIST=""
+CONFIG_SYSTEM_REVOCATION_LIST=y
 # end of Certificates for signature checking
 
 CONFIG_BINARY_PRINTF=y
