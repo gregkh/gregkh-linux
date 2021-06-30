@@ -57,7 +57,8 @@ case "${REMOTE}" in
 #	REMOTE_SERVER="145.40.68.85"
 #	REMOTE_SERVER="147.75.87.105"
 #	REMOTE_SERVER="145.40.68.7"
-	REMOTE_SERVER="145.40.68.91"
+	REMOTE_SERVER="136.144.57.225"
+	REMOTE_SERVER="147.75.33.63"
 	# packages I missed:  flex bison libelf-dev
 	#$ cat /etc/ccache.conf
 	#max_size = 15.0G
