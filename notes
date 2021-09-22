@@ -1,3 +1,15 @@
+lore_reply () {
+	if [[ "${1}" == "" ]] || [[ ! "${1}" =~ "lore.kernel.org" ]]; then
+		echo "First (only) argument should be a LORE link"
+		return
+	fi
+
+	mbox=$(mktemp --suffix=.mbox)
+	b4 mbox -n $mbox $1
+	mutt -f $mbox
+}
+
+
 building a initrd:
 	in busybox _install dir:
 	find . -print0 | cpio --null -ov --format=newc | gzip -9v > ../initramfs-busybox-x86.cpio.gz
