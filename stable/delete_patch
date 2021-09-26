@@ -1,0 +1,31 @@
+#!/bin/bash
+
+
+help()
+{
+	echo "$0 PATCH_NAME VERSION"
+	exit 1
+}
+
+
+delete()
+{
+	local patch=$1
+	local version=$2
+
+	echo "deleting $2 from linux-${version} queue"
+
+}
+
+PATCH=$1
+
+VERSION=$2
+
+if [ "${VERSION}" == "" ] ; then
+	help
+fi
+
+if [ "${PATCH}" == "" ] ; then
+	help
+fi
+
