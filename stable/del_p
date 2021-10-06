@@ -13,7 +13,9 @@ delete()
 	local patch=$1
 	local version=$2
 
-	echo "deleting $2 from linux-${version} queue"
+	echo "deleting ${patch} from linux-${version} queue"
+
+	cd linux-${version}.y && quilt pop "${patch}" && quilt delete -r "${patch}" && qp -a
 
 }
 
@@ -28,4 +30,6 @@ fi
 if [ "${PATCH}" == "" ] ; then
 	help
 fi
+
+delete ${PATCH} ${VERSION}
 
