@@ -12,6 +12,13 @@ if [ "${mbox}" == "" ] ; then
 fi
 
 messageid=$(grep -i --max-count=1 "^Message-id:" "${mbox}" | cut -f 2 -d '<' | cut -f 1 -d '>')
-echo "Link: https://lore.kernel.org/r/${messageid}"
+#echo "Link: https://lore.kernel.org/r/${messageid}"
+out="Link: https://lore.kernel.org/r/${messageid}
+"
 
-grep -i '^Tested-by:\|^Reviewed-by:' ${mbox}
+out+=$(grep -i '^Tested-by:\|^Reviewed-by:' ${mbox})
+
+printf '%s\n' "${out}"
+
+echo "${out}" | xclip -selection c
+
