@@ -15,21 +15,52 @@ delete()
 
 	echo "deleting ${patch} from linux-${version} queue"
 
-	cd linux-${version}.y && quilt pop "${patch}" && quilt delete -r "${patch}" && qp -a
+	cd linux-${version}.y
+	if [ $? -ne 0 ] ; then
+		echo "directory linux-${version}.y is not found, exiting"
+		return
+	fi
 
+	found=$(quilt series | grep ${patch})
+	if [ "${found}" == "" ] ; then
+		echo "patch ${patch} is not found in linux-${version}.y"
+		cd ..
+		return
+	fi
+
+	quilt pop "${patch}"
+	quilt delete -r "${patch}"
+	if [ $? -ne 0 ] ; then
+		echo "unable to delete patch ${patch} from linux-${version}.y"
+		cd ..
+		return
+	fi
+	qp -a
+	cd ..
 }
 
 PATCH=$1
-
-VERSION=$2
-
-if [ "${VERSION}" == "" ] ; then
-	help
-fi
+shift
 
 if [ "${PATCH}" == "" ] ; then
 	help
 fi
 
-delete ${PATCH} ${VERSION}
 
+VERSION=$1
+if [ "${VERSION}" == "" ] ; then
+	help
+fi
+
+if [ "${VERSION}" == "all" ] ; then
+	echo "removing ${PATCH} from all versions..."
+	for VERSION in $(cat active_kernel_versions)
+	do
+		delete ${PATCH} ${VERSION}
+	done
+else
+	for VERSION in $*
+	do
+		delete ${PATCH} ${VERSION}
+	done
+fi
