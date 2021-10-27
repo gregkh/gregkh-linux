@@ -157,9 +157,13 @@ STABLE_GIT="${REMOTE_STABLE_GIT}"
 KERNEL_VERSION="${KERNEL_VERSION}"
 PATCHES="stable_queue.tar.gz"
 
+echo "update the git tree at \${STABLE_GIT}"
+echo ""
+cd \${STABLE_GIT}
+git fetch --all
+
 
 cd ${REMOTE_DIR}
-
 echo "Starting to test kernel version ${KERNEL_VERSION}"
 echo ""
 
