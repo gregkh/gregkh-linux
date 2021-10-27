@@ -3,7 +3,7 @@
 # Testing script to take a stable kernel patch set, build it on a remote
 # machine using ktest, and email back the results.
 #
-# Copyright 2012 Greg Kroah-Hartman <gregkh@linuxfoundation.org>
+# Copyright 2012,2020-2021 Greg Kroah-Hartman <gregkh@linuxfoundation.org>
 #
 # Released under the GPLv2 only.
 #
