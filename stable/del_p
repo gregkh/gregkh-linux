@@ -15,22 +15,19 @@ delete()
 
 	echo "deleting ${patch} from linux-${version} queue"
 
-	cd linux-${version}.y
-	if [ $? -ne 0 ] ; then
-		echo "directory linux-${version}.y is not found, exiting"
-		return
-	fi
+	cd linux-"${version}".y ||
+		(echo "directory linux-${version}.y is not found" && return)
 
-	found=$(quilt series | grep ${patch})
-	if [ "${found}" == "" ] ; then
+	found=$(quilt series | grep "${patch}")
+	if [[ -z  "${found}" ]] ; then
 		echo "patch ${patch} is not found in linux-${version}.y"
 		cd ..
 		return
 	fi
 
 	quilt pop "${patch}"
-	quilt delete -r "${patch}"
-	if [ $? -ne 0 ] ; then
+#	quilt delete -r "${patch}"
+	if ! quilt delete -r "${patch}" ; then
 		echo "unable to delete patch ${patch} from linux-${version}.y"
 		cd ..
 		return
@@ -42,13 +39,13 @@ delete()
 PATCH=$1
 shift
 
-if [ "${PATCH}" == "" ] ; then
+if [[ -z "${PATCH}" ]]; then
 	help
 fi
 
 
 VERSION=$1
-if [ "${VERSION}" == "" ] ; then
+if [[ -z "${VERSION}" ]]; then
 	help
 fi
 
@@ -56,11 +53,11 @@ if [ "${VERSION}" == "all" ] ; then
 	echo "removing ${PATCH} from all versions..."
 	for VERSION in $(cat active_kernel_versions)
 	do
-		delete ${PATCH} ${VERSION}
+		delete "${PATCH}" "${VERSION}"
 	done
 else
-	for VERSION in $*
+	for VERSION in "$@"
 	do
-		delete ${PATCH} ${VERSION}
+		delete "${PATCH}" "${VERSION}"
 	done
 fi
