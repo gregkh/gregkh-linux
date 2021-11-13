@@ -11,50 +11,59 @@ txtcyn=$(tput setaf 6)    # Cyan
 txtwht=$(tput setaf 7)    # White
 txtrst=$(tput sgr0)       # Text reset
 
-VERSION=$1
-if [ "$VERSION" == "" ] ; then
-	echo "you need a version!"
-	exit
-fi
-echo "VERSION=$VERSION"
-DIR="queue-$VERSION"
 
+do_it() {
+	local VERSION=$1
+	if [ "$VERSION" == "" ] ; then
+		echo "you need a version!"
+		exit
+	fi
+	echo "VERSION=$VERSION"
+	local DIR="queue-$VERSION"
 
-# create a temp directory and copy the patches there
-TMP_DIR=$(mktemp -d "../stable_patches-${VERSION}-XXXXX") || exit 1
+	# create a temp directory and copy the patches there
+	local TMP_DIR=$(mktemp -d "../stable_patches-${VERSION}-XXXXX") || exit 1
 
-git ls-files -o | grep "queue-${VERSION}" | xargs -i  cp {} -v "${TMP_DIR}"
+	git ls-files -o | grep "queue-${VERSION}" | xargs -i  cp {} -v "${TMP_DIR}"
 
-# create a commit message
-echo "${VERSION}-stable patches" > commit.msg
-echo "" >> commit.msg
-echo "added patches:" >> commit.msg
-for file in $(ls "${TMP_DIR}")
+	# create a commit message
+	echo "${VERSION}-stable patches" > commit.msg
+	echo "" >> commit.msg
+	echo "added patches:" >> commit.msg
+	for file in $(ls "${TMP_DIR}")
+	do
+		echo "	$(basename ${file})" >> commit.msg
+	done
+
+	# add the files and commit them to git
+	git add --all "${DIR}"
+	git commit -F commit.msg
+	rm commit.msg
+
+	# do notification for the authors that the patches are now added to the tree.
+	for file in $(ls "${TMP_DIR}")
+	do
+		../added-to-stable-version "${VERSION}" "${TMP_DIR}/$file"
+	done
+
+	# clean up
+	rm -rf "${TMP_DIR}"
+
+	ONLINE=$(gregkh_machine_online)
+	# Only push if we have a network connection
+	if [ "${ONLINE}" = "1" ] ; then
+		echo "${txtylw}pushing to${txtrst} ${txtcyn}kroah.com${txtrst}"
+		git push kroah.com master
+		echo "${txtylw}pushing to${txtrst} ${txtcyn}origin${txtrst}"
+		git push
+		# kick off a build
+		/home/gregkh/linux/scripts/test_stable/test_stable_ssh ${VERSION}
+	fi
+}
+
+for STABLE_VERSION in $*
 do
-	echo "	$(basename ${file})" >> commit.msg
+	echo "${txtblu}Working on patches for ${txtred}linux-${STABLE_VERSION}.y${txtrst}"
+	do_it "${STABLE_VERSION}"
 done
 
-# add the files and commit them to git
-git add --all "${DIR}"
-git commit -F commit.msg
-rm commit.msg
-
-# do notification for the authors that the patches are now added to the tree.
-for file in $(ls "${TMP_DIR}")
-do
-	../added-to-stable-version "${VERSION}" "${TMP_DIR}/$file"
-done
-
-# clean up
-rm -rf "${TMP_DIR}"
-
-ONLINE=$(gregkh_machine_online)
-# Only push if we have a network connection
-if [ "${ONLINE}" = "1" ] ; then
-	echo "${txtylw}pushing to${txtrst} ${txtcyn}kroah.com${txtrst}"
-	git push kroah.com master
-	echo "${txtylw}pushing to${txtrst} ${txtcyn}origin${txtrst}"
-	git push
-	# kick off a build
-	/home/gregkh/linux/scripts/test_stable/test_stable_ssh ${VERSION}
-fi
