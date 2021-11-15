@@ -22,13 +22,43 @@
 # that point in time, so we can live with it.
 #
 
+# default values
+ARCH="x86"
+SRC_DIR="."
+OBJ_DIR="."
+
+for arg in "$@"; do
+	case $arg in
+		--arch=*)
+			ARCH="${arg#*=}"
+			shift
+			;;
+		--source=*)
+			SRC_DIR="${arg#*=}"
+			shift
+			;;
+		--objects=*)
+			OBJ_DIR="${arg#*=}"
+			shift
+			;;
+		*)
+			echo "Invalid option '${arg}'"
+			exit 1
+			;;
+	esac
+done
+
+echo "Finding files for arch	${ARCH}"
+echo "Source directory =	${SRC_DIR}"
+echo "Object directory =	${OBJ_DIR}"
+
 # can specify the arch on the command line, otherwise default to x86
-if [ $# -ne 1 ]; then
-	ARCH="x86"
-else
-	ARCH=$1
-fi
-echo "Finding files for arch ${ARCH}"
+#if [ $# -ne 1 ]; then
+#	ARCH="x86"
+#else
+#	ARCH=$1
+#fi
+#echo "Finding files for arch ${ARCH}"
 
 # Don't touch anything below here.
 SCRIPT=${0##*/}
@@ -101,10 +131,12 @@ H_INCLUDES=$(mktemp "${SCRIPT}"_h_includes.XXXX) || exit 1
 REAL_INCLUDES=$(mktemp "${SCRIPT}"_real_includes.XXXX) || exit 1
 FIND=$(mktemp "${SCRIPT}"_find.XXXX) || exit 1
 
+echo "${FIND}"
+
 
 # -----------------start here!------------------
 printf "Finding all .c files used based on the .o files...\n"
-find . -type f > "${FIND}"
+find ${OBJ_DIR} -type f > "${FIND}"
 
 # first get the object files and strip off the .o and replace it with a .c
 # to find the .c files we want to count.
