@@ -1,5 +1,16 @@
 #!/bin/bash
 
+txtund=$(tput sgr 0 1)    # Underline
+txtbld=$(tput bold)       # Bold
+txtred=$(tput setaf 1)    # Red
+txtgrn=$(tput setaf 2)    # Green
+txtylw=$(tput setaf 3)    # Yellow
+txtblu=$(tput setaf 4)    # Blue
+txtpur=$(tput setaf 5)    # Purple
+txtcyn=$(tput setaf 6)    # Cyan
+txtwht=$(tput setaf 7)    # White
+txtrst=$(tput sgr0)       # Text reset
+
 KERNEL=$1
 shift
 #echo "VERSION=$KERNEL"
@@ -241,7 +252,7 @@ reply()
 for patch_file in $*
 do
 	reply $patch_file
-	echo "acknowledged $patch_file"
+	echo "	${txtblu}acknowledged ${txtylw}$patch_file${txtrst}"
 ##	echo "-----------------------------------------------"
 ##	echo
 done
