@@ -18,7 +18,7 @@ do_it() {
 		echo "you need a version!"
 		exit
 	fi
-	echo "VERSION=$VERSION"
+	# echo "VERSION=$VERSION"
 	local DIR="queue-$VERSION"
 
 	# create a temp directory and copy the patches there
@@ -53,9 +53,9 @@ do_it() {
 	# Only push if we have a network connection
 	if [ "${ONLINE}" = "1" ] ; then
 		echo "${txtylw}pushing to${txtrst} ${txtcyn}kroah.com${txtrst}"
-		git push kroah.com master
+		git push -q kroah.com master
 		echo "${txtylw}pushing to${txtrst} ${txtcyn}origin${txtrst}"
-		git push
+		git push -q
 		# kick off a build
 		/home/gregkh/linux/scripts/test_stable/test_stable_ssh ${VERSION}
 	fi
