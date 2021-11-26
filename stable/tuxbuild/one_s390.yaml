@@ -1,0 +1,7 @@
+sets:
+  - name: one_s390
+    builds:
+
+      # s390
+      - {target_arch: s390,     toolchain: gcc-9,    kconfig: defconfig}
+
