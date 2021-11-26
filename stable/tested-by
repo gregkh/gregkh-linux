@@ -1,4 +1,7 @@
 #!/bin/bash
+# SPDX-License-Identifier: GPL-2.0
+#
+# Copyright (c) 2020-2021 Greg Kroah-Hartman <gregkh@linuxfoundation.org>
 #
 # extract the initial "Link" for a stable -rc announcement and all of the
 # Tested-by lines to be added to the git commit for the release.
@@ -11,14 +14,44 @@ if [ "${mbox}" == "" ] ; then
 	exit 1
 fi
 
-messageid=$(grep -i --max-count=1 "^Message-id:" "${mbox}" | cut -f 2 -d '<' | cut -f 1 -d '>')
-#echo "Link: https://lore.kernel.org/r/${messageid}"
-out="Link: https://lore.kernel.org/r/${messageid}
+TMP_DIR=$(mktemp -d "tmpdir_XXXXX") || exit 1
+
+splitmbox.py "${mbox}" "${TMP_DIR}" >/dev/null
+
+cd "${TMP_DIR}" || exit 1
+
+out=""
+
+for file in $(find . -type f | sort); do
+	#echo "file = ${file}"
+	from_greg=$(grep "From: Greg Kroah-Hartman <gregkh@linuxfoundation.org>" "${file}")
+	if [ "${from_greg}" == "" ] ; then
+		out+=$(grep -i '^Tested-by:\|^Reviewed-by:' "${file}")
+	else
+		messageid=$(grep -i --max-count=1 "^Message-id:" "${file}" | cut -f 2 -d '<' | cut -f 1 -d '>')
+		out+="Link: https://lore.kernel.org/r/${messageid}"
+	fi
+	out+="
 "
+	rm "${file}"
+done
+cd ..
+rmdir "${TMP_DIR}"
 
-out+=$(grep -i '^Tested-by:\|^Reviewed-by:' ${mbox})
+printf '%s' "${out}"
+printf '%s' "${out}" | xclip -selection c
+#echo "${out}"
+#echo "${out}" | xclip -selection c
 
-printf '%s\n' "${out}"
+exit 1
 
-echo "${out}" | xclip -selection c
+# old version:
+#messageid=$(grep -i --max-count=1 "^Message-id:" "${mbox}" | cut -f 2 -d '<' | cut -f 1 -d '>')
+#out="Link: https://lore.kernel.org/r/${messageid}
+#"
+#
+#out+=$(grep -i '^Tested-by:\|^Reviewed-by:' ${mbox})
+#
+#printf '%s\n' "${out}"
+#echo "${out}" | xclip -selection c
 
