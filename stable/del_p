@@ -25,7 +25,7 @@ delete()
 		return
 	fi
 
-	quilt pop "${patch}"
+	quilt pop -qf "${patch}"
 #	quilt delete -r "${patch}"
 	if ! quilt delete -r "${patch}" ; then
 		echo "unable to delete patch ${patch} from linux-${version}.y"
