@@ -1,6 +1,6 @@
 #
 # Automatically generated file; DO NOT EDIT.
-# Linux/x86 4.4.275-rc1 Kernel Configuration
+# Linux/x86 4.4.299-rc1 Kernel Configuration
 #
 CONFIG_64BIT=y
 CONFIG_X86_64=y
@@ -849,6 +849,7 @@ CONFIG_NET_INGRESS=y
 CONFIG_PACKET=m
 CONFIG_PACKET_DIAG=m
 CONFIG_UNIX=m
+CONFIG_UNIX_SCM=y
 CONFIG_UNIX_DIAG=m
 CONFIG_XFRM=y
 CONFIG_XFRM_ALGO=m
