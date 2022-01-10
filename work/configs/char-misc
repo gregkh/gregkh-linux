@@ -1,6 +1,6 @@
 #
 # Automatically generated file; DO NOT EDIT.
-# Linux/x86 5.16.0-rc5 Kernel Configuration
+# Linux/x86 5.16.0-rc8 Kernel Configuration
 #
 CONFIG_CC_VERSION_TEXT="gcc (GCC) 11.1.0"
 CONFIG_CC_IS_GCC=y
@@ -5320,7 +5320,6 @@ CONFIG_X86_PLATFORM_DEVICES=y
 # CONFIG_IBM_RTL is not set
 # CONFIG_SENSORS_HDAPS is not set
 # CONFIG_THINKPAD_ACPI is not set
-CONFIG_X86_PLATFORM_DRIVERS_INTEL=y
 # CONFIG_INTEL_ATOMISP2_PM is not set
 # CONFIG_INTEL_SAR_INT1092 is not set
 # CONFIG_INTEL_PMC_CORE is not set
