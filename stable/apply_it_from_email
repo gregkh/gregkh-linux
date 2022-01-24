@@ -42,5 +42,7 @@ echo "${txtblu}c2p $COMMIT_ID${txtrst}"
 #terminology --geometry=120x30 --exec "${C2P} ${COMMIT_ID}" 2> /dev/null &
 tilix --geometry=120x30 --command="${C2P} ${COMMIT_ID}" 2> /dev/null &
 #tilix --command="${C2P} ${COMMIT_ID}"
+#kitty "${C2P} ${COMMIT_ID}" &
+
 
 exit
