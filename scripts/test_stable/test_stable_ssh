@@ -47,7 +47,8 @@ case "${REMOTE}" in
 	REMOTE_STABLE_GIT="/home/gregkh/linux/stable/linux-stable/"
 	REMOTE_WORK="/home/gregkh/tmp/"
 	REMOTE_SERVER="build"
-	REMOTE_SERVER="gregkh-builder"
+	#REMOTE_SERVER="gregkh-builder"
+	REMOTE_SERVER="pdx-korg-gregkh-builder"
 	REMOTE_USER="gregkh"
 	;;
 "rack")
@@ -58,7 +59,8 @@ case "${REMOTE}" in
 #	REMOTE_SERVER="147.75.87.105"
 #	REMOTE_SERVER="145.40.68.7"
 #	REMOTE_SERVER="147.75.84.241"
-	REMOTE_SERVER="145.40.121.103"
+	REMOTE_SERVER="147.75.62.93"
+	REMOTE_SERVER="eqx-korg-gregkh-builder"
 	# packages I missed:  flex bison libelf-dev
 	#$ cat /etc/ccache.conf
 	#max_size = 15.0G
@@ -121,7 +123,7 @@ test_it()
 		CC="CC=\"gcc-8\""
 	fi
 
-	echo "Testing kernel version ${KERNEL_VERSION} on remote server \"${REMOTE}\""
+	echo "Testing kernel version ${KERNEL_VERSION} on remote server \"${REMOTE}\" ie ${REMOTE_SERVER}"
 
 	# create the local temporary directory to do the work in.
 	SCRIPT_HOME=`mktemp -d ${LOCAL_WORK}/stable_test_${KERNEL_VERSION}_XXXXX` || exit 1
