@@ -64,7 +64,7 @@ spin_i=1
 spin()
 {
 	sp="/-\|"
-	printf "\b${sp:spin_i++%${#sp}:1}"
+	printf "\b%s" "${sp:spin_i++%${#sp}:1}"
 }
 
 logn()
@@ -212,7 +212,7 @@ done
 
 rm "${RELEASES}"
 
-num_commits=$(grep -c '^From ' ${MBOX})
+num_commits=$(grep -c '^From ' "${MBOX}")
 if [ "${num_commits}" == "0" ] ; then
 	echo "${txtgrn}No missing fixes found!${txtrst}"
 	rm "${MBOX}"
