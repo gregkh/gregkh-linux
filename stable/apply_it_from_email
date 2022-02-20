@@ -40,9 +40,10 @@ echo "${txtblu}c2p $COMMIT_ID${txtrst}"
 #gnome-terminal --command="${C2P} $COMMIT_ID" --geometry=120x30 &
 #gnome-terminal --command="${C2P} $COMMIT_ID" &
 #terminology --geometry=120x30 --exec "${C2P} ${COMMIT_ID}" 2> /dev/null &
-tilix --geometry=120x30 --command="${C2P} ${COMMIT_ID}" 2> /dev/null &
+#tilix --geometry=120x30 --command="${C2P} ${COMMIT_ID}" 2> /dev/null &
 #tilix --command="${C2P} ${COMMIT_ID}"
-#kitty "${C2P} ${COMMIT_ID}" &
+#kitty ${C2P} ${COMMIT_ID} &
+kitty -o initial_window_width=200 -o initial_window_heigth=220 ${C2P} ${COMMIT_ID} 2> /dev/null &
 
 
 exit
