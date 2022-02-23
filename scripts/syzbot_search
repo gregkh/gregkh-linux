@@ -19,7 +19,7 @@ FIXED_IN="/home/gregkh/linux/scripts/fix_in_what_release"
 
 TMP_PREFIX="${TMPDIR}/${PREFIX}"
 
-BASE_KERNEL="5.15"
+BASE_KERNEL="5.16"
 
 #KERNEL_RANGE="v4.9..v4.10"
 #KERNEL_RANGE="v4.14..v4.15"
@@ -29,7 +29,7 @@ BASE_KERNEL="5.15"
 #KERNEL_RANGE="v5.1..v5.2"
 #KERNEL_RANGE="v5.3..v5.4"
 #KERNEL_RANGE="v5.4..HEAD"
-KERNEL_RANGE="v5.15..HEAD"
+KERNEL_RANGE="v5.16..HEAD"
 
 STABLE_KERNEL="${HOME}/stable/linux-${BASE_KERNEL}.y"
 #STABLE_KERNEL="${HOME}/stable/linux-4.14.y"
@@ -50,6 +50,9 @@ NOT_STABLE_YET=`mktemp ${TMP_PREFIX}not_stable_yet.XXXXXX` || exit 1
 SYZ_MBOX=`mktemp ${TMP_PREFIX}syzkaller_mbox.XXXXXX` || exit 1
 
 COMMIT_LOG=`mktemp ${TMP_PREFIX}tmp_log.XXXXX` || exit 1
+
+
+
 
 while read -r commit
 do
