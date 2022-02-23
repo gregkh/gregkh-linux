@@ -1,6 +1,6 @@
 #
 # Automatically generated file; DO NOT EDIT.
-# Linux/x86 4.9.297-rc1 Kernel Configuration
+# Linux/x86 4.9.303 Kernel Configuration
 #
 CONFIG_64BIT=y
 CONFIG_X86_64=y
@@ -235,6 +235,7 @@ CONFIG_BPF_SYSCALL=y
 CONFIG_SHMEM=y
 CONFIG_AIO=y
 CONFIG_ADVISE_SYSCALLS=y
+# CONFIG_BPF_UNPRIV_DEFAULT_OFF is not set
 CONFIG_USERFAULTFD=y
 CONFIG_PCI_QUIRKS=y
 CONFIG_MEMBARRIER=y
