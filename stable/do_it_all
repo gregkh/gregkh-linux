@@ -57,7 +57,7 @@ do_it() {
 		echo "${txtylw}pushing to${txtrst} ${txtcyn}origin${txtrst}"
 		git push -q
 		# kick off a build
-		/home/gregkh/linux/scripts/test_stable/test_stable_ssh ${VERSION}
+		REMOTE="rack" /home/gregkh/linux/scripts/test_stable/test_stable_ssh ${VERSION}
 	fi
 }
 
