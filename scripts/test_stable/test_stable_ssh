@@ -39,7 +39,8 @@ LOCAL_KTEST="/home/gregkh/linux/gregkh/tools/testing/ktest/ktest.pl"
 QUEUE_DIR="/home/gregkh/linux/stable/stable-queue/"
 
 
-REMOTE=${REMOTE:-build}	# default option is the "build" server option
+#REMOTE=${REMOTE:-build}	# default option is the "build" server option
+REMOTE=${REMOTE:-rack}	# default option is the "rack" server option
 
 # test for default server options
 case "${REMOTE}" in
@@ -59,7 +60,8 @@ case "${REMOTE}" in
 #	REMOTE_SERVER="147.75.87.105"
 #	REMOTE_SERVER="145.40.68.7"
 #	REMOTE_SERVER="147.75.84.241"
-	REMOTE_SERVER="145.40.121.99"
+	REMOTE_SERVER="145.40.96.217"
+	REMOTE_SERVER=$(builder check 2>&1 | grep 147 | cut -f 2 -d '@')
 #	REMOTE_SERVER="eqx-korg-gregkh-builder"
 	# packages I missed:  flex bison libelf-dev
 	#$ cat /etc/ccache.conf
