@@ -1,0 +1,5 @@
+version: 1
+name: arm32 test build
+description: build arm32 kernels
+jobs:
+  - build: {toolchain: gcc-10, target_arch: arm, kconfig: allmodconfig}
