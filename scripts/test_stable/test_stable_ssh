@@ -61,7 +61,7 @@ case "${REMOTE}" in
 #	REMOTE_SERVER="145.40.68.7"
 #	REMOTE_SERVER="147.75.84.241"
 	REMOTE_SERVER="145.40.96.217"
-	REMOTE_SERVER=$(builder check 2>&1 | grep 147 | cut -f 2 -d '@')
+	REMOTE_SERVER=$(builder check 2>&1 | grep "gregkh@" | head -n 1 | cut -f 2 -d '@')
 #	REMOTE_SERVER="eqx-korg-gregkh-builder"
 	# packages I missed:  flex bison libelf-dev
 	#$ cat /etc/ccache.conf
