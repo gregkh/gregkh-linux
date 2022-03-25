@@ -22,6 +22,8 @@ qemu kernel image:
 cross-compile:
 	$ CROSS_COMPILE=mipsel-linux-gnu- ARCH=mips make
 
+	make ARCH=arm64 CROSS_COMPILE=~/linux/compilers/gcc-11.1.0-nolibc/aarch64-linux/bin/aarch64-linux- -j100
+
 
 Intel patch review complaints:
 	x86-patch-review@intel.com
