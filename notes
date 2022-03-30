@@ -18,6 +18,9 @@ building a initrd:
 qemu kernel image:
 	qemu-system-x86_64 -kernel arch/x86_64/boot/bzImage -initrd ../tools/initramfs-busybox-x86.cpio.gz -nographic -append "console=ttyS0" -enable-kvm
 
+old-style qemu-kvm:
+	qemu-kvm -m 512 -kernel ./arch/x86/boot/bzImage -serial stdio -append "root=/dev/sda2 console=tty0 console=ttyS0" -snapshot /dev/sda 
+
 
 cross-compile:
 	$ CROSS_COMPILE=mipsel-linux-gnu- ARCH=mips make
