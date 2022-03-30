@@ -1,8 +1,16 @@
-gregkh/
+# directories to ignore
+compilers/
+drivers/
+e/
 gregkh-stable/
-patches/
-tools/
-tmp/
-trees/
+gregkh/
+intern/
 kdbus/
 ltsi/
+next/
+patches/
+tab/
+tmp/
+tools/
+torvalds/
+trees/
