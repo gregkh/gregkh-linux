@@ -1,0 +1,80 @@
+----------------------------------
+Equinox builder instance:
+
+$ ./kcbench -s 5.15 -o /dev/shm/ -m
+Processor:           AMD EPYC 7502P 32-Core Processor [48 CPUs]
+Cpufreq; Memory:     Unknown; 257618 MiB
+Linux running:       4.19.0-17-amd64 [x86_64]
+Compiler:            gcc (Debian 8.3.0-6) 8.3.0
+Linux compiled:      5.15.0 [/home/gregkh/.cache/kcbench/linux-5.15/]
+Config; Environment: allmodconfig; CCACHE_DISABLE="1"
+Build command:       make vmlinux modules
+Filling caches:      This might take a while... Done
+Run 1 (-j 48):       401.67 seconds / 8.96 kernels/hour [P:4428%]
+Run 2 (-j 48):       401.83 seconds / 8.96 kernels/hour [P:4427%]
+Run 3 (-j 54):       401.65 seconds / 8.96 kernels/hour [P:4452%]
+Run 4 (-j 54):       401.49 seconds / 8.97 kernels/hour [P:4454%]
+Run 5 (-j 24):       ^Ac560.51 seconds / 6.42 kernels/hour [P:2391%]
+Run 6 (-j 24):       558.85 seconds / 6.44 kernels/hour [P:2399%]
+Run 7 (-j 29):       505.41 seconds / 7.12 kernels/hour [P:2876%]
+Run 8 (-j 29):       505.59 seconds / 7.12 kernels/hour [P:2878%]
+
+$ ./kcbenchrate -o /dev/shm/ -s 5.15 -v
+[NOTE] Downloading source of Linux 5.15; this might take a while...
+
+WARNING: Rate run still experimental. Use at your own risk!
+
+Processor:           AMD EPYC 7502P 32-Core Processor [64 CPUs]
+Cpufreq; Memory:     Unknown; 257615 MiB
+Linux running:       4.19.0-17-amd64 [x86_64]
+Compiler:            gcc (Debian 8.3.0-6) 8.3.0
+Linux compiled:      5.15.0 [/home/gregkh/.cache/kcbench/linux-5.15]
+Config; Environment: defconfig; CCACHE_DISABLE="1"
+Build command:       make vmlinux
+[INFO] Running 'make --silent -C '/home/gregkh/.cache/kcbench/linux-5.15' O='/dev/shm/kcbenchrate/worker.template/kcbench.tmp/' -j '64' defconfig'.
+Starting 64 workers: ................................................................ All launched, starting to measure.
+64 workers completed 64 kernels so far (avrg: 1415.63 s/run) with a rate of 162.75 kernels/hour.
+64 workers completed 128 kernels so far (avrg: 1415.95 s/run) with a rate of 162.72 kernels/hour.
+
+
+
+----------------------------------
+old-style colo-builder-box:
+
+$ ./kcbench -o ~/tmp/ -s 5.15 -m
+Processor:           Intel Core Processor (Broadwell) [40 CPUs]
+Cpufreq; Memory:     Unknown; 120740 MiB
+Linux running:       5.15.11-200.fc35.x86_64 [x86_64]
+Compiler:            gcc (GCC) 11.2.1 20211203 (Red Hat 11.2.1-7)
+Linux compiled:      5.15.0 [/home/gregkh/.cache/kcbench/linux-5.15/]
+Config; Environment: allmodconfig; CCACHE_DISABLE="1"
+Build command:       make vmlinux modules
+Filling caches:      This might take a while... Done
+Run 1 (-j 40):       1087.33 seconds / 3.31 kernels/hour [P:3662%, 8851 maj. pagefaults]
+Run 2 (-j 40):       1091.40 seconds / 3.30 kernels/hour [P:3649%, 9283 maj. pagefaults]
+Run 3 (-j 46):       1088.90 seconds / 3.31 kernels/hour [P:3690%, 7156 maj. pagefaults]
+Run 4 (-j 46):       1093.40 seconds / 3.29 kernels/hour [P:3681%, 7469 maj. pagefaults]
+
+
+----------------------------------
+workstation:
+
+$ ./kcbench -s 5.15 -o /dev/shm/ -m
+Processor:           AMD Ryzen Threadripper 3970X 32-Core Processor [64 CPUs]
+Cpufreq; Memory:     schedutil [acpi-cpufreq]; 257679 MiB
+Linux running:       5.16.2-arch1-1 [x86_64]
+Compiler:            gcc (GCC) 11.1.0
+Linux compiled:      5.15.0 [/home/gregkh/.cache/kcbench/linux-5.15/]
+Config; Environment: allmodconfig; CCACHE_DISABLE="1"
+Build command:       make vmlinux modules
+Filling caches:      This might take a while... Done
+Run 1 (-j 64):       390.46 seconds / 9.22 kernels/hour [P:5806%, 12974 maj. pagefaults]
+Run 2 (-j 64):       391.27 seconds / 9.20 kernels/hour [P:5803%, 12972 maj. pagefaults]
+Run 3 (-j 71):       399.18 seconds / 9.02 kernels/hour [P:5725%, 11822 maj. pagefaults]
+Run 4 (-j 71):       391.20 seconds / 9.20 kernels/hour [P:5844%, 11629 maj. pagefaults]
+Run 5 (-j 32):       488.53 seconds / 7.37 kernels/hour [P:3156%, 9134 maj. pagefaults]
+Run 6 (-j 32):       488.95 seconds / 7.36 kernels/hour [P:3150%, 8448 maj. pagefaults]
+Run 7 (-j 38):       461.76 seconds / 7.80 kernels/hour [P:3722%, 8009 maj. pagefaults]
+Run 8 (-j 38):       461.32 seconds / 7.80 kernels/hour [P:3723%, 7662 maj. pagefaults]
+
+
