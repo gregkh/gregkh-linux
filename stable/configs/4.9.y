@@ -1,6 +1,6 @@
 #
 # Automatically generated file; DO NOT EDIT.
-# Linux/x86 4.9.303 Kernel Configuration
+# Linux/x86 4.9.310-rc1 Kernel Configuration
 #
 CONFIG_64BIT=y
 CONFIG_X86_64=y
@@ -4279,6 +4279,7 @@ CONFIG_I2C_MT65XX=m
 CONFIG_I2C_OCORES=m
 CONFIG_I2C_PCA_PLATFORM=m
 # CONFIG_I2C_PXA_PCI is not set
+CONFIG_I2C_QUP=m
 CONFIG_I2C_RIIC=m
 CONFIG_I2C_RK3X=m
 CONFIG_I2C_SH_MOBILE=m
