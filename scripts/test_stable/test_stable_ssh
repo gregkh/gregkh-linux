@@ -72,11 +72,12 @@ case "${REMOTE}" in
 	SSH_OPTIONS="-o StrictHostKeyChecking=no -o UserKnownHostsFile=/dev/null"
 	;;
 "bob")
-	REMOTE_STABLE_GIT="/home/gregkh/linux/stable/linux-stable/"
-	#REMOTE_WORK="/home/gregkh/linux/tmp/"
-	REMOTE_WORK="/dev/shm/"
 	REMOTE_SERVER="bob"
-	REMOTE_USER="gregkh"
+	REMOTE_WORK="/dev/shm/"
+#	REMOTE_STABLE_GIT="/home/gregkh/linux/stable/linux-stable/"
+#	REMOTE_USER="gregkh"
+	REMOTE_STABLE_GIT="/home/bob/linux/stable/"
+	REMOTE_USER="bob"
 	;;
 "jade")
 	REMOTE_STABLE_GIT="/home/guest/linux/stable/linux-stable/"
@@ -260,8 +261,9 @@ OUTPUT_DIR = \${PWD}/output
 LOG_FILE = \${PWD}/log
 LOCALVERSION = -test
 BUILD_OPTIONS = -j${NUM_PROCESSORS}
-MACHINE = aws
+MACHINE = ${REMOTE}
 BUILD_DIR = \${PWD}
+TMP_DIR= ${REMOTE_DIR}
 MAKE_CMD = CCACHE_BASEDIR=${REMOTE_DIR} KBUILD_BUILD_TIMESTAMP='' make CC="${CC}"
 __EOF__
 #MAKE_CMD = CCACHE_BASEDIR=${REMOTE_DIR} KBUILD_BUILD_TIMESTAMP='' make CC="ccache gcc"
