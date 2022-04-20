@@ -135,7 +135,7 @@ test_it()
 	fi
 	case "${KERNEL_VERSION}" in
 	"5.10"|"5.15"|"5.16"|"5.17")
-		CC="gcc"
+		CC="ccache gcc"
 		;;
 	*)
 		CC="ccache gcc"
@@ -188,6 +188,9 @@ git fetch --all
 cd ${REMOTE_DIR}
 echo "Starting to test kernel version ${KERNEL_VERSION}"
 echo ""
+
+# create a minimum config
+echo "# CONFIG_GCC_PLUGINS is not set" > min_config
 
 # create the linux clone with the correct branch
 git clone -q -s --branch linux-${KERNEL_VERSION}.y ${REMOTE_STABLE_GIT} linux
@@ -264,7 +267,8 @@ BUILD_OPTIONS = -j${NUM_PROCESSORS}
 MACHINE = ${REMOTE}
 BUILD_DIR = \${PWD}
 TMP_DIR= ${REMOTE_DIR}
-MAKE_CMD = CCACHE_BASEDIR=${REMOTE_DIR} KBUILD_BUILD_TIMESTAMP='' make CC="${CC}"
+MIN_CONFIG = ../min_config
+MAKE_CMD = KBUILD_BUILD_TIMESTAMP='' make CC="${CC}"
 __EOF__
 #MAKE_CMD = CCACHE_BASEDIR=${REMOTE_DIR} KBUILD_BUILD_TIMESTAMP='' make CC="ccache gcc"
 
