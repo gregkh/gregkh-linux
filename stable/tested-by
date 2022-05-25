@@ -40,7 +40,7 @@ rmdir "${TMP_DIR}"
 
 printf '%s' "${out}"
 printf '%s' "${out}" | xclip -selection c
-printf '%s' "${out}" | wl-copy
+#printf '%s' "${out}" | wl-copy
 #echo "${out}"
 #echo "${out}" | xclip -selection c
 
