@@ -102,7 +102,8 @@ foreach my $patch (@patches) {
 #		$line =~ s/^Subject: \[PATCH \d\/\d\]/Subject:/;
 #		$line =~ s/^Subject: \[PATCH \d\d\/\d\d\]/Subject:/;
 #		$line =~ s/^Subject: \[PATCH \d\d\d\/\d\d\d\]/Subject:/;
-		$line =~ s/^Subject: \[[^()]*\]/Subject:/;
+#		$line =~ s/^Subject: \[[^()]*\]/Subject:/;
+		$line =~ s/^Subject: \[[^()]*?\]/Subject:/;	# the ? is to not be greedy and stop at the first match
 
 		# add our signed off by if this is the last line in the header
 		if ($line =~ m/^---$/) {
