@@ -73,7 +73,7 @@ case "${REMOTE}" in
 	;;
 "bob")
 	REMOTE_SERVER="bob"
-	REMOTE_SERVER="100.93.211.108"
+#	REMOTE_SERVER="100.93.211.108"
 	REMOTE_WORK="/dev/shm/"
 #	REMOTE_STABLE_GIT="/home/gregkh/linux/stable/linux-stable/"
 #	REMOTE_USER="gregkh"
@@ -135,8 +135,8 @@ test_it()
 		CC="CC=\"gcc-8\""
 	fi
 	case "${KERNEL_VERSION}" in
-	"5.10"|"5.15"|"5.16"|"5.17")
-		CC="ccache gcc"
+	"5.10"|"5.15"|"5.16"|"5.17"|"5.18")
+		CC="ccache gcc-11"
 		;;
 	*)
 		CC="ccache gcc"
