@@ -1,13 +1,13 @@
 #
 # Automatically generated file; DO NOT EDIT.
-# Linux/x86 4.19.242 Kernel Configuration
+# Linux/x86 4.19.246 Kernel Configuration
 #
 
 #
-# Compiler: gcc (GCC) 11.2.0
+# Compiler: gcc (GCC) 12.1.0
 #
 CONFIG_CC_IS_GCC=y
-CONFIG_GCC_VERSION=110200
+CONFIG_GCC_VERSION=120100
 CONFIG_CLANG_VERSION=0
 CONFIG_CC_HAS_ASM_GOTO=y
 CONFIG_CONSTRUCTORS=y

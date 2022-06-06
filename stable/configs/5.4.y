@@ -1,13 +1,13 @@
 #
 # Automatically generated file; DO NOT EDIT.
-# Linux/x86 5.4.193 Kernel Configuration
+# Linux/x86 5.4.197 Kernel Configuration
 #
 
 #
-# Compiler: gcc (GCC) 11.2.0
+# Compiler: gcc (GCC) 12.1.0
 #
 CONFIG_CC_IS_GCC=y
-CONFIG_GCC_VERSION=110200
+CONFIG_GCC_VERSION=120100
 CONFIG_CLANG_VERSION=0
 CONFIG_CC_CAN_LINK=y
 CONFIG_CC_HAS_ASM_GOTO=y
@@ -12317,7 +12317,9 @@ CONFIG_LSM="yama,loadpin,safesetid,integrity,selinux,smack,tomoyo,apparmor"
 #
 # Memory initialization
 #
+CONFIG_CC_HAS_AUTO_VAR_INIT=y
 CONFIG_INIT_STACK_NONE=y
+# CONFIG_INIT_STACK_ALL is not set
 CONFIG_INIT_ON_ALLOC_DEFAULT_ON=y
 CONFIG_INIT_ON_FREE_DEFAULT_ON=y
 # end of Memory initialization
