@@ -1,15 +1,14 @@
 #!/bin/bash
 
-git fetch stable
-git checkout stable/linux-5.10.y
+git checkout linux-5.15.y
 ver=$(make kernelversion)
 git checkout linux-rolling-lts
 git merge --no-commit --signoff v$ver; GIT_AUTHOR_DATE=$(git log -1 --format="%aD" v$ver) GIT_COMMITTER_DATE=$(git log -1 --format="%cD" v$ver) git commit -s -m "Merge v$ver"
 
-git checkout stable/linux-5.10.y
+git checkout linux-5.18.y
 ver=$(make kernelversion)
 git checkout linux-rolling-stable
 git merge --no-commit --signoff v$ver; GIT_AUTHOR_DATE=$(git log -1 --format="%aD" v$ver) GIT_COMMITTER_DATE=$(git log -1 --format="%cD" v$ver) git commit -s -m "Merge v$ver"
 
-git push stable-push linux-rolling-stable linux-rolling-lts
+echo "git push origin linux-rolling-stable linux-rolling-lts"
 
