@@ -143,6 +143,10 @@ test_it()
 		CC="ccache gcc"
 		;;
 	esac
+	# override old debian box for now
+	if [ "${REMOTE}" == "rack" ] ; then
+		CC="ccache gcc"
+	fi
 
 	echo "Testing kernel version ${KERNEL_VERSION} on remote server \"${REMOTE}\" ie ${REMOTE_SERVER}"
 
