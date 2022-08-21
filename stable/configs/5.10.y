@@ -1,6 +1,6 @@
 #
 # Automatically generated file; DO NOT EDIT.
-# Linux/x86 5.10.137-rc1 Kernel Configuration
+# Linux/x86 5.10.137 Kernel Configuration
 #
 CONFIG_CC_VERSION_TEXT="gcc-11 (GCC) 11.3.0"
 CONFIG_CC_IS_GCC=y
