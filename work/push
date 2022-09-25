@@ -59,11 +59,16 @@ fi
 
 for remote in $(git remote)
 do
-	echo -n "${txtylw}pushing${txtrst} "
-	echo -n "${txtcyn}${TO_PUSH} ${txtrst}"
-	echo -n "${txtylw}to ${txtrst}"
-	echo    "${txtred}${remote}${txtrst}"
-	git push -q "${remote}" "${TO_PUSH}"
+	repo_text=" ${txtcyn}${TO_PUSH}${txtrst} to ${txtred}${remote}${txtrst}"
+	pushed_text="  ${txtgrn}pushed${txtrst}${repo_text}"
+	pushing_text="${txtylw}pushing${txtrst}${repo_text}"
+#	echo -n "${txtylw}pushing${txtrst} "
+#	echo -n "${txtcyn}${TO_PUSH} ${txtrst}"
+#	echo -n "${txtylw}to ${txtrst}"
+#	echo    "${txtred}${remote}${txtrst}"
+	gum spin --title="${pushing_text}" --show-output -s minidot -- git push -q "${remote}" "${TO_PUSH}"
+	#git push -q "${remote}" "${TO_PUSH}"
+	echo "${pushed_text}"
 done
 
 #echo "Switching back to ${CURRENT_BRANCH}"
