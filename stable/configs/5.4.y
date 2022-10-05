@@ -1,6 +1,6 @@
 #
 # Automatically generated file; DO NOT EDIT.
-# Linux/x86 5.4.211-rc1 Kernel Configuration
+# Linux/x86 5.4.217 Kernel Configuration
 #
 
 #
@@ -10816,6 +10816,7 @@ CONFIG_SOC_BRCMSTB=y
 #
 # NXP/Freescale QorIQ SoC drivers
 #
+CONFIG_FSL_GUTS=y
 CONFIG_FSL_MC_DPIO=m
 CONFIG_DPAA2_CONSOLE=m
 # end of NXP/Freescale QorIQ SoC drivers

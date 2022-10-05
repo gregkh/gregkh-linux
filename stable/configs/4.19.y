@@ -1,6 +1,6 @@
 #
 # Automatically generated file; DO NOT EDIT.
-# Linux/x86 4.19.256-rc1 Kernel Configuration
+# Linux/x86 4.19.262-rc1 Kernel Configuration
 #
 
 #
