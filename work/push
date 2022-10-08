@@ -60,8 +60,8 @@ fi
 for remote in $(git remote)
 do
 	repo_text=" ${txtcyn}${TO_PUSH}${txtrst} to ${txtred}${remote}${txtrst}"
-	pushed_text="  ${txtgrn}pushed${txtrst}${repo_text}"
-	pushing_text="${txtylw}pushing${txtrst}${repo_text}"
+	pushed_text=" ${txtgrn}pushed${txtrst}${repo_text}"
+	pushing_text=" ${txtylw}pushing${txtrst}${repo_text}"
 #	echo -n "${txtylw}pushing${txtrst} "
 #	echo -n "${txtcyn}${TO_PUSH} ${txtrst}"
 #	echo -n "${txtylw}to ${txtrst}"
