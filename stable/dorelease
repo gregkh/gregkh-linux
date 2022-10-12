@@ -68,6 +68,13 @@ if [ ${MAJOR} == "5" ] ; then
 	REL=${REL_ARRAY[2]}
 	MINOR=${REL_ARRAY[1]}
 fi
+if [ ${MAJOR} == "6" ] ; then
+	# 6.x series
+	VER="6.x"
+	BASE=${REL_ARRAY[0]}.${REL_ARRAY[1]}
+	REL=${REL_ARRAY[2]}
+	MINOR=${REL_ARRAY[1]}
+fi
 
 
 LAST=$(($REL - 1))
