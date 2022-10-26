@@ -11,5 +11,7 @@ release-*
 queue-3.18
 old
 s
+mbox
+tmp
 scratch/
 commit_tree/
