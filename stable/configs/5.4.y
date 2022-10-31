@@ -1,6 +1,6 @@
 #
 # Automatically generated file; DO NOT EDIT.
-# Linux/x86 5.4.217 Kernel Configuration
+# Linux/x86 5.4.221 Kernel Configuration
 #
 
 #
