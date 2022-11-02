@@ -74,7 +74,7 @@ case "${REMOTE}" in
 "bob")
 	REMOTE_SERVER="bob"
 	REMOTE_SERVER="192.168.1.50"
-#	REMOTE_SERVER="100.93.211.108"
+	REMOTE_SERVER="100.93.211.108"
 	REMOTE_WORK="/dev/shm/"
 #	REMOTE_STABLE_GIT="/home/gregkh/linux/stable/linux-stable/"
 #	REMOTE_USER="gregkh"
