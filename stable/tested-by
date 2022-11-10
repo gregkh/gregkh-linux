@@ -16,7 +16,9 @@ fi
 
 TMP_DIR=$(mktemp -d "tmpdir_XXXXX") || exit 1
 
-splitmbox.py "${mbox}" "${TMP_DIR}" >/dev/null
+#splitmbox.py "${mbox}" "${TMP_DIR}" >/dev/null
+#splitmbox.py "${mbox}" "${TMP_DIR}"
+splitmbox.pl "${mbox}" "${TMP_DIR}" > /dev/null
 
 cd "${TMP_DIR}" || exit 1
 
