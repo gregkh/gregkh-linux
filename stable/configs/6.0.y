@@ -1,6 +1,6 @@
 #
 # Automatically generated file; DO NOT EDIT.
-# Linux/x86 6.0.13 Kernel Configuration
+# Linux/x86 6.0.19 Kernel Configuration
 #
 CONFIG_CC_VERSION_TEXT="gcc-11 (GCC) 11.3.0"
 CONFIG_CC_IS_GCC=y
