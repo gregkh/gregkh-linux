@@ -75,7 +75,7 @@ case "${REMOTE}" in
 	REMOTE_SERVER="bob"
 	REMOTE_SERVER="192.168.1.50"
 	tailscale status 2> /dev/null
-	if [ $? -eq 0] ; then
+	if [ $? -eq 0 ] ; then
 		REMOTE_SERVER="100.93.211.108"
 	fi
 	REMOTE_WORK="/dev/shm/"
