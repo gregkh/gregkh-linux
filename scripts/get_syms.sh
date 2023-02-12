@@ -15,6 +15,14 @@ SCRIPT=${0##*/}
 # check for sudo permission before we try to do much of anything
 sudo -v || exit 1
 
+# verify that bpftrace is on the system
+BPFTRACE=$(which bpftrace 2> /dev/null)
+if [[ "${BPFTRACE}" == "" ]] ; then
+	echo "bpftrace is required to be able to trace the kernel build."
+	echo "Please install in order to use this tool properly."
+	exit 1
+fi
+
 # create some tempfiles to use.
 BUILDSNOOP_LIST=$(mktemp "${SCRIPT}".XXXX) || exit 1
 BUILDSNOOP_BT=$(mktemp "${SCRIPT}".XXXX.bt) || exit 1
@@ -41,9 +49,8 @@ __EOF__
 
 chmod 755 "${BUILDSNOOP_BT}"
 
-echo "we are going to run ${BUILDSNOOP_BT} as root now, sorry about that"
-sudo BPFTRACE_STRLEN=128 ./"${BUILDSNOOP_BT}" > "${BUILDSNOOP_LIST}" &
-
+echo "Loading the bpftrace script ${BUILDSNOOP_BT} as root now, sorry about that"
+sudo BPFTRACE_STRLEN=128 ${BPFTRACE} "${BUILDSNOOP_BT}" > "${BUILDSNOOP_LIST}" &
 SNOOPID=$!
 
 # now build the kernel
