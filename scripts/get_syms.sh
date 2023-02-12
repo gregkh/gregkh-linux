@@ -70,14 +70,23 @@ sort "${BUILDSNOOP_LIST}" | uniq | sed 's/^\.\///' | sed 's/^\.\///' | sort | un
 
 #  Walk the list and convert all using 'realpath' to normalize some crazy ..' stuff
 REAL_COUNT=$(wc -l ${TEMPFILE_LIST} | cut -f 1 -d ' ')
-echo "  - resolving ${REAL_COUNT} filenames..."
+I=0
 while read -r FILE ; do
 	REAL_FILE=$(realpath --relative-to=. "${FILE}" 2>/dev/null)
 	if [[ "${REAL_FILE}" != "" ]] ; then
 		echo "${REAL_FILE}" >> "${TEMPFILE2_LIST}"
 	fi
+	# Print out the % done every 100 iterations of the loop.
+	if [[ "$((I%100))" == "0" ]] ; then
+		let percent=(${I}*100/${REAL_COUNT}*100)/100
+		printf "\r  - resolving ${REAL_COUNT} filenames... ${percent}%%"
+	fi
+	I=$((I+1))
 done < "${TEMPFILE_LIST}"
+printf "\r  - resolving ${REAL_COUNT} filenames... 100%%\n"
+
 sort "${TEMPFILE2_LIST}" | uniq > "${TEMPFILE_LIST}"
+echo "  - resolve list contains $(wc -l ${TEMPFILE_LIST} | cut -f 1 -d ' ') files"
 
 # Now let's cheat, and get a full list of everything that git thinks is a valid
 # file in its repo, and then just compare the two lists and take the files that
@@ -99,7 +108,7 @@ R_FILE_COUNT=0
 while read -r FILE ; do
 	LINES=$(wc -l "${FILE}" | cut -f 1 -d ' ')
 	SUFFIX=${FILE:(-2)}
-	if [[ "${SUFFIX}" == ".c" ]] ; then
+	if [[ "${SUFFIX}" == ".c" ]] || [[ "${SUFFIX}" == ".S" ]] ; then
 		C_LINE_COUNT=$((LINES + C_LINE_COUNT))
 		C_FILE_COUNT=$((1 + C_FILE_COUNT))
 	elif [[ "${SUFFIX}" == ".h" ]] ; then
@@ -116,24 +125,12 @@ done < "${FINAL_LIST}"
 
 #TOTAL_FILES=$(wc -l ${FINAL_LIST} | cut -f 1 -d ' ')
 
-printf "     .c: %9d files\t%9d lines\n" "${C_FILE_COUNT}" "${C_LINE_COUNT}"
+printf "  .c/.S: %9d files\t%9d lines\n" "${C_FILE_COUNT}" "${C_LINE_COUNT}"
 printf "     .h: %9d files\t%9d lines\n" "${H_FILE_COUNT}" "${H_LINE_COUNT}"
 printf "  other: %9d files\t%9d lines\n" "${R_FILE_COUNT}" "${R_LINE_COUNT}"
 printf "  Total: %9d files\t%9d lines\n" "${TOTAL_FILES}" "${TOTAL_LINES}"
 
-# look at all filenames and run some simple "is this really a file we care
-# about" type tests
-#while read -r filename
-#do
-#	if [[ -d "${filename}" ]]; then
-#		continue
-#	fi
-#
-#	echo "${filename}" >> foo.4
-#done < foo.3
-
 echo "Full list of files is in ${FINAL_LIST}"
-
 
 rm "${BUILDSNOOP_LIST}"
 rm "${GITFILE_LIST}"

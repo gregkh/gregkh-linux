@@ -1,0 +1,13 @@
+#!/usr/bin/env bpftrace
+// SPDX-License-Identifier: Apache-2.0
+/*
+ * snoop and print out the filename of anything opened
+ *
+ * Based on opensnoop.bt from Brendan Gregg, but stripped
+ * down to almost nothing
+ */
+tracepoint:syscalls:sys_enter_open,
+tracepoint:syscalls:sys_enter_openat
+{
+	printf("%s\n", str(args->filename));
+}
