@@ -6,12 +6,14 @@
 # (C) 2023 Greg Kroah-Hartman <gregkh@linuxfoundation.org>
 #
 
-#BUILDSNOOP="./buildsnoop.bt"
 BUILD_COMMAND="make CC=gcc-11 -j100"
 FINAL_LIST="files_touched_in_build"
 
 
 SCRIPT=${0##*/}
+
+# check for sudo permission before we try to do much of anything
+sudo -v || exit 1
 
 # create some tempfiles to use.
 BUILDSNOOP_LIST=$(mktemp "${SCRIPT}".XXXX) || exit 1
@@ -67,7 +69,8 @@ echo "  - sorting..."
 sort "${BUILDSNOOP_LIST}" | uniq | sed 's/^\.\///' | sed 's/^\.\///' | sort | uniq > "${TEMPFILE_LIST}"
 
 #  Walk the list and convert all using 'realpath' to normalize some crazy ..' stuff
-echo "  - resolving filenames..."
+REAL_COUNT=$(wc -l ${TEMPFILE_LIST} | cut -f 1 -d ' ')
+echo "  - resolving ${REAL_COUNT} filenames..."
 while read -r FILE ; do
 	REAL_FILE=$(realpath --relative-to=. "${FILE}" 2>/dev/null)
 	if [[ "${REAL_FILE}" != "" ]] ; then
@@ -86,14 +89,37 @@ comm -1 -2 "${GITFILE_LIST}" "${TEMPFILE_LIST}" > "${FINAL_LIST}"
 # count the number of files and the lines as that's fun to know
 echo "  - counting lines"
 TOTAL_LINES=0
+C_LINE_COUNT=0
+C_FILE_COUNT=0
+H_LINE_COUNT=0
+H_FILE_COUNT=0
+R_LINE_COUNT=0
+R_FILE_COUNT=0
+
 while read -r FILE ; do
 	LINES=$(wc -l "${FILE}" | cut -f 1 -d ' ')
+	SUFFIX=${FILE:(-2)}
+	if [[ "${SUFFIX}" == ".c" ]] ; then
+		C_LINE_COUNT=$((LINES + C_LINE_COUNT))
+		C_FILE_COUNT=$((1 + C_FILE_COUNT))
+	elif [[ "${SUFFIX}" == ".h" ]] ; then
+		H_LINE_COUNT=$((LINES + H_LINE_COUNT))
+		H_FILE_COUNT=$((1 + H_FILE_COUNT))
+	else
+		R_LINE_COUNT=$((LINES + R_LINE_COUNT))
+		R_FILE_COUNT=$((1 + R_FILE_COUNT))
+	fi
+
 	TOTAL_LINES=$((LINES + TOTAL_LINES))
+	TOTAL_FILES=$((1 + TOTAL_FILES))
 done < "${FINAL_LIST}"
 
-TOTAL_FILES=$(wc -l ${FINAL_LIST} | cut -f 1 -d ' ')
+#TOTAL_FILES=$(wc -l ${FINAL_LIST} | cut -f 1 -d ' ')
 
-printf "\n  Total: %9d files\t%9d lines\n\n" "${TOTAL_FILES}" "${TOTAL_LINES}"
+printf "     .c: %9d files\t%9d lines\n" "${C_FILE_COUNT}" "${C_LINE_COUNT}"
+printf "     .h: %9d files\t%9d lines\n" "${H_FILE_COUNT}" "${H_LINE_COUNT}"
+printf "  other: %9d files\t%9d lines\n" "${R_FILE_COUNT}" "${R_LINE_COUNT}"
+printf "  Total: %9d files\t%9d lines\n" "${TOTAL_FILES}" "${TOTAL_LINES}"
 
 # look at all filenames and run some simple "is this really a file we care
 # about" type tests
@@ -113,7 +139,4 @@ rm "${BUILDSNOOP_LIST}"
 rm "${GITFILE_LIST}"
 rm "${TEMPFILE_LIST}"
 rm "${TEMPFILE2_LIST}"
-
-
-exit 1
 
