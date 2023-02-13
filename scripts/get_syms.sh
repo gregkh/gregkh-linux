@@ -12,9 +12,6 @@ FINAL_LIST="files_touched_in_build"
 
 SCRIPT=${0##*/}
 
-# check for sudo permission before we try to do much of anything
-sudo -v || exit 1
-
 # verify that bpftrace is on the system
 BPFTRACE=$(which bpftrace 2> /dev/null)
 if [[ "${BPFTRACE}" == "" ]] ; then
@@ -22,6 +19,9 @@ if [[ "${BPFTRACE}" == "" ]] ; then
 	echo "Please install in order to use this tool properly."
 	exit 1
 fi
+
+# check for sudo permission before we try to do much of anything
+sudo -v || exit 1
 
 # create some tempfiles to use.
 BUILDSNOOP_LIST=$(mktemp "${SCRIPT}".XXXX) || exit 1
