@@ -120,8 +120,6 @@ tracepoint:syscalls:sys_enter_openat
 }
 __EOF__
 
-chmod 755 "${BUILDSNOOP_BT}"
-
 echo "Loading the bpftrace script ${BUILDSNOOP_BT} as root now, sorry about that"
 sudo BPFTRACE_STRLEN=128 "${BPFTRACE}" "${BUILDSNOOP_BT}" > "${BUILDSNOOP_LIST}" &
 SNOOPID=$!
@@ -131,7 +129,13 @@ echo "building the kernel with '${OPTION_MAKE}'"
 ${OPTION_MAKE}
 
 # we are done, so kill the opensnoop process
-kill ${SNOOPID}
+echo "shutting down the bpftrace script pid: ${SNOOPID}"
+pids=$(ps ax | grep ${BUILDSNOOP_BT} | awk '{print $1}')
+sudo -v || exit 1
+for pid in ${pids} ; do
+	echo "killing pid ${pid}"
+	sudo "kill ${pid}" 2>/dev/null
+done
 rm "${BUILDSNOOP_BT}"
 
 echo "Processing the list of files"
