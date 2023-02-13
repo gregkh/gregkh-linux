@@ -134,7 +134,7 @@ pids=$(ps ax | grep ${BUILDSNOOP_BT} | awk '{print $1}')
 sudo -v || exit 1
 for pid in ${pids} ; do
 	echo "killing pid ${pid}"
-	sudo "kill ${pid}" 2>/dev/null
+	sudo kill -9 ${pid} 2>/dev/null
 done
 rm "${BUILDSNOOP_BT}"
 
@@ -180,7 +180,6 @@ ORIGINAL_DIR=$(pwd)
 cd "${OPTION_KERNEL_DIR}" || exit 1
 git ls-files | sort > "${GITFILE_LIST}"
 comm -1 -2 "${GITFILE_LIST}" "${TEMP1}" > "${TEMP3}"
-cd "${ORIGINAL_DIR}" || exit 1
 
 # count the number of files and the lines as that's fun to know
 if [[ "${OPTION_COUNT}" == "1" ]] ; then
@@ -216,6 +215,8 @@ if [[ "${OPTION_COUNT}" == "1" ]] ; then
 	printf "  other: %9d files\t%9d lines\n" "${R_FILE_COUNT}" "${R_LINE_COUNT}"
 	printf "  Total: %9d files\t%9d lines\n" "${TOTAL_FILES}" "${TOTAL_LINES}"
 fi
+
+cd "${ORIGINAL_DIR}" || exit 1
 
 # if asked to save off the file list, do so
 if [[ "${OPTION_FILE_LIST}" != "" ]] ; then
