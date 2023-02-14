@@ -193,6 +193,8 @@ if [[ "${OPTION_COUNT}" == "1" ]] ; then
 	TOTAL_LINES=0
 	C_LINE_COUNT=0
 	C_FILE_COUNT=0
+	S_LINE_COUNT=0
+	S_FILE_COUNT=0
 	H_LINE_COUNT=0
 	H_FILE_COUNT=0
 	R_LINE_COUNT=0
@@ -201,7 +203,10 @@ if [[ "${OPTION_COUNT}" == "1" ]] ; then
 	while read -r FILE ; do
 		LINES=$(wc -l "${FILE}" | cut -f 1 -d ' ')
 		SUFFIX=${FILE:(-2)}
-		if [[ "${SUFFIX}" == ".c" ]] || [[ "${SUFFIX}" == ".S" ]] ; then
+		if [[ "${SUFFIX}" == ".c" ]] ; then
+			C_LINE_COUNT=$((LINES + C_LINE_COUNT))
+			C_FILE_COUNT=$((1 + C_FILE_COUNT))
+		elif [[ "${SUFFIX}" == ".S" ]] ; then
 			C_LINE_COUNT=$((LINES + C_LINE_COUNT))
 			C_FILE_COUNT=$((1 + C_FILE_COUNT))
 		elif [[ "${SUFFIX}" == ".h" ]] ; then
@@ -216,7 +221,8 @@ if [[ "${OPTION_COUNT}" == "1" ]] ; then
 		TOTAL_FILES=$((1 + TOTAL_FILES))
 	done < "${TEMP3}"
 
-	printf "  .c/.S: %9d files\t%9d lines\n" "${C_FILE_COUNT}" "${C_LINE_COUNT}"
+	printf "     .c: %9d files\t%9d lines\n" "${C_FILE_COUNT}" "${C_LINE_COUNT}"
+	printf "     .S: %9d files\t%9d lines\n" "${S_FILE_COUNT}" "${S_LINE_COUNT}"
 	printf "     .h: %9d files\t%9d lines\n" "${H_FILE_COUNT}" "${H_LINE_COUNT}"
 	printf "  other: %9d files\t%9d lines\n" "${R_FILE_COUNT}" "${R_LINE_COUNT}"
 	printf "  Total: %9d files\t%9d lines\n" "${TOTAL_FILES}" "${TOTAL_LINES}"
