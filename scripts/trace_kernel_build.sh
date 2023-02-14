@@ -116,7 +116,12 @@ cat << __EOF__ > "${BUILDSNOOP_BT}"
 tracepoint:syscalls:sys_enter_open,
 tracepoint:syscalls:sys_enter_openat
 {
-	printf("%s\n", str(args->filename));
+	\$g = "magic_command_to_exit_trace";
+	\$s = str(args->filename);
+	printf("%s\n", \$s);
+	if (\$s == \$g) {
+		exit();
+	}
 }
 __EOF__
 
@@ -130,12 +135,13 @@ ${OPTION_MAKE}
 
 # we are done, so kill the opensnoop process
 echo "shutting down the bpftrace script pid: ${SNOOPID}"
-pids=$(ps ax | grep ${BUILDSNOOP_BT} | awk '{print $1}')
-sudo -v || exit 1
-for pid in ${pids} ; do
-	echo "killing pid ${pid}"
-	sudo kill -9 ${pid} 2>/dev/null
-done
+cat "magic_command_to_exit_trace" 2>/dev/null
+#pids=$(ps ax | grep ${BUILDSNOOP_BT} | awk '{print $1}')
+#sudo -v || exit 1
+#for pid in ${pids} ; do
+#	echo "killing pid ${pid}"
+#	sudo kill -9 ${pid} 2>/dev/null
+#done
 rm "${BUILDSNOOP_BT}"
 
 echo "Processing the list of files"
