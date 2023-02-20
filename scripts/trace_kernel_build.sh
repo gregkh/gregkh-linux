@@ -129,6 +129,9 @@ echo "Loading the bpftrace script ${BUILDSNOOP_BT} as root now, sorry about that
 sudo BPFTRACE_STRLEN=128 "${BPFTRACE}" "${BUILDSNOOP_BT}" > "${BUILDSNOOP_LIST}" &
 SNOOPID=$!
 
+# sleep to get the bpftrace installed...
+sleep 5
+
 # now build the kernel
 echo "building the kernel with '${OPTION_MAKE}'"
 ${OPTION_MAKE}
