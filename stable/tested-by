@@ -26,7 +26,7 @@ out=""
 
 for file in $(find . -type f | sort); do
 	#echo "file = ${file}"
-	from_greg=$(grep "From: Greg Kroah-Hartman <gregkh@linuxfoundation.org>" "${file}")
+	from_greg=$(grep "^From: Greg Kroah-Hartman <gregkh@linuxfoundation.org>" "${file}")
 	if [ "${from_greg}" == "" ] ; then
 		out+=$(grep -i '^Tested-by:\|^Reviewed-by:' "${file}")
 	else
