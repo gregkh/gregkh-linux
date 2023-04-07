@@ -210,8 +210,8 @@ if [[ "${OPTION_COUNT}" == "1" ]] ; then
 			C_LINE_COUNT=$((LINES + C_LINE_COUNT))
 			C_FILE_COUNT=$((1 + C_FILE_COUNT))
 		elif [[ "${SUFFIX}" == ".S" ]] ; then
-			C_LINE_COUNT=$((LINES + C_LINE_COUNT))
-			C_FILE_COUNT=$((1 + C_FILE_COUNT))
+			S_LINE_COUNT=$((LINES + C_LINE_COUNT))
+			S_FILE_COUNT=$((1 + C_FILE_COUNT))
 		elif [[ "${SUFFIX}" == ".h" ]] ; then
 			H_LINE_COUNT=$((LINES + H_LINE_COUNT))
 			H_FILE_COUNT=$((1 + H_FILE_COUNT))
