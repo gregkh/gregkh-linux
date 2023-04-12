@@ -147,7 +147,7 @@ reply()
 		echo "    $SUBJECT"
 		echo
 		echo "to the $KERNEL-stable tree which can be found at:"
-		echo "    http://www.kernel.org/git/?p=linux/kernel/git/stable/stable-queue.git;a=summary"
+		echo "    https://www.kernel.org/git/?p=linux/kernel/git/stable/stable-queue.git;a=summary"
 		echo
 		echo "The filename of the patch is:"
 		echo "    " `basename "$PATCH"`
