@@ -2,7 +2,7 @@
 
 # to move to a new major tree:
 #
-# git merge -s ource --no-commit v6.0.X
+# git merge -s ours --no-commit v6.0.X
 # git read-tree -um v6.0.X
 # git commit -s -m "Merge..."
 #
@@ -12,7 +12,7 @@ ver=$(make kernelversion)
 git checkout linux-rolling-lts
 git merge --no-commit --signoff v$ver; GIT_AUTHOR_DATE=$(git log -1 --format="%aD" v$ver) GIT_COMMITTER_DATE=$(git log -1 --format="%cD" v$ver) git commit -s -m "Merge v$ver"
 
-git checkout linux-6.1.y
+git checkout linux-6.2.y
 ver=$(make kernelversion)
 git checkout linux-rolling-stable
 git merge --no-commit --signoff v$ver; GIT_AUTHOR_DATE=$(git log -1 --format="%aD" v$ver) GIT_COMMITTER_DATE=$(git log -1 --format="%cD" v$ver) git commit -s -m "Merge v$ver"
