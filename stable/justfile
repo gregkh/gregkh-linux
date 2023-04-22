@@ -1,6 +1,6 @@
 # show the list of options
 help:
-	just --list
+	@just --list
 
 
 # Figure out how many patches not applied from each queue
