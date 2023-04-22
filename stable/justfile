@@ -3,12 +3,16 @@
 left:
 	#!/usr/bin/env bash
 	cd stable-queue
-	NUMBERS=$(git ls-files -o | cut -f 1 -d '/' | cut -f 2 -d '-' | sort --version-sort | uniq)
+	LS_FILES=$(git ls-files -o)
+	NUMBERS=$(echo "${LS_FILES}" | cut -f 1 -d '/' | cut -f 2 -d '-' | sort --version-sort | uniq)
+	total=0
+	echo "patches not committed:"
 	for N in ${NUMBERS}; do
-		outstanding=$(git ls-files -o | grep ${N} | wc -l)
-		echo "Outstanding for ${N} is ${outstanding}"
+		uncommit=$(echo "${LS_FILES}" | grep ${N} | wc -l)
+		printf "	%3s:	%4d\n" "${N}" "${uncommit}"
+		total=$((uncommit + total))
 	done
-
+	printf "	total:	%4d\n" "${total}"
 
 
 # commit patches in a stable queue for all kernel versions
