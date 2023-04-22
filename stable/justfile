@@ -1,0 +1,24 @@
+
+# Figure out how many patches not applied from each queue
+left:
+	#!/usr/bin/env bash
+	cd stable-queue
+	NUMBERS=$(git ls-files -o | cut -f 1 -d '/' | cut -f 2 -d '-' | sort --version-sort | uniq)
+	for N in ${NUMBERS}; do
+		outstanding=$(git ls-files -o | grep ${N} | wc -l)
+		echo "Outstanding for ${N} is ${outstanding}"
+	done
+
+
+
+# commit patches in a stable queue for all kernel versions
+commit:
+	#!/usr/bin/env bash
+	cd stable-queue
+	NUMBERS=$(git ls-files -o | cut -f 1 -d '/' | cut -f 2 -d '-' | sort --version-sort | uniq)
+	for N in ${NUMBERS}; do
+		echo "../do_it_all ${N}"
+		../do_it_all "${N}"
+	done
+
+
