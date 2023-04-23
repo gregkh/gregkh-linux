@@ -1,12 +1,12 @@
 #!/usr/bin/env -S just --justfile
 
 # show the list of options
-help:
+_help:
 	@just --list
 
 
 # Figure out how many patches not applied from each queue
-left:
+list:
 	#!/usr/bin/env bash
 	cd stable-queue
 	LS_FILES=$(git ls-files -o)
@@ -21,10 +21,15 @@ left:
 	printf "	total:	%4d\n" "${total}"
 
 
-# commit patches in a stable queue for all kernel versions
-commit:
+# commit patches in a stable queue for specific, or all, kernel trees
+commit version='all':
 	#!/usr/bin/env bash
 	cd stable-queue
+	V={{version}}
+	if [[ "${V}" != "all" ]]; then
+		../do_it_all "${V}"
+		exit
+	fi
 	NUMBERS=$(git ls-files -o | cut -f 1 -d '/' | cut -f 2 -d '-' | sort --version-sort | uniq)
 	for N in ${NUMBERS}; do
 		echo "../do_it_all ${N}"
