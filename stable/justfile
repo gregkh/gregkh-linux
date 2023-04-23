@@ -36,4 +36,6 @@ commit version='all':
 		../do_it_all "${N}"
 	done
 
-
+# create -rc release for current directory
+mbox:
+	cd {{invocation_directory()}}; ../stable-queue/scripts/quilt-mail mbox
