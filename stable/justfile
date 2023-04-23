@@ -1,3 +1,5 @@
+#!/usr/bin/env -S just --justfile
+
 # show the list of options
 help:
 	@just --list
