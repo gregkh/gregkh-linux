@@ -1,6 +1,6 @@
 #
 # Automatically generated file; DO NOT EDIT.
-# Linux/x86 5.4.232 Kernel Configuration
+# Linux/x86 5.4.243-rc1 Kernel Configuration
 #
 
 #
@@ -1715,7 +1715,6 @@ CONFIG_DEFAULT_NET_SCH="pfifo_fast"
 #
 CONFIG_NET_CLS=y
 CONFIG_NET_CLS_BASIC=m
-CONFIG_NET_CLS_TCINDEX=m
 CONFIG_NET_CLS_ROUTE4=m
 CONFIG_NET_CLS_FW=m
 CONFIG_NET_CLS_U32=m
