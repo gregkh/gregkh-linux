@@ -1,0 +1,26 @@
+#!/usr/bin/env -S just --justfile
+
+# show the list of options
+_help:
+	@just --list
+
+# Merge main into all branches
+merge_main:
+	#!/usr/bin/env bash
+	cd {{invocation_directory()}}
+	git merge main
+	for branch in $(git branch --list --no-color | cut -f 3 -d ' '); do
+		echo "Updating $branch"
+		git checkout "${branch}"
+		git merge main
+	done
+
+# Push all tags
+push_tags:
+	#!/usr/bin/env bash
+	cd {{invocation_directory()}}
+	for remote in $(git remote); do
+		#git push "${remote}" --tags
+		gum spin --title="Pushing tags to ${remote}" --align=right --show-output -s minidot -- git push "${remote}" --tags
+	done
+
