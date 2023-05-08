@@ -26,8 +26,16 @@ push_tags:
 
 # push all branches
 push_all:
-	cd {{invocation_directory()}}; ../push all
+	@cd {{invocation_directory()}}; ../scripts/push all
+
+# Generate a pull request
+pull_request:
+	@cd {{invocation_directory()}}; ../scripts/pull_request
+
+# make pull message (obsolete)
+make_message:
+	@cd {{invocation_directory()}}; ../scripts/mk_msg x
 
 # commit all for this branch
 commit:
-	cd {{invocation_directory()}}; ../do.sh
+	@cd {{invocation_directory()}}; ../scripts/do.sh
