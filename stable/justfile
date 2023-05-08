@@ -25,7 +25,8 @@ list:
 commit version='all':
 	#!/usr/bin/env bash
 	cd stable-queue
-	V={{version}}
+	V="{{version}}"
+	#echo "V=${V}"
 	if [[ "${V}" != "all" ]]; then
 		../do_it_all "${V}"
 		exit
