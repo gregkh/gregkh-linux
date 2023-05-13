@@ -24,6 +24,10 @@ push_tags:
 		gum spin --title="Pushing tags to ${remote}" --align=right --show-output -s minidot -- git push "${remote}" --tags
 	done
 
+# push a specific branch/tags
+push type:
+	@cd {{invocation_directory()}}; ../scripts/push {{type}}
+
 # push all branches
 push_all:
 	@cd {{invocation_directory()}}; ../scripts/push all
