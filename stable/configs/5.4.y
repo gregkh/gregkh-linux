@@ -1,6 +1,6 @@
 #
 # Automatically generated file; DO NOT EDIT.
-# Linux/x86 5.4.247-rc1 Kernel Configuration
+# Linux/x86 5.4.249-rc1 Kernel Configuration
 #
 
 #
@@ -1525,13 +1525,6 @@ CONFIG_IP6_NF_TARGET_NPT=m
 # end of IPv6: Netfilter Configuration
 
 CONFIG_NF_DEFRAG_IPV6=m
-
-#
-# DECnet: Netfilter Configuration
-#
-CONFIG_DECNET_NF_GRABULATOR=m
-# end of DECnet: Netfilter Configuration
-
 CONFIG_NF_TABLES_BRIDGE=m
 CONFIG_NFT_BRIDGE_META=m
 CONFIG_NFT_BRIDGE_REJECT=m
@@ -1631,8 +1624,6 @@ CONFIG_NET_DSA_TAG_TRAILER=m
 CONFIG_VLAN_8021Q=m
 CONFIG_VLAN_8021Q_GVRP=y
 CONFIG_VLAN_8021Q_MVRP=y
-CONFIG_DECNET=m
-CONFIG_DECNET_ROUTER=y
 CONFIG_LLC=m
 CONFIG_LLC2=m
 CONFIG_ATALK=m
