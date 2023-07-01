@@ -141,7 +141,7 @@ test_it()
 	fi
 	case "${KERNEL_VERSION}" in
 	"4.9"|"4.14"|"4.19")
-		CC="ccache gcc-11"
+		CC="ccache gcc-12"
 		;;
 	"5.4")
 		CC="ccache gcc-12"
