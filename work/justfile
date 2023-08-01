@@ -21,7 +21,7 @@ push_tags:
 	cd {{invocation_directory()}}
 	for remote in $(git remote); do
 		#git push "${remote}" --tags
-		gum spin --title="Pushing tags to ${remote}" --align=right --show-output -s minidot -- git push "${remote}" --tags
+		gum spin --title="Pushing tags to ${remote}" --align=right --show-output -s minidot --show-output -- git push "${remote}" --tags
 	done
 
 # push a specific branch/tags
