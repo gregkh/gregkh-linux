@@ -1,6 +1,6 @@
 #
 # Automatically generated file; DO NOT EDIT.
-# Linux/x86 5.15.126-rc1 Kernel Configuration
+# Linux/x86 5.15.130-rc1 Kernel Configuration
 #
 CONFIG_CC_VERSION_TEXT="gcc-12 (GCC) 12.3.0"
 CONFIG_CC_IS_GCC=y
@@ -12343,7 +12343,6 @@ CONFIG_STM32_ADC=m
 CONFIG_STM32_DFSDM_CORE=m
 CONFIG_STM32_DFSDM_ADC=m
 CONFIG_STMPE_ADC=m
-CONFIG_STX104=m
 CONFIG_SUN4I_GPADC=m
 CONFIG_TI_ADC081C=m
 CONFIG_TI_ADC0832=m
@@ -12367,6 +12366,12 @@ CONFIG_VF610_ADC=m
 CONFIG_VIPERBOARD_ADC=m
 CONFIG_XILINX_XADC=m
 # end of Analog to digital converters
+
+#
+# Analog to digital and digital to analog converters
+#
+CONFIG_STX104=m
+# end of Analog to digital and digital to analog converters
 
 #
 # Analog Front Ends
