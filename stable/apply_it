@@ -60,7 +60,7 @@ if [ "$VERSION" != "" ] ; then
 	done
 else
 	# no version specified, so get the list of active kernels
-	for VERSION in $(cat active_kernel_versions); do
+	for VERSION in $(cat stable-queue/active_kernel_versions); do
 		apply_it ${VERSION}
 	done
 fi

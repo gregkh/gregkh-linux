@@ -57,15 +57,15 @@ release_it()
 	#echo "vim Makefile"
 	echo "../version_bump"
 	echo "git commit -a -m \"Linux ${VERSION}\" -e"
-	echo "../dotag ${VERSION}"
-	echo "../dorelease"
+	echo "../stable-queue/scripts/tag_stable ${VERSION}"
+	echo "../stable-queue/scripts/dorelease"
 
 
 	# move the file in the stable queue to the released location
 	echo "cd ../stable-queue"
 	echo "git mv queue-${TREE} releases/${VERSION}"
 	echo "git commit -a -m \"Linux ${VERSION}\""
-	echo "../dotag ${VERSION}"
+	echo "./scripts/tag_stable ${VERSION}"
 	#echo "git push && git push --tags && git push kroah.com master && git push kroah.com --tags"
 	echo "git push && git push --tags"
 

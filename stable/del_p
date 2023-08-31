@@ -51,7 +51,7 @@ fi
 
 if [ "${VERSION}" == "all" ] ; then
 	echo "removing ${PATCH} from all versions..."
-	for VERSION in $(cat active_kernel_versions)
+	for VERSION in $(cat stable-queue/active_kernel_versions)
 	do
 		delete "${PATCH}" "${VERSION}"
 	done

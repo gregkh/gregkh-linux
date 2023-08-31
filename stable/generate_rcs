@@ -7,7 +7,7 @@ create_kernel() {
 	../stable-queue/scripts/quilt-mail mbox
 }
 
-for VERSION in $(cat active_kernel_versions); do
+for VERSION in $(cat stable-queue/active_kernel_versions); do
 	create_kernel "${VERSION}" &
 done
 
