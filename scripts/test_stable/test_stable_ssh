@@ -319,7 +319,7 @@ fi
 
 if [ "${VERSION}" == "all" ] ; then
 	echo "testing all active kernel versions"
-	for VERSION in $(cat ~/linux/stable/active_kernel_versions); do
+	for VERSION in $(cat ~/linux/stable/stable-queue/active_kernel_versions); do
 		test_it ${VERSION}
 	done
 	exit
