@@ -1,0 +1,36 @@
+#!/bin/bash
+
+# colors!
+txtund=$(tput sgr 0 1)    # Underline
+txtbld=$(tput bold)       # Bold
+txtred=$(tput setaf 1)    # Red
+txtgrn=$(tput setaf 2)    # Green
+txtylw=$(tput setaf 3)    # Yellow
+txtblu=$(tput setaf 4)    # Blue
+txtpur=$(tput setaf 5)    # Purple
+txtcyn=$(tput setaf 6)    # Cyan
+txtwht=$(tput setaf 7)    # White
+txtrst=$(tput sgr0)       # Text reset
+
+CURRENT_BRANCH=$(git symbolic-ref --short -q HEAD)
+
+PWD=$(pwd)
+TREE=$(basename "${PWD}")
+
+branches=("linus" "next" "testing")
+
+for branch in ${branches[@]}; do
+	text="${txtcyn}Syncing${txtrst} ${txtgrn}${branch}${txtrst}"
+	gum spin --title="${text}" --align=right --show-output -s minidot -- git checkout work-${branch} && git merge ${TREE}-${branch}
+	echo "${txtcyn}Synced${txtrst} ${txtgrn}${branch}${txtrst}"
+done
+
+git checkout --quiet ${CURRENT_BRANCH}
+exit
+
+git checkout work-linus   && git merge ${TREE}-linus
+git checkout work-next    && git merge ${TREE}-next
+git checkout work-testing && git merge ${TREE}-testing
+
+exit
+

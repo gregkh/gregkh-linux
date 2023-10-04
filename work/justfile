@@ -47,3 +47,7 @@ make_message:
 # commit all for this branch
 commit:
 	@cd {{invocation_directory()}}; ../scripts/do.sh
+
+# sync the working branches
+work_sync:
+	@cd {{invocation_directory()}}; ../scripts/work_sync
