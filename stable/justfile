@@ -40,3 +40,39 @@ commit version='all':
 # create -rc release for current directory
 mbox:
 	cd {{invocation_directory()}}; ../stable-queue/scripts/quilt-mail mbox
+
+# sync all scratch directories up
+scratch_sync:
+	#!/usr/bin/env bash
+	cd scratch
+	# keep these two arrays in sync!
+	root=("linux-4.14.y"
+	      "linux-4.19.y"
+	      "linux-5.4.y"
+	      "linux-5.10.y"
+	      "linux-5.15.y"
+	      "linux-6.1.y"
+	      "linux-6.5.y"
+	      "master")
+	scratch=("s-414"
+		 "s-419"
+		 "s-504"
+		 "s-510"
+		 "s-515"
+		 "s-601"
+		 "s-605"
+		 "s-main")
+	num_root=${#root[@]}
+
+	for i in $(seq 0 "${num_root}"); do
+		r=${root[${i}]}
+		s=${scratch[${i}]}
+		if [[ "${r}" == "" ]]; then
+			break;
+		fi
+		echo "Checking out ${s}..."
+		git checkout --quiet "${s}"
+		echo "Rebasing ${s} onto ${r}"
+		git rebase "${r}"
+	done
+

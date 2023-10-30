@@ -107,6 +107,13 @@ verify_fixes()
 				continue
 			fi
 
+			if ! git merge-base --is-ancestor "$sha" "$c"; then
+				printf '%s%s\t\t- %s\n' "$commit_msg" "$fixes_msg" 'Target SHA should be an ancestor of your tree'
+				commit_msg=''
+				error=1
+				continue
+			fi
+
 			if [ "${#sha}" -lt 12 ]; then
 				msg="${msg:+${msg}${nl}}${tab}${tab}- SHA1 should be at least 12 digits long${nl}${tab}${tab}  Can be fixed by setting core.abbrev to 12 (or more) or (for git v2.11${nl}${tab}${tab}  or later) just making sure it is not set (or set to \"auto\")."
 			fi
