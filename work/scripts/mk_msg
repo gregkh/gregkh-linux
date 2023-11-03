@@ -6,15 +6,28 @@ ROOT="main"
 #ROOT="c8ddb2713c624f432fa5fe3c7ecffcdda46ea0d4"
 #ROOT="cf7d7e5a1980d1116ee152d25dac382b112b9c17"
 
+MERGE_POINT=$(git merge-base ${ROOT} HEAD)
+
+if [ "${MERGE_POINT}" == "" ] ; then
+	echo "unable to find common merge-base!"
+	exit 1
+fi
+
+PRETTY_MERGE_POINT=$(git show -s --abbrev-commit --abbrev=12 --pretty=format:"%h (\"%s\")%n" ${MERGE_POINT})
+
+echo "Merge base is ${PRETTY_MERGE_POINT}"
+
 TMP_FILE=$1
 #
 echo > $TMP_FILE
-git diff -M --stat --summary $ROOT..HEAD >> $TMP_FILE
+echo "Merge base is ${PRETTY_MERGE_POINT})" >> ${TMP_FILE}
+echo >> $TMP_FILE
+git diff -M --stat --summary ${MERGE_POINT}..HEAD >> $TMP_FILE
 echo >> $TMP_FILE
 echo "---------------" >> $TMP_FILE
 echo >> $TMP_FILE
-git log --no-merges $ROOT..HEAD | git shortlog  >> $TMP_FILE
-git format-patch -M -n $ROOT..HEAD
+git log --no-merges ${MERGE_POINT}..HEAD | git shortlog  >> $TMP_FILE
+git format-patch -M -n ${MERGE_POINT}..HEAD
 
-echo "git send-email --to linux-pci@atrey.karlin.mff.cuni.cz --no-chain-reply-to *.patch"
+#echo "git send-email --to linux-pci@atrey.karlin.mff.cuni.cz --no-chain-reply-to *.patch"
 
