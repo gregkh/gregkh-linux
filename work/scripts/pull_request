@@ -17,27 +17,44 @@ tree=$(basename ${pwd})
 
 #echo "tree=${tree}"
 
+branch=$(git symbolic-ref --short -q HEAD | cut -f2- -d '-' | cut -f2- -d '-')
+
+#echo "branch=${branch}"
+
 version=$1
 
 if [ "${version}" == "" ] ; then
 	version=$(kv)
 	# strip off extra ".0" that is in the output of the kernel makefile
 	version="${version/.0/}"
-	# dig out the -rc version, if present
-	rc=${version: -1}
-	# bump it by 1
-	new_rc=$((rc+1))
-	#echo "rc=${rc} new_rc=${new_rc}"
-	# replace the version with the new bumped-by-one rc
-	# it's a good guess, not always right, but most of the time it is.
-	version="${version/rc${rc}/rc${new_rc}}"
+
+	# if this branch is "-linus" then we can "guess" that this is a "normal" pull request of bugfixes for the next -rc release
+	if [ "${branch}" == "linus" ] ; then
+		# dig out the -rc version, if present
+		rc=${version: -1}
+		# bump it by 1
+		new_rc=$((rc+1))
+		#echo "rc=${rc} new_rc=${new_rc}"
+		# replace the version with the new bumped-by-one rc
+		# it's a good guess, not always right, but most of the time it is.
+		version="${version/rc${rc}/rc${new_rc}}"
+	else
+		# this is possibly for the "next" -rc1 release
+		# strip off the -rc chunk
+		version="${version/-rc*/}"
+		# dig out the minor number
+		minor="${version/*./}"
+		# and the major number
+		major="${version/.*/}"
+		#echo "major=${major} minor=${minor}"
+		# bump minor by one
+		minor=$((minor+1))
+		# reconstruct the version and tack on -rc1
+		version="${major}.${minor}-rc1"
+	fi
 fi
 
 #echo "version=${version}"
-
-branch=$(git symbolic-ref --short -q HEAD | cut -f2- -d '-' | cut -f2- -d '-')
-
-#echo "branch=${branch}"
 
 q=$(gum input --prompt="# What is the kernel version? " --value="${version}")
 
