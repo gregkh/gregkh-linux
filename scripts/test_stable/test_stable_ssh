@@ -144,7 +144,7 @@ test_it()
 		CC="ccache gcc-12"
 		;;
 	"5.4")
-		CC="ccache gcc-12"
+		CC="ccache gcc"
 		;;
 	"5.10")
 		CC="ccache gcc"
