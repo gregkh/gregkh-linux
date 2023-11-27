@@ -1,7 +1,7 @@
-sets:
-  - name: one_x86
-    builds:
-
+version: 1
+name: one_x86
+description: One x86 allmodconfig build
+jobs:
+  - builds:
       # x86_64
-      - {target_arch: x86_64,   toolchain: gcc-10,    kconfig: allmodconfig}
-
+      - {target_arch: x86_64,   toolchain: gcc-12,    kconfig: allmodconfig}
