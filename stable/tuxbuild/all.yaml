@@ -1,6 +1,8 @@
-sets:
-  - name: all
-    builds:
+version: 1
+name: all
+description: All arches, one kernel
+jobs:
+  - builds:
 
       # arc
       - {target_arch: arc,      toolchain: gcc-8,     kconfig: allnoconfig}
