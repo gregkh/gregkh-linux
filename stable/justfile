@@ -52,7 +52,6 @@ scratch_sync:
 	      "linux-5.10.y"
 	      "linux-5.15.y"
 	      "linux-6.1.y"
-	      "linux-6.5.y"
 	      "linux-6.6.y"
 	      "master")
 	scratch=("s-414"
@@ -61,7 +60,6 @@ scratch_sync:
 		 "s-510"
 		 "s-515"
 		 "s-601"
-		 "s-605"
 		 "s-606"
 		 "s-main")
 	num_root=${#root[@]}
