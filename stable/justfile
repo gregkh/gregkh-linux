@@ -90,3 +90,6 @@ scratch_sync:
 		git rebase "${r}"
 	done
 
+# Generate the stable -rc releases for all stable branches
+generate_rcs:
+	./generate_rcs
