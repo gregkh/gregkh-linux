@@ -44,57 +44,35 @@ commit version='all':
 mbox:
 	cd {{invocation_directory()}}; ../stable-queue/scripts/quilt-mail mbox
 
-#
-#test:
-#	#!/usr/bin/env bash
-#	declare -A versions=(	["4.19"]="419"	\
-#				["5.4"]="504"	\
-#				["5.10"]="510"	\
-#				["5.15"]="515"	\
-#				["6.1"]="601"	\
-#				["6.6"]="606"	\
-#				["6.7"]="607"	\
-#				)
-#	for i in ${!versions[@]}; do
-#		echo "linux-${i}.y" "s-${versions[$i]}"
-#	done
 
 # sync all scratch directories up
 scratch_sync:
 	#!/usr/bin/env bash
-	cd scratch
-	# keep these two arrays in sync!
-	root=("linux-4.19.y"
-	      "linux-5.4.y"
-	      "linux-5.10.y"
-	      "linux-5.15.y"
-	      "linux-6.1.y"
-	      "linux-6.6.y"
-	      "linux-6.7.y"
-	      "linux-6.8.y"
-	      "master")
-	scratch=("s-419"
-		 "s-504"
-		 "s-510"
-		 "s-515"
-		 "s-601"
-		 "s-606"
-		 "s-607"
-		 "s-608"
-		 "s-main")
-	num_root=${#root[@]}
 
-	for i in $(seq 0 "${num_root}"); do
-		r=${root[${i}]}
-		s=${scratch[${i}]}
-		if [[ "${r}" == "" ]]; then
-			break;
-		fi
+	function do_it
+	{
+		local r=$1
+		local s=$2
 		echo "Checking out ${s}..."
 		git checkout --quiet "${s}"
 		echo "Rebasing ${s} onto ${r}"
 		git rebase "${r}"
+	}
+
+	cd scratch
+	declare -A versions=(	["4.19"]="419"	\
+				["5.4"]="504"	\
+				["5.10"]="510"	\
+				["5.15"]="515"	\
+				["6.1"]="601"	\
+				["6.6"]="606"	\
+				["6.7"]="607"	\
+				["6.8"]="608"	\
+				)
+	for i in ${!versions[@]}; do
+		do_it "linux-${i}.y" "s-${versions[$i]}"
 	done
+	do_it "master" "s-main"
 
 # Generate the stable -rc releases for all stable branches
 generate_rcs:
