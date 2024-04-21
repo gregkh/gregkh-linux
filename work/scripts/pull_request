@@ -60,7 +60,7 @@ q=$(gum input --prompt="# What is the kernel version? " --value="${version}")
 
 #echo "q=${q}"
 
-gum style "# Creating pull request for $(gum style --foreground 212 ${tree}) for $(gum style --foreground 99 ${version})"
+gum style "# Creating pull request for $(gum style --foreground 212 ${tree}) for $(gum style --foreground 99 ${q})"
 
 #printf "# Creating pull request for ${tree} for ${version}\n"
 printf "git tag -u kroah.com -s $tree-$q $tree-$branch\n";
