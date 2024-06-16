@@ -1,6 +1,6 @@
 #
 # Automatically generated file; DO NOT EDIT.
-# Linux/x86 5.4.276-rc1 Kernel Configuration
+# Linux/x86 5.4.278 Kernel Configuration
 #
 
 #
