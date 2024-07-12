@@ -1,0 +1,22 @@
+#!/bin/bash
+# git send-email hook to provide a custom message-id instead of relying
+# on git's own algorithm
+# From Christian Brauner and others in this thread:
+# https://social.kernel.org/notice/AU5IphRPUsQvvkx732
+
+export CUSTOM_MESSAGE_ID=$(${HOME}/bin/make_message_id)
+echo "new id = '${CUSTOM_MESSAGE_ID}'"
+
+# Check if there is a line starting with Message-Id:. Stop the search when the
+# first empty newline is encountered. This is where the header should end.
+perl -ne 'if (/^Message-Id:/) { $found = 1 } elsif (/^$/) { exit } END { exit !$found }' "${1}"
+if [ $? -eq 0 ]; then
+	# If there already is a Message-Id: line we replace it with our custom message id.
+	perl -i -pe 'if (!$replaced && s/^Message-Id:.*/Message-Id: <$ENV{CUSTOM_MESSAGE_ID}>/) { $replaced = 1 }' "${1}"
+else
+	# If there is no Message-Id: line we insert one right after the Subject: line.
+	perl -i -pe 'if (/^Subject:/ && !$inserted) { $_ .= "Message-Id: <$ENV{CUSTOM_MESSAGE_ID}>\n"; $inserted = 1 }' "${1}"
+fi
+
+patatt sign --hook "${1}"
+
