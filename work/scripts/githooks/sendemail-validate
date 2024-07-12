@@ -1,1 +1,22 @@
-patatt sign --hook "${1}"
+#!/usr/bin/perl
+# SPDX-License-Identifier: GPL-2.0-or-later
+
+use Mail::Box::Manager;
+
+my $mgr = Mail::Box::Manager->new;
+my $folder = $mgr->open(folder => $ARGV[0], type => 'Mail::Box::Mbox', access => 'rw');
+my $msg = $folder->message(0);
+my Mail::Message::Head $head = $msg->head;
+
+my $msg_id = `/home/gregkh/bin/make_message_id`;
+print "msg id = $msg_id\n";
+print $head;
+print $head->get('Message-Id'), "\n";
+
+$head->delete('Message-Id');
+$head->add("Message-Id: <${msg_id}>");
+print $head;
+$folder->close;
+
+`patatt sign --hook "${ARGV[0]}"`
+
