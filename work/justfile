@@ -51,3 +51,7 @@ commit:
 # sync the working branches
 work_sync:
 	@cd {{invocation_directory()}}; ../scripts/work_sync
+
+# Install the path to the git hooks we want to use for these repos
+install_hooks:
+	@cd {{invocation_directory()}}; git config core.hooksPath /home/gregkh/linux/work/scripts/githooks/
