@@ -1,0 +1,1 @@
+patatt sign --hook "${1}"
