@@ -20,6 +20,27 @@ list:
 	done
 	printf "	total:	%4d\n" "${total}"
 
+# Print a pretty summary of the current queues
+summary:
+	#!/usr/bin/env bash
+	cd stable-queue
+	LS_FILES=$(git ls-files -o)
+	total=0
+	total_nc=0
+	printf "      version  queued	not-committed\n"
+	for version in $(cat active_kernel_versions); do
+		if [[ -d queue-${version} ]]; then
+			queued=$(ls queue-${version} | grep -v "^series$" | wc -l)
+			notcommitted=$(echo "${LS_FILES}" | grep "queue-${version}" | wc -l)
+
+			printf "	%3s:	%4d	%4d\n" "${version}" "${queued}" "${notcommitted}"
+			total=$((queued + total))
+			total_nc=$((notcommitted + total_nc))
+		fi
+	done
+	printf "	total:	%4d	%4d\n" "${total}" "${total_nc}"
+
+
 # Collect the "Tested-by:" lines from a -rc series
 tested-by mbox='mbox':
 	@./tested-by {{mbox}}
