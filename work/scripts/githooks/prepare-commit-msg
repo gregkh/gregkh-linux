@@ -1,4 +1,4 @@
 #!/bin/sh
 sed -i 's|ssh://git@gitolite.kernel.org/|git://git.kernel.org/|g' "$1"
-echo "hi!"
+#echo "hi!"
 exit 0
