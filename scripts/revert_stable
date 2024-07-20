@@ -1,0 +1,32 @@
+#!/bin/bash
+#
+# revert_stable:
+#	Revert a commit in a stable tree and reference the original commit id
+#
+# usage:
+#   revert_stable SHA1
+#
+# Dumps the message into a file called "revert_msg" which you can then include
+# in the changelog text for the revert.
+
+SHA=$1
+
+if [[ "${SHA}" == "" ]]; then
+	echo "Error: forgot to give a sha"
+	exit 1
+fi
+
+MAINSHA=$(git --no-pager log -n1 ${SHA} | grep -i upstream | grep -oE "[a-f0-9]{40,}") || true
+
+if [[ "${MAINSHA}" == "" ]]; then
+	MAINSHA=${SHA}
+fi
+
+LOG=$(git show --format="%s" ${SHA} | head -n 1)
+
+echo "Revert \"${LOG}\""			> revert_msg
+echo ""						>> revert_msg
+echo "This reverts commit ${SHA} which is"	>> revert_msg
+echo "commit ${MAINSHA} upstream."		>> revert_msg
+
+git revert -e ${SHA}
