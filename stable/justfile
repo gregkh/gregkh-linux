@@ -14,7 +14,7 @@ list:
 	total=0
 	echo "patches not committed:"
 	for N in ${NUMBERS}; do
-		uncommit=$(echo "${LS_FILES}" | grep ${N} | wc -l)
+		uncommit=$(echo "${LS_FILES}" | grep "${N}/" | wc -l)
 		printf "	%3s:	%4d\n" "${N}" "${uncommit}"
 		total=$((uncommit + total))
 	done
@@ -31,7 +31,7 @@ summary:
 	for version in $(cat active_kernel_versions); do
 		if [[ -d queue-${version} ]]; then
 			queued=$(ls queue-${version} | grep -v "^series$" | wc -l)
-			notcommitted=$(echo "${LS_FILES}" | grep "queue-${version}" | wc -l)
+			notcommitted=$(echo "${LS_FILES}" | grep "queue-${version}/" | wc -l)
 
 			printf "	%3s:	%4d	%4d\n" "${version}" "${queued}" "${notcommitted}"
 			total=$((queued + total))
