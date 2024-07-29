@@ -28,7 +28,7 @@ summary:
 	total=0
 	total_nc=0
 	printf "      version  queued	not-committed\n"
-	for version in $(cat active_kernel_versions); do
+	for version in $(cat active_kernel_versions | sort --version-sort); do
 		if [[ -d queue-${version} ]]; then
 			queued=$(ls queue-${version} | grep -v "^series$" | wc -l)
 			notcommitted=$(echo "${LS_FILES}" | grep "queue-${version}/" | wc -l)
