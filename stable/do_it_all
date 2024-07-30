@@ -24,7 +24,7 @@ do_it() {
 	# create a temp directory and copy the patches there
 	local TMP_DIR=$(mktemp -d "../stable_patches-${VERSION}-XXXXX") || exit 1
 
-	git ls-files -o | grep "queue-${VERSION}" | xargs -i  cp {} -v "${TMP_DIR}"
+	git ls-files -o | grep "queue-${VERSION}/" | xargs -i  cp {} -v "${TMP_DIR}"
 
 	# create a commit message
 	echo "${VERSION}-stable patches" > commit.msg
