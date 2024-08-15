@@ -126,6 +126,11 @@ fast_author()
 			continue
 		fi
 
+		# skip the initial "From " line as that's not always correct
+		if [[ $l =~ "From " ]] ; then
+			continue
+		fi
+
 		# if this is the start of the diff, then it's time to stop looking
 		if [[ $l =~ ^--- ]] ; then
 			break;
@@ -173,8 +178,8 @@ reply()
 	MESSAGE_ID=`grep -a -i "^Message-ID:" $PATCH | cut -f 2 -d ' ' | cut -f 2 -d '<' | cut -f 1 -d '>'`
 #	author AUTHOR $1 FIRST_AUTHOR
 	fast_author AUTHOR $1 FIRST_AUTHOR
-##	echo "author said $AUTHOR"
-##	echo "first_author said $FIRST_AUTHOR"
+	echo "author said $AUTHOR"
+	echo "first_author said $FIRST_AUTHOR"
 	if [ x"$AUTHOR" == "x" ]
 	then
 		echo "nobody to notify"
