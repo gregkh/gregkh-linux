@@ -178,8 +178,8 @@ reply()
 	MESSAGE_ID=`grep -a -i "^Message-ID:" $PATCH | cut -f 2 -d ' ' | cut -f 2 -d '<' | cut -f 1 -d '>'`
 #	author AUTHOR $1 FIRST_AUTHOR
 	fast_author AUTHOR $1 FIRST_AUTHOR
-	echo "author said $AUTHOR"
-	echo "first_author said $FIRST_AUTHOR"
+	echo "	${txtblu}author:${txtrst}		${txtylw}${FIRST_AUTHOR}${txtrst}"
+	echo "	${txtblu}involved:${txtrst}	${txtylw}${AUTHOR}${txtrst}"
 	if [ x"$AUTHOR" == "x" ]
 	then
 		echo "nobody to notify"
