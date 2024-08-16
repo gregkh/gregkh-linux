@@ -126,6 +126,11 @@ fast_author()
 			continue
 		fi
 
+		# skip the Closes: line so we don't send email to the wrong place
+		if [[ $l =~ ^Closes: ]] ; then
+			continue
+		fi
+
 		# skip the initial "From " line as that's not always correct
 		if [[ $l =~ "From " ]] ; then
 			continue
@@ -135,7 +140,6 @@ fast_author()
 		if [[ $l =~ ^--- ]] ; then
 			break;
 		fi
-
 
 		full_text="${full_text} ${l}"
 	done < $TXT
