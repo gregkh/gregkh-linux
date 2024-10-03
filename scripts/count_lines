@@ -1,6 +1,6 @@
 #!/bin/bash
 #
-# Copyright 2016 Greg Kroah-Hartman <gregkh@linuxfoundation.org>
+# Copyright 2016, 2024 Greg Kroah-Hartman <gregkh@linuxfoundation.org>
 #
 # Released under the GPL version 2 only.
 # SPDX-License-Identifier: GPL-2.0
@@ -22,10 +22,35 @@
 # that point in time, so we can live with it.
 #
 
+# don't use unset variables
+set -o nounset
+
+# set where the tool was run from,
+# the name of our script,
+# and the git version of it
+DIR="$(dirname "$(readlink -f "${BASH_SOURCE[0]}")")"
+SCRIPT=${0##*/} 
+SCRIPT_VERSION=$(cd "${DIR}" && git ls-tree --abbrev=12 HEAD | grep "${SCRIPT}" | awk '{print $3}' | head -n 1)
+
 # default values
 ARCH="x86"
 SRC_DIR="."
 OBJ_DIR="."
+
+
+help() {
+	echo "Usage: ${SCRIPT} [OPTIONS]"
+	echo "Count the lines of kernel code that we are actually using for a given build."
+	echo ""
+	echo "Arguments:"
+	echo " --arch=ARCH		The arch to use, default is \"${ARCH}\""
+	echo " --source=DIRECTORY	The kernel source directory, default is \"${SRC_DIR}\""
+	echo " --objects=DIRECTORY	The kernel objects directory (where the build happened), default is \"${OBJ_DIR}\""
+	echo " --tmp=DIRECTORY	Temporary directory to use for scratch files, default is \"${TMPDIR}\""
+	echo " --help			This information"
+	exit 1
+}
+
 
 for arg in "$@"; do
 	case $arg in
@@ -41,9 +66,16 @@ for arg in "$@"; do
 			OBJ_DIR="${arg#*=}"
 			shift
 			;;
+		--tmp=*)
+			TMPDIR="${arg#*=}"
+			shift
+			;;
+		--help=*)
+			help
+			;;
 		*)
 			echo "Invalid option '${arg}'"
-			exit 1
+			help
 			;;
 	esac
 done
@@ -51,6 +83,7 @@ done
 echo "Finding files for arch	${ARCH}"
 echo "Source directory =	${SRC_DIR}"
 echo "Object directory =	${OBJ_DIR}"
+echo "Temp directory =	${TMPDIR}"
 
 # can specify the arch on the command line, otherwise default to x86
 #if [ $# -ne 1 ]; then
@@ -68,23 +101,31 @@ find_includes() {
 	FILES=$1		# files to look at
 	INCLUDES=$2		# where to write the includes we find
 
-	#printf "FILES=%s\tINCLUDES=%s\n" "${FILES}" "${INCLUDES}"
+	printf "FILES=%s\tINCLUDES=%s\tSRC_DIR=%s\n" "${FILES}" "${INCLUDES}" "${SRC_DIR}"
+
+	pushd .
+	cd "${SRC_DIR}"
 
 	# iterate over all files and try to find the includes
 	while read -r FILE ; do
+		echo -n "file=${FILE}	"
 		if [ -f "${FILE}" ]; then
+			echo "found!"
 			# find all of the .h files this file used
 			#  search for include         remove after "         remove after >       remove all of the ../  remove #include   remove whitespace    remove ""    remove <  remove >
 			grep "^#include" "${FILE}" | sed -e 's/\.h".*$/\.h"/' -e 's/\.h>.*$/\.h>/' -e 's/\.\.\///g'  -e 's/#include//'  -e 's/[[:blank:]]//g' -e 's/"//g' -e 's/<//g' -e 's/>//g' >> "${INCLUDES}"
+		else
+			echo "not found!"
 		fi
 	done < "${FILES}"
 
 	# sort and try to clean up the list of includes
-	TMP=$(mktemp "${SCRIPT}"_tmp.XXXX) || exit 1
+	TMP=$(mktemp "${TMPDIR}/${SCRIPT}"_tmp.XXXX) || exit 1
 	sort "${INCLUDES}" | uniq > "${TMP}"
+	echo "pwd=${PWD} mv ${TMP} ${INCLUDES}"
 	mv "${TMP}" "${INCLUDES}"
 
-	# fine the "real" .h file based on the list we now have
+	# find the "real" .h file based on the list we now have
 	while read -r FILE ; do
 		#printf "looking for %s\n" "${FILE}"
 		F=$(grep -F "${FILE}" "${FIND}")
@@ -92,7 +133,7 @@ find_includes() {
 	done < "${INCLUDES}"
 
 	# sort the list again
-	TMP2=$(mktemp "${SCRIPT}"_tmp2.XXXX) || exit 1
+	TMP2=$(mktemp "${TMPDIR}/${SCRIPT}"_tmp2.XXXX) || exit 1
 	sort "${TMP}" | uniq > "${TMP2}"
 	mv "${TMP2}" "${TMP}"
 
@@ -110,6 +151,8 @@ find_includes() {
 	done < "${TMP}"
 
 	rm "${TMP}"
+
+	popd
 }
 
 count_lines() {
@@ -125,18 +168,24 @@ count_lines() {
 
 
 # make some temp files to mess around with
-C_FILES=$(mktemp "${SCRIPT}"_c_files.XXXX) || exit 1
-C_INCLUDES=$(mktemp "${SCRIPT}"_c_includes.XXXX) || exit 1
-H_INCLUDES=$(mktemp "${SCRIPT}"_h_includes.XXXX) || exit 1
-REAL_INCLUDES=$(mktemp "${SCRIPT}"_real_includes.XXXX) || exit 1
-FIND=$(mktemp "${SCRIPT}"_find.XXXX) || exit 1
+C_FILES=$(mktemp "${TMPDIR}/${SCRIPT}"_c_files.XXXX) || exit 1
+C_INCLUDES=$(mktemp "${TMPDIR}/${SCRIPT}"_c_includes.XXXX) || exit 1
+H_INCLUDES=$(mktemp "${TMPDIR}/${SCRIPT}"_h_includes.XXXX) || exit 1
+REAL_INCLUDES=$(mktemp "${TMPDIR}/${SCRIPT}"_real_includes.XXXX) || exit 1
+FIND=$(mktemp "${TMPDIR}/${SCRIPT}"_find.XXXX) || exit 1
 
-echo "${FIND}"
+#echo "${FIND}"
 
 
 # -----------------start here!------------------
 printf "Finding all .c files used based on the .o files...\n"
-find ${OBJ_DIR} -type f > "${FIND}"
+f=$(cd ${OBJ_DIR} && find . -type f)
+echo "${f}" > "${FIND}"
+#find ${OBJ_DIR} -type f > "${FIND}"
+
+objs=$(cd "${OBJ_DIR}" && find . -type f | grep "\.o$")
+
+
 
 # first get the object files and strip off the .o and replace it with a .c
 # to find the .c files we want to count.
@@ -174,10 +223,10 @@ TOTAL_FILES=$((C_FILE_COUNT + H_FILE_COUNT))
 
 printf "Totals: %9d files\t%9d lines\n" ${TOTAL_FILES} ${TOTAL_LINES}
 
-rm "${C_FILES}"
-rm "${C_INCLUDES}"
-rm "${H_INCLUDES}"
-rm "${REAL_INCLUDES}"
-rm "${FIND}"
+#rm "${C_FILES}"
+#rm "${C_INCLUDES}"
+#rm "${H_INCLUDES}"
+#rm "${REAL_INCLUDES}"
+#rm "${FIND}"
 
 exit 0
