@@ -1,0 +1,57 @@
+#!/bin/bash
+
+# set to 1 to get some debugging logging messages (or use -v/--verbose option)
+DEBUG=0
+
+# set where the tool was run from,
+# the name of our script,
+# and the git version of it
+DIR="$(dirname "$(readlink -f "${BASH_SOURCE[0]}")")"
+SCRIPT=${0##*/}
+SCRIPT_VERSION=$(cd "${DIR}" && git ls-tree --abbrev=12 HEAD | grep "${SCRIPT}" | awk '{print $3}' | head -n 1)
+
+help() {
+	echo "Usage: ${SCRIPT} git_range file_list"
+	exit 1
+}
+
+dbg() {
+	if [[ ${DEBUG} -ge 1 ]] ; then
+		echo "$1"
+	fi
+}
+
+GIT_RANGE=$1
+FILE_LIST=$2
+
+# don't use unset variables
+set -o nounset
+
+if [[ "${FILE_LIST}" == "" || "${GIT_RANGE}" == "" ]] ; then
+	help
+fi
+
+# Grab the git range being proposed, with no merges
+GIT_COMMITS=$(git log --oneline --no-merges ${GIT_RANGE} | cut -f 1 -d ' ')
+if [[ "${GIT_COMMITS}" == "" ]] ; then
+	echo "need a valid git range"
+	exit 1
+fi
+
+# Iterate over all commits
+while IFS= read -r commit; do
+	dbg "commit=${commit}"
+
+	# Get the list of files modified in this commit
+	files=$(git diff --name-only "${commit}"^.."${commit}" 2> /dev/null)
+	while IFS= read -r file; do
+		dbg "	file=${file}"
+
+		# search the list of files to see if the files in this commit are there.
+		hit=$(grep "${file}" "${FILE_LIST}")
+		if [[ "${hit}" != "" ]] ; then
+			echo "$(git show -s --abbrev-commit --abbrev=12 --pretty=format:"%h %s%n" ${commit})"
+		fi
+		break
+	done <<< "${files}"
+done <<< "${GIT_COMMITS}"
