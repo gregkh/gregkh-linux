@@ -41,7 +41,7 @@ pull_request:
 	@cd {{invocation_directory()}}; ../scripts/pull_request
 
 # make pull message (obsolete)
-make_message:
+x_make_message:
 	@cd {{invocation_directory()}}; ../scripts/mk_msg x
 
 # commit all for this branch
