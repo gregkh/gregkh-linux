@@ -88,6 +88,7 @@ scratch_sync:
 				["6.1"]="601"	\
 				["6.6"]="606"	\
 				["6.11"]="611"	\
+				["6.12"]="612"	\
 				)
 	for i in ${!versions[@]}; do
 		do_it "linux-${i}.y" "s-${versions[$i]}"
