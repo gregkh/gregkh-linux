@@ -1,0 +1,58 @@
+#!/bin/bash
+# Take an email, find the git commit id associated with it, and do an
+# "interdiff" of the two to see what is different and then pipe that diff to a
+# window to review used when reviewing stable kernel patches
+#
+# Called from mutt.  Has no affect on any commits, just for checking that
+# things are sane.
+
+# Text color variables
+txtund=$(tput sgr 0 1)    # Underline
+txtbld=$(tput bold)       # Bold
+txtred=$(tput setaf 1)    # Red
+txtgrn=$(tput setaf 2)    # Green
+txtylw=$(tput setaf 3)    # Yellow
+txtblu=$(tput setaf 4)    # Blue
+txtpur=$(tput setaf 5)    # Purple
+txtcyn=$(tput setaf 6)    # Cyan
+txtwht=$(tput setaf 7)    # White
+txtrst=$(tput sgr0)       # Text reset
+
+USER=$(whoami)
+TMPDIR="/home/${USER}/tmp"
+KERNEL_DIR="/home/${USER}/linux/stable/linux-stable/"
+
+EMAIL=$(mktemp ${TMPDIR}/apply_email.XXXXX) || exit 1
+
+cat - > "${EMAIL}"
+/home/gregkh/linux/scripts/fix_patch "${EMAIL}"
+
+COMMIT_ID=$(grep -i upstream ${EMAIL} | grep -oE "[a-f0-9]{40,}")
+if [[ "${COMMIT_ID}" == "" ]] ; then
+	# try to find it in a cherry-pick line
+	COMMIT_ID=$(grep -i "cherry picked from commit" | grep -oE "[a-f0-9]{40,}")
+fi
+
+if [ "${COMMIT_ID}" == "" ] ; then
+	echo "${txtred}commit id not found!${txtrst}"
+	rm "${EMAIL}"
+	exit 1
+fi
+
+found=$(/home/gregkh/linux/stable/commit_tree/id_found_in "${COMMIT_ID}")
+
+echo "${txtcyn}COMMIT_ID=${txtgrn}$COMMIT_ID${txtrst}	${txtcyn}Found in=${txtgrn}${found}${txtrst}"
+
+COMMIT=$(mktemp ${TMPDIR}/apply_commit.XXXXX) || exit 1
+INTERDIFF=$(mktemp ${TMPDIR}/apply_interdif.XXXXX) || exit 1
+foo=$(cd ${KERNEL_DIR} && git show --pretty=email ${COMMIT_ID} > ${COMMIT})
+id=$(diff -u --ignore-matching-lines '^[^+-]' ${COMMIT} ${EMAIL} > ${INTERDIFF})
+
+#kitty -o initial_window_width=200 -o initial_window_heigth=220 vim ${INTERDIFF} 2> /dev/null
+kitty -o initial_window_width=200 -o initial_window_heigth=220 bat --style=changes --paging=always --theme=Dracula ${INTERDIFF} 2> /dev/null
+
+rm ${COMMIT}
+rm ${INTERDIFF}
+rm ${EMAIL}
+
+exit 0
