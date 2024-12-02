@@ -1,0 +1,52 @@
+#!/bin/bash
+# Take an email, find the git commit id associated with it, save it to a file,
+# and then run a separate script in a new terminal window (as mutt doesn't like
+# having scripts accept input) that asks for the version that this commit is to
+# be applied to, and then runs 'c2p' to take that commit and add it to the
+# stable queue.  Yeah, it's a mess...
+#
+# Called from mutt.
+
+# Text color variables
+txtund=$(tput sgr 0 1)    # Underline
+txtbld=$(tput bold)       # Bold
+txtred=$(tput setaf 1)    # Red
+txtgrn=$(tput setaf 2)    # Green
+txtylw=$(tput setaf 3)    # Yellow
+txtblu=$(tput setaf 4)    # Blue
+txtpur=$(tput setaf 5)    # Purple
+txtcyn=$(tput setaf 6)    # Cyan
+txtwht=$(tput setaf 7)    # White
+txtrst=$(tput sgr0)       # Text reset
+
+USER=$(whoami)
+TMPDIR="/home/${USER}/tmp"
+KERNEL_DIR="/home/${USER}/linux/stable/linux-stable/"
+
+#EMAIL=$(mktemp ${TMPDIR}/apply_email.XXXXX) || exit 1
+EMAIL="/home/${USER}/linux/stable/s"
+
+cat - > "${EMAIL}"
+/home/${USER}/linux/scripts/fix_patch "${EMAIL}"
+
+COMMIT_ID=$(grep -i upstream ${EMAIL} | grep -oE "[a-f0-9]{40,}")
+if [[ "${COMMIT_ID}" == "" ]] ; then
+	# try to find it in a cherry-pick line
+	COMMIT_ID=$(grep -i "cherry picked from commit" | grep -oE "[a-f0-9]{40,}")
+fi
+
+if [ "${COMMIT_ID}" == "" ] ; then
+	echo "${txtred}commit id not found!${txtrst}"
+	rm "${EMAIL}"
+	exit 1
+fi
+
+#found=$(/home/gregkh/linux/stable/commit_tree/id_found_in "${COMMIT_ID}")
+#echo "${txtcyn}COMMIT_ID=${txtgrn}$COMMIT_ID${txtrst}	${txtcyn}Found in=${txtgrn}${found}${txtrst}"
+echo "${txtcyn}COMMIT_ID=${txtgrn}$COMMIT_ID${txtrst}"
+
+kitty -o initial_window_width=200 -o initial_window_heigth=220 /home/${USER}/linux/stable/email_to_c2p_helper ${COMMIT_ID} ${EMAIL} 2> /dev/null
+
+#rm ${EMAIL}
+
+exit 0
