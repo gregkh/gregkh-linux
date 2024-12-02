@@ -22,6 +22,18 @@ TMPDIR="/home/${USER}/tmp"
 KERNEL_DIR="/home/${USER}/linux/stable/linux-stable/"
 
 COMMIT_ID=$1
+EMAIL=$2
+
+found=$(/home/gregkh/linux/stable/commit_tree/id_found_in "${COMMIT_ID}")
+#echo "${txtcyn}COMMIT_ID=${txtgrn}$COMMIT_ID${txtrst}	${txtcyn}Found in=${txtgrn}${found}${txtrst}"
+
+subject=$(grep "^Subject:" ${EMAIL})
+echo "	${txtgrn}${subject}${txtrst}"
+echo "	${txtcyn}commit ${txtgrn}${COMMIT_ID}${txtrst}"
+echo "	${txtcyn}Already in:	${txtgrn}${found}${txtrst}"
+echo ""
+echo "pick a version to apply this to:"
+
 
 v=$(/home/gregkh/linux/stable/stable-queue/scripts/active_kernel_versions_get.sh)
 versions=""
@@ -30,7 +42,10 @@ for v1 in ${v}; do
 done
 
 echo "versions= '${versions}'"
-echo "commit= '${COMMIT_ID}'"
+
+if [[ "${versions}" == "" ]]; then
+	exit 1
+fi
 
 cd /home/gregkh/linux/stable/linux-stable/
 /home/gregkh/bin/c2p ${COMMIT_ID} ${versions}
