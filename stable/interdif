@@ -30,7 +30,7 @@ cat - > "${EMAIL}"
 COMMIT_ID=$(grep -i upstream ${EMAIL} | grep -oE "[a-f0-9]{40,}")
 if [[ "${COMMIT_ID}" == "" ]] ; then
 	# try to find it in a cherry-pick line
-	COMMIT_ID=$(grep -i "cherry picked from commit" | grep -oE "[a-f0-9]{40,}")
+	COMMIT_ID=$(grep -i "cherry picked from commit" ${EMAIL} | grep -oE "[a-f0-9]{40,}")
 fi
 
 if [ "${COMMIT_ID}" == "" ] ; then
