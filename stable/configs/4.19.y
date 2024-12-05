@@ -1,13 +1,13 @@
 #
 # Automatically generated file; DO NOT EDIT.
-# Linux/x86 4.19.316 Kernel Configuration
+# Linux/x86 4.19.325 Kernel Configuration
 #
 
 #
-# Compiler: gcc-12 (GCC) 12.3.0
+# Compiler: gcc-13 (GCC) 13.3.1 20241125
 #
 CONFIG_CC_IS_GCC=y
-CONFIG_GCC_VERSION=120300
+CONFIG_GCC_VERSION=130301
 CONFIG_CLANG_VERSION=0
 CONFIG_CC_HAS_ASM_GOTO=y
 CONFIG_CONSTRUCTORS=y
