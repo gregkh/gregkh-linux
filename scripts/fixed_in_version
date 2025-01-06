@@ -12,6 +12,10 @@ txtcyn=$(tput setaf 6)    # Cyan
 txtwht=$(tput setaf 7)    # White
 txtrst=$(tput sgr0)       # Text reset
 
+# Location of all of the patches that have ever been added to the stable trees
+# git repo is at git.kernel.org:/pub/scm/linux/kernel/git/stable/stable-queue.git
+STABLE_QUEUE="/home/gregkh/linux/stable/stable-queue"
+
 find_fix() {
 	FIX=$1
 
@@ -51,7 +55,21 @@ find_fix() {
 	#git describe --contains ${COMMIT_ID}
 	#release=`git describe --contains ${long_id} | cut -f 1 -d '~'`
 	#release=$(/home/gregkh/linux/scripts/fix_in_what_release "${long_id}")
-	release=$(/home/gregkh/linux/stable/commit_tree/id_found_in "${long_id}")
+	#release=$(/home/gregkh/linux/stable/commit_tree/id_found_in "${long_id}")
+	#release+=" | "
+	release=$(/home/gregkh/linux/vulns/tools/verhaal/id_found_in "${long_id}")
+
+	# Now look in the stable queue just to be "safe"
+	if [ -d ${STABLE_QUEUE} ] ; then
+		GREP="git grep"
+		cd ${STABLE_QUEUE=} || exit
+		rs=$(${GREP} -l -i "${long_id}" queue-*)
+		for r in ${rs}; do
+			r=${r%\/*}          # only keep the front queue release directory of a match, not the patch itself
+			release+=" ${r}"
+		done
+	fi
+
 	echo "${txtcyn}${release}${txtrst}"
 	echo ""
 }
