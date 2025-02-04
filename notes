@@ -27,6 +27,9 @@ cross-compile:
 
 	make ARCH=arm64 CROSS_COMPILE=~/linux/compilers/gcc-11.1.0-nolibc/aarch64-linux/bin/aarch64-linux- -j100
 
+kernel doc testing:
+	scripts/kernel-doc -Wall -none -v ...your file...
+
 
 Intel patch review complaints:
 	x86-patch-review@intel.com
