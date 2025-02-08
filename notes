@@ -33,3 +33,8 @@ kernel doc testing:
 
 Intel patch review complaints:
 	x86-patch-review@intel.com
+
+Dynamic debug function information
+$ alias ddcmd='echo $* > /proc/dynamic_debug/control'
+# add function to all enabled messages
+$ ddcmd '+f'
