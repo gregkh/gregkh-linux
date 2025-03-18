@@ -183,10 +183,6 @@ f=$(cd ${OBJ_DIR} && find . -type f)
 echo "${f}" > "${FIND}"
 #find ${OBJ_DIR} -type f > "${FIND}"
 
-objs=$(cd "${OBJ_DIR}" && find . -type f | grep "\.o$")
-
-
-
 # first get the object files and strip off the .o and replace it with a .c
 # to find the .c files we want to count.
 #find . -type f | grep "\.o$" | sed -e 's/\.o$/\.c/' > "${C_FILES}"
