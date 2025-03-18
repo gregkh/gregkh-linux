@@ -157,6 +157,10 @@ find_includes() {
 
 count_lines() {
 	FILES=$1
+
+	pushd .
+	cd "${SRC_DIR}"
+
 	while read -r FILE ; do
 		if [ -f "${FILE}" ]; then
 			LINES=$(wc -l "${FILE}" | cut -f 1 -d ' ')
@@ -164,6 +168,8 @@ count_lines() {
 			#printf "total=%08d\tlines=%06d\t%s\n" ${TOTAL_LINES} "${LINES}" "${FILE}"
 		fi
 	done < "${FILES}"
+
+	popd
 }
 
 
