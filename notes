@@ -1,3 +1,6 @@
+# run dyad rust tests for all cves created
+RUN_INTEGRATION_TESTS=1 cargo test -- --ignored
+
 lore_reply () {
 	if [[ "${1}" == "" ]] || [[ ! "${1}" =~ "lore.kernel.org" ]]; then
 		echo "First (only) argument should be a LORE link"
