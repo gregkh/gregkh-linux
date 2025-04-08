@@ -81,7 +81,7 @@ scratch_sync:
 	}
 
 	cd scratch
-	declare -A versions=(	["4.19"]="419"	\
+	declare -A versions=(			\
 				["5.4"]="504"	\
 				["5.10"]="510"	\
 				["5.15"]="515"	\
@@ -89,6 +89,7 @@ scratch_sync:
 				["6.6"]="606"	\
 				["6.12"]="612"	\
 				["6.13"]="613"	\
+				["6.14"]="614"	\
 				)
 	for i in ${!versions[@]}; do
 		do_it "linux-${i}.y" "s-${versions[$i]}"
