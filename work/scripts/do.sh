@@ -147,7 +147,11 @@ reply()
 		echo "    $SUBJECT"
 		echo
 		echo "to my ${TREE} git tree which can be found at"
-		echo "    git://git.kernel.org/pub/scm/linux/kernel/git/gregkh/${TREE}.git"
+		if [ "${TREE}" = "driver-core" ] ; then
+			echo "    git://git.kernel.org/pub/scm/linux/kernel/git/driver-core/${TREE}.git"
+		else
+			echo "    git://git.kernel.org/pub/scm/linux/kernel/git/gregkh/${TREE}.git"
+		fi
 		echo "in the ${TREE}-${BRANCH} branch."
 		echo
 		echo "The patch will show up in the next release of the linux-next tree"
