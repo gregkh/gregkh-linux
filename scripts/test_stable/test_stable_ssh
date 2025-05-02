@@ -270,9 +270,9 @@ echo "Errors   = \${ERRORS}"
 
 if [ "\${KTEST_RUN}" = "0" ]; then
 	# test succeeded
-	SUBJECT="Build of ${KERNEL_VERSION} was good (W:\${WARNINGS} E:\${ERRORS} \${TIME} seconds)"
+	SUBJECT="${REMOTE}: Build of ${KERNEL_VERSION} was good (W:\${WARNINGS} E:\${ERRORS} \${TIME} seconds)"
 else
-	SUBJECT="Build of ${KERNEL_VERSION} FAILED! (W:\${WARNINGS} E:\${ERRORS} \${TIME} seconds)"
+	SUBJECT="${REMOTE}: Build of ${KERNEL_VERSION} FAILED! (W:\${WARNINGS} E:\${ERRORS} \${TIME} seconds)"
 fi
 
 mutt -s "\${SUBJECT}" -a linux/log -- ${EMAIL} < output_log
