@@ -32,6 +32,23 @@
 #EMAIL="greg@kroah.com"
 EMAIL="gregkh@kernel.org"
 
+# Initialize our color variables if we are a normal terminal
+if [[ -t 1 ]]; then
+	txtred=$(tput setaf 1)	# Red
+	txtgrn=$(tput setaf 2)	# Green
+	txtylw=$(tput setaf 3)	# Yellow
+	txtblu=$(tput setaf 4)	# Blue
+	txtcyn=$(tput setaf 6)	# Cyan
+	txtrst=$(tput sgr0)	# Text reset
+else
+	txtred=""
+	txtgrn=""
+	txtylw=""
+	txtblu=""
+	txtcyn=""
+	txtrst=""
+fi
+
 LOCAL_WORK="/tmp/"
 LOCAL_WORK=${TMPDIR}
 LOCAL_KTEST="/home/gregkh/linux/gregkh/tools/testing/ktest/ktest.pl"
@@ -42,6 +59,10 @@ QUEUE_DIR="/home/gregkh/linux/stable/stable-queue/"
 #REMOTE=${REMOTE:-build}	# default option is the "build" server option
 #REMOTE=${REMOTE:-rack}	# default option is the "rack" server option
 REMOTE=${REMOTE:-bob}	# default option is the "bob" server option
+
+# Compiler to use.  Can be overridden by the server option below, or by the
+# version of the kernel being tested
+CC=""
 
 # test for default server options
 case "${REMOTE}" in
@@ -70,28 +91,26 @@ case "${REMOTE}" in
 	#cache_dir = /dev/shm/ccache/
 	REMOTE_USER="gregkh"
 	SSH_OPTIONS="-o StrictHostKeyChecking=no -o UserKnownHostsFile=/dev/null"
+	CC="ccache gcc"
 	;;
 "bob")
 	REMOTE_SERVER="bob"
-	REMOTE_SERVER="192.168.1.50"
-	tailscale status 1> /dev/null
-	if [ $? -eq 0 ] ; then
-		echo "tailscale is up!"
-		REMOTE_SERVER="100.93.211.108"
+	REMOTE_SERVER=$(tailscale status 2> /dev/null | grep bob | cut -f 1 -d ' ')
+	if [[ "${REMOTE_SERVER}" == "" ]] ; then
+		REMOTE_SERVER="192.168.1.50"
 	fi
 	REMOTE_WORK="/dev/shm/"
 #	REMOTE_STABLE_GIT="/home/gregkh/linux/stable/linux-stable/"
 #	REMOTE_USER="gregkh"
 	REMOTE_STABLE_GIT="/home/bob/linux/stable/"
 	REMOTE_USER="bob"
+	CC="ccache gcc-14"
 	;;
 "scoop")
 	REMOTE_SERVER="scoop"
-	REMOTE_SERVER="192.168.1.51"
-	tailscale status 1> /dev/null
-	if [ $? -eq 0 ] ; then
-		echo "tailscale is up!"
-		REMOTE_SERVER="100.93.211.108"
+	REMOTE_SERVER=$(tailscale status 2> /dev/null | grep scoop | cut -f 1 -d ' ')
+	if [[ "${REMOTE_SERVER}" == "" ]] ; then
+		REMOTE_SERVER="192.168.1.51"
 	fi
 	REMOTE_WORK="/dev/shm/"
 	REMOTE_STABLE_GIT="/home/scoop/linux/stable/"
@@ -147,47 +166,43 @@ test_it()
 {
 	KERNEL_VERSION=$1
 
-	CC=""
-	if [ "${KERNEL_VERSION}" == "4.4" ] ; then
-		CC="CC=\"gcc-8\""
-	fi
-	case "${KERNEL_VERSION}" in
-	"4.9"|"4.14"|"4.19")
-		CC="ccache gcc-13"
-		;;
-	"5.4")
-		CC="ccache gcc"
-		;;
-	"5.10")
-		CC="ccache gcc"
-		;;
-	"5.15")
-		CC="ccache gcc"
-		;;
-	*)
-		CC="ccache gcc"
-		;;
-	esac
-	# override old debian box for now
-	if [ "${REMOTE}" == "rack" ] ; then
-		CC="ccache gcc"
+	# if we have not already overriden the compiler option, let's try to do
+	# some changes based on version being tested
+	if [[ "${CC}" == "" ]] ; then
+		case "${KERNEL_VERSION}" in
+		"4.9"|"4.14"|"4.19")
+			CC="ccache gcc-13"
+			;;
+		"5.4")
+			CC="ccache gcc"
+			;;
+		"5.10")
+			CC="ccache gcc"
+			;;
+		"5.15")
+			CC="ccache gcc"
+			;;
+		*)
+			CC="ccache gcc"
+			;;
+		esac
 	fi
 
-	echo "Testing kernel version ${KERNEL_VERSION} on remote server \"${REMOTE}\" ie ${REMOTE_SERVER}"
+	echo "Testing kernel version ${txtgrn}${KERNEL_VERSION}${txtrst} on remote server ${txtylw}\"${REMOTE}\"${txtrst} ie ${txtylw}${REMOTE_SERVER}${txtrst}"
 
 	# create the local temporary directory to do the work in.
 	SCRIPT_HOME=`mktemp -d ${LOCAL_WORK}/stable_test_${KERNEL_VERSION}_XXXXX` || exit 1
-	echo "Using ${SCRIPT_HOME} for our local files"
+	echo "	Using ${txtcyn}${SCRIPT_HOME}${txtrst} for our local files"
 
 	# create the remote directory
 	REMOTE_DIR=`ssh ${SSH_OPTIONS} ${REMOTE_USER}@${REMOTE_SERVER} mktemp -d ${REMOTE_WORK}/stable_test_${KERNEL_VERSION}_XXXXX` || exit 1
-	echo "Using ${REMOTE_DIR} for the remote directory"
+	echo "	Using ${txtcyn}${REMOTE_DIR}${txtrst} for the remote directory"
 
 	# figure out how many processors are on the remote machine
 	# we use this to know how many processes to spawn when doing the build
 	#NUM_PROCESSORS=`ssh ${SSH_OPTIONS} ${REMOTE_USER}@${REMOTE_SERVER} grep -c "processor" /proc/cpuinfo`
 	NUM_PROCESSORS=`ssh ${SSH_OPTIONS} ${REMOTE_USER}@${REMOTE_SERVER} nproc`
-	echo "Remote machine has ${NUM_PROCESSORS} processors."
+	echo "	Remote machine has ${txtblu}${NUM_PROCESSORS}${txtrst} processors."
 
 	# tar up stable patch queue for just this kernel version
 	if [ -d ${QUEUE_DIR}/queue-${KERNEL_VERSION} ] ; then
@@ -318,7 +333,7 @@ __EOF__
 	#ssh ${REMOTE_USER}@${REMOTE_SERVER} "${REMOTE_DIR}/run_test.sh > ${REMOTE_DIR}/output_log"
 	ssh ${SSH_OPTIONS} -n -f ${REMOTE_USER}@${REMOTE_SERVER} "sh -c \"cd ${REMOTE_DIR}; nohup ./run_test.sh > ${REMOTE_DIR}/output_log 2>&1 &\" "
 
-	echo "Job successfully submitted."
+	echo "	${txtgrn}Job successfully submitted.${txtrst}"
 }
 
 # grab the kernel version from the command line
