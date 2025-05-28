@@ -60,7 +60,7 @@ q=$(gum input --prompt="# What is the kernel version? " --value="${version}")
 
 #echo "q=${q}"
 
-gum style "# Creating pull request for $(gum style --foreground 212 ${tree}) for $(gum style --foreground 99 ${q})"
+gum style --foreground 44 "# Creating pull request for $(gum style --foreground 212 ${tree}) for $(gum style --foreground 99 ${q})"
 
 # Not everything is in my named git path, some are shared
 name="gregkh"
