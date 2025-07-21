@@ -17,20 +17,32 @@ CURRENT_BRANCH=$(git symbolic-ref --short -q HEAD)
 PWD=$(pwd)
 TREE=$(basename "${PWD}")
 
-branches=("linus" "next" "testing")
+# Old manual way:
+#
+#git checkout work-linus   && git merge ${TREE}-linus
+#git checkout work-next    && git merge ${TREE}-next
+#git checkout work-testing && git merge ${TREE}-testing
+#exit
 
+# Dynamically only sync the branches that are not the same
+
+branches=("linus" "next" "testing")
 for branch in ${branches[@]}; do
-	text="${txtcyn}Syncing${txtrst} ${txtgrn}${branch}${txtrst}"
-	gum spin --title="${text}" --align=right --show-output -s minidot -- git checkout work-${branch} && git merge ${TREE}-${branch}
-	echo "${txtcyn}Synced${txtrst} ${txtgrn}${branch}${txtrst}"
+	root_id=$(git for-each-ref refs/heads/${TREE}-${branch} | awk '{print $1}')
+	branch_id=$(git for-each-ref refs/heads/work-${branch} | awk '{print $1}')
+	#echo "TREE=${TREE}	root_id=${root_id}	branch_id=${branch_id}"
+	if [[ "${root_id}" != "${branch_id}" ]]; then
+		text="${txtcyn}Syncing${txtrst} ${txtgrn}${branch}${txtrst}"
+		gum spin --title="${text}" --align=right --show-output -s minidot -- git checkout work-${branch} && git merge ${TREE}-${branch}
+		echo "Branch ${txtgrn}${branch}${txtrst} ${txtcyn}now synced${txtrst}"
+	else
+		echo "Branch ${txtgrn}${branch}${txtrst} ${txtcyn}already synced${txtrst}"
+	fi
+
 done
 
+# Go back to the branch we started on
 git checkout --quiet ${CURRENT_BRANCH}
 exit
 
-git checkout work-linus   && git merge ${TREE}-linus
-git checkout work-next    && git merge ${TREE}-next
-git checkout work-testing && git merge ${TREE}-testing
-
-exit
 
