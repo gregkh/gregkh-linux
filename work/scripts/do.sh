@@ -117,6 +117,13 @@ reply()
 		echo "nobody to notify"
 		exit 0
 	fi
+
+	# Add in driver core maintainers if this is a driver core patch
+	if [[ "${TREE}" = "driver-core" ]] ; then
+		AUTHOR="${AUTHOR},dakr@kernel.org,rafael@kernel.org"
+	fi
+	#echo "AUTHOR='${AUTHOR}'"
+
 	to=""
 	for i in $(echo "$AUTHOR" | sed -e 's/,/ /g')
 	do
