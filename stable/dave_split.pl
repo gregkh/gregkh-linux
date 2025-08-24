@@ -9,6 +9,7 @@
 my $line;
 my $firstline = "true";
 my $header_complete = "false";
+my $wait_for_body = "false";
 my $tmpfile = "";
 my $tmpdir;
 my $kernel_version;
@@ -93,6 +94,7 @@ foreach my $patch (@patches) {
 
 	$firstline = "true";
 	$header_complete = "false";
+	$wait_for_body = "false";
 	while ($line = <PATCH>) {
 		# We clean up 3 things:
 		# 	- Strip the patch number off of the subject
@@ -111,7 +113,6 @@ foreach my $patch (@patches) {
 			print FILE "Signed-off-by: Greg Kroah-Hartman <gregkh\@linuxfoundation.org>\n";
 		}
 
-		print FILE $line;
 
 		# figure out who wrote this patch
 		if ($line =~ m/^From: /) {
@@ -119,11 +120,25 @@ foreach my $patch (@patches) {
 			chomp($author);
 		}
 
+		if ($wait_for_body eq "true") {
+			if ($line ne "\n") {
+				if (line =~ m/^From: /) {
+					print FILE $line;
+				} else {
+					print FILE "$author\n";
+				}
+				$wait_for_body = "false";
+			}
+		} else {
+			print FILE $line;
+		}
+
 		# if this is the end of the mail header, write the author info.
 		if ($header_complete eq "false") {
 			if ($line eq "\n") {
-				print FILE "$author\n";
+				#print FILE "$author\n";
 				$header_complete = "true";
+				$wait_for_body = "true";
 			}
 		}
 	}
