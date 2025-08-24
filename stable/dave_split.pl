@@ -120,12 +120,18 @@ foreach my $patch (@patches) {
 			chomp($author);
 		}
 
+		# if this is the end of the mail header, write the author info
+		# if it is not present.
+		# Yes, this could be more obvious and made cleaner, it's early
+		# and I'm still on my first cup of coffee.  It's amazing this
+		# thing works at all..
 		if ($wait_for_body eq "true") {
 			if ($line ne "\n") {
-				if (line =~ m/^From: /) {
+				if ($line =~ m/^From: /) {
 					print FILE $line;
 				} else {
-					print FILE "$author\n";
+					print FILE "$author\n\n";
+					print FILE "$line";
 				}
 				$wait_for_body = "false";
 			}
@@ -133,7 +139,8 @@ foreach my $patch (@patches) {
 			print FILE $line;
 		}
 
-		# if this is the end of the mail header, write the author info.
+		# if this is the end of the mail header, switch states to start
+		# looking for an author or body of the commit
 		if ($header_complete eq "false") {
 			if ($line eq "\n") {
 				#print FILE "$author\n";
