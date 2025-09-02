@@ -1,0 +1,23 @@
+procs:
+  "5.4":
+    cwd: linux-5.4.y
+    shell: just mbox
+  "5.10":
+    cwd: linux-5.10.y
+    shell: just mbox
+  "5.15":
+    cwd: linux-5.15.y
+    shell: just mbox
+  "6.1":
+    cwd: linux-6.1.y
+    shell: just mbox
+  "6.6":
+    cwd: linux-6.6.y
+    shell: just mbox
+  "6.12":
+    cwd: linux-6.12.y
+    shell: just mbox
+  "6.16":
+    cwd: linux-6.16.y
+    shell: just mbox
+
