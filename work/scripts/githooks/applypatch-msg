@@ -1,6 +1,7 @@
 #!/bin/sh
 . git-sh-setup
-perl -pi -e 's|^Message-I[Dd]:\s*<?([^>]+)>?$|Link: https://lore.kernel.org/r/$1|g;' "$1"
+#perl -pi -e 's|^Message-I[Dd]:\s*<?([^>]+)>?$|Link: https://lore.kernel.org/r/$1|g;' "$1"
+perl -pi -e 's|^Message-I[Dd]:\s*<?([^>]+)>?$|Link: https://patch.msgid.link/$1|g;' "$1"
 test -x "$GIT_DIR/hooks/commit-msg" &&
         exec "$GIT_DIR/hooks/commit-msg" ${1+"$@"}
 :
