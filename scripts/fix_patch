@@ -2,7 +2,7 @@
 
 for PATCH in $*
 do
-	TMPFILE=`mktemp example.XXXXXX` || exit 1
+	TMPFILE=`mktemp tmp_fixpatch.XXXXXX` || exit 1
 
 	#echo "TMPFILE=$TMPFILE"
 	perl ~/linux/scripts/mime_dump --headers From,Date,Subject,To,Cc,Message-ID,Content-Disposition -F -f $PATCH > $TMPFILE
