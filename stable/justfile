@@ -82,7 +82,6 @@ scratch_sync:
 
 	cd scratch
 	declare -A versions=(			\
-				["5.4"]="504"	\
 				["5.10"]="510"	\
 				["5.15"]="515"	\
 				["6.1"]="601"	\
