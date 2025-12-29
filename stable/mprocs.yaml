@@ -1,7 +1,4 @@
 procs:
-  "5.4":
-    cwd: linux-5.4.y
-    shell: just mbox
   "5.10":
     cwd: linux-5.10.y
     shell: just mbox
@@ -17,7 +14,7 @@ procs:
   "6.12":
     cwd: linux-6.12.y
     shell: just mbox
-  "6.17":
-    cwd: linux-6.17.y
+  "6.18":
+    cwd: linux-6.18.y
     shell: just mbox
 
