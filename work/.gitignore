@@ -5,6 +5,7 @@ s3
 s4
 bainbu/
 char-misc/
+clanker/
 debugfs_cleanup/
 driver-core/
 rust/
