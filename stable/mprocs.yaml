@@ -17,4 +17,6 @@ procs:
   "6.18":
     cwd: linux-6.18.y
     shell: just mbox
-
+  "6.19":
+    cwd: linux-6.19.y
+    shell: just mbox
