@@ -16,17 +16,23 @@ if [[ "${SHA}" == "" ]]; then
 	exit 1
 fi
 
+SHA_FULL=$(git log -1 --format="%H" "${SHA}" 2> /dev/null)
+if [[ "${SHA_FULL}" == "" ]]; then
+	echo "Error: invalid sha ${SHA}"
+	exit 1
+fi
+
 MAINSHA=$(git --no-pager log -n1 ${SHA} | grep -i upstream | grep -oE "[a-f0-9]{40,}") || true
 
 if [[ "${MAINSHA}" == "" ]]; then
-	MAINSHA=${SHA}
+	MAINSHA=${SHA_FULL}
 fi
 
-LOG=$(git show --format="%s" ${SHA} | head -n 1)
+LOG=$(git show --format="%s" ${SHA_FULL} | head -n 1)
 
 echo "Revert \"${LOG}\""			> revert_msg
 echo ""						>> revert_msg
-echo "This reverts commit ${SHA} which is"	>> revert_msg
+echo "This reverts commit ${SHA_FULL} which is"	>> revert_msg
 echo "commit ${MAINSHA} upstream."		>> revert_msg
 
-git revert -e ${SHA}
+git revert -e ${SHA_FULL}
