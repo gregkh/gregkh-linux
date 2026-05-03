@@ -104,8 +104,8 @@ case "${REMOTE}" in
 #	REMOTE_USER="gregkh"
 	REMOTE_STABLE_GIT="/home/bob/linux/stable/"
 	REMOTE_USER="bob"
-	#CC="ccache gcc-14"
-	CC="ccache gcc"
+	CC="ccache gcc-15"
+	#CC="ccache gcc"
 	;;
 "scoop")
 	REMOTE_SERVER="scoop"
