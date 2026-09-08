@@ -1,12 +1,15 @@
 #!/bin/bash
 
+REAL_SCRIPT=$(realpath -e "${BASH_SOURCE[0]}")
+SCRIPT_TOP="${SCRIPT_TOP:-$(dirname "${REAL_SCRIPT}")}"
+cd ${SCRIPT_TOP}
+echo "${SCRIPT_TOP}"
 
 help()
 {
 	echo "$0 PATCH_NAME VERSION"
 	exit 1
 }
-
 
 delete()
 {
@@ -43,20 +46,20 @@ if [[ -z "${PATCH}" ]]; then
 	help
 fi
 
-
-VERSION=$1
-if [[ -z "${VERSION}" ]]; then
-	help
+if [[ "$#" == "0" ]]; then
+	versions=$("./stable-queue/scripts/active_kernel_versions_get.sh")
+else
+	versions="$*"
 fi
 
-if [ "${VERSION}" == "all" ] ; then
+if [[ "${versions}" == "all" ]]; then
 	echo "removing ${PATCH} from all versions..."
 	for VERSION in $(cat stable-queue/active_kernel_versions)
 	do
 		delete "${PATCH}" "${VERSION}"
 	done
 else
-	for VERSION in "$@"
+	for VERSION in ${versions}
 	do
 		delete "${PATCH}" "${VERSION}"
 	done
