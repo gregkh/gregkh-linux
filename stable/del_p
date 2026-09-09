@@ -1,5 +1,16 @@
 #!/bin/bash
 
+txtund=$(tput sgr 0 1)    # Underline
+txtbld=$(tput bold)       # Bold
+txtred=$(tput setaf 1)    # Red
+txtgrn=$(tput setaf 2)    # Green
+txtylw=$(tput setaf 3)    # Yellow
+txtblu=$(tput setaf 4)    # Blue
+txtpur=$(tput setaf 5)    # Purple
+txtcyn=$(tput setaf 6)    # Cyan
+txtwht=$(tput setaf 7)    # White
+txtrst=$(tput sgr0)       # Text reset
+
 REAL_SCRIPT=$(realpath -e "${BASH_SOURCE[0]}")
 SCRIPT_TOP="${SCRIPT_TOP:-$(dirname "${REAL_SCRIPT}")}"
 cd ${SCRIPT_TOP}
@@ -47,6 +58,12 @@ if [[ -z "${PATCH}" ]]; then
 fi
 
 if [[ "$#" == "0" ]]; then
+	queued_in=$(cd stable-queue/ && grep -l -r ${PATCH} queue-* | sort -Vr)
+	if [[ "${queued_in}" != "" ]]; then
+		for q in ${queued_in}; do
+			echo "	currently in:	${txtgrn}${q}${txtrst}"
+		done
+	fi
 	versions=$("./stable-queue/scripts/active_kernel_versions_get.sh")
 else
 	versions="$*"
