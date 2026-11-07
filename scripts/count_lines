@@ -157,6 +157,10 @@ find_includes() {
 
 count_lines() {
 	FILES=$1
+
+	pushd .
+	cd "${SRC_DIR}"
+
 	while read -r FILE ; do
 		if [ -f "${FILE}" ]; then
 			LINES=$(wc -l "${FILE}" | cut -f 1 -d ' ')
@@ -164,6 +168,8 @@ count_lines() {
 			#printf "total=%08d\tlines=%06d\t%s\n" ${TOTAL_LINES} "${LINES}" "${FILE}"
 		fi
 	done < "${FILES}"
+
+	popd
 }
 
 
@@ -179,13 +185,12 @@ FIND=$(mktemp "${TMPDIR}/${SCRIPT}"_find.XXXX) || exit 1
 
 # -----------------start here!------------------
 printf "Finding all .c files used based on the .o files...\n"
-f=$(cd ${OBJ_DIR} && find . -type f)
-echo "${f}" > "${FIND}"
-#find ${OBJ_DIR} -type f > "${FIND}"
 
-objs=$(cd "${OBJ_DIR}" && find . -type f | grep "\.o$")
+(cd "${SRC_DIR}" && find . -type f) > "${FIND}"
 
-
+if [ "${SRC_DIR}" != "${OBJ_DIR}" ]; then
+	(cd "${OBJ_DIR}" && find . -type f) >> "${FIND}"
+fi
 
 # first get the object files and strip off the .o and replace it with a .c
 # to find the .c files we want to count.
