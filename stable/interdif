@@ -34,6 +34,11 @@ if [[ "${COMMIT_ID}" == "" ]] ; then
 fi
 
 if [ "${COMMIT_ID}" == "" ] ; then
+	# maybe some random sha1?
+	COMMIT_ID=$(grep -oE "[a-f0-9]{40,}" ${EMAIL})
+fi
+
+if [ "${COMMIT_ID}" == "" ] ; then
 	echo "${txtred}commit id not found!${txtrst}"
 	rm "${EMAIL}"
 	exit 1
